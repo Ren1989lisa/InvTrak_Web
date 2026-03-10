@@ -1,0 +1,33 @@
+.login-container{
+  background: linear-gradient(135deg, #2d557a 10%, #073a69 90%);
+  min-height: 100vh;
+}
+
+.logo-box{
+  font-size: 20px;
+}
+
+.login-card{
+  width: 380px;
+  border-radius: 15px;
+  background: #d6e4f0;
+}
+
+.login-card input{
+  border-radius: 8px;
+}
+
+button{
+  border-radius: 8px;
+  background-color: #4E8EA2;
+}
+
+.login-btn{
+  background-color: #4E8EA2;
+  border: none;
+  color: white;
+}
+
+.login-btn:hover{
+  background-color: #2b6b7f;
+}
