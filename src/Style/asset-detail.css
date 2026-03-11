@@ -1,0 +1,79 @@
+/* Pantalla detalle de activo - consistente con bienes-registrados.css */
+
+.inv-page--detail {
+  padding-bottom: 2rem;
+}
+
+.inv-content--detail {
+  max-width: 900px;
+}
+
+.inv-back-btn {
+  color: #2f73a6 !important;
+  font-weight: 600;
+  text-decoration: none !important;
+  padding-left: 0;
+}
+
+.inv-back-btn:hover {
+  color: #1e5a85 !important;
+  text-decoration: underline !important;
+}
+
+/* Card grande centrada */
+.inv-asset-detail-card {
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.inv-asset-detail-card__header {
+  border: 0;
+  padding: 12px 16px;
+  color: #fff;
+  background: linear-gradient(90deg, #2c5e91 0%, #6ea3d8 100%);
+  font-size: 1rem;
+}
+
+.inv-asset-detail-card__body {
+  padding: 20px;
+}
+
+.inv-asset-detail-card__col {
+  margin-bottom: 8px;
+}
+
+.inv-asset-detail-card__col .inv-field {
+  margin-bottom: 14px;
+}
+
+/* QR centrado */
+.inv-qr-section {
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
+  margin-bottom: 20px;
+}
+
+.inv-qr-section__code {
+  display: block;
+}
+
+/* Botones de acción alineados horizontalmente */
+.inv-action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
+
+/* Activo no encontrado */
+.inv-detail-not-found {
+  text-align: center;
+  padding: 3rem 1rem;
+}
+
+.inv-detail-not-found p {
+  margin-bottom: 1rem;
+  color: #233241;
+}

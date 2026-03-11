@@ -11,6 +11,7 @@
     "estatus": "Resguardado",
     "costo": 2555.00,
     "fecha_alta": "2025-05-15",
+    "imagen": "/assets/codigoQR.png",
     "ubicacion": {
       "campus": "UTEZ",
       "edificio": "D3",
@@ -29,6 +30,7 @@
     "estatus": "Disponible",
     "costo": 18500.00,
     "fecha_alta": "2025-04-10",
+    "imagen": "/assets/codigoQR.png",
     "ubicacion": {
       "campus": "UPEMOR",
       "edificio": "E1",
@@ -47,6 +49,8 @@
     "estatus": "Resguardado",
     "costo": 1200.00,
     "fecha_alta": "2025-03-20",
+    "imagen": "/assets/codigoQR.png",
+
     "ubicacion": {
       "campus": "UPEMOR",
       "edificio": "E2",
@@ -65,6 +69,7 @@
     "estatus": "Disponible",
     "costo": 850.00,
     "fecha_alta": "2025-02-11",
+    "imagen": "/assets/codigoQR.png",
     "ubicacion": {
       "campus": "UTEZ",
       "edificio": "D1",

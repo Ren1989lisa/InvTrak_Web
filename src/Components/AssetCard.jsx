@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { Card } from "react-bootstrap";
 import "../Style/bienes-registrados.css";
 
@@ -13,10 +14,27 @@ function formatCurrency(value) {
 }
 
 export default function AssetCard({ activo }) {
+  const navigate = useNavigate();
   const ubicacion = activo?.ubicacion ?? {};
 
+  const handleClick = () => {
+    navigate(`/activo/${activo?.id_activo}`);
+  };
+
   return (
-    <Card className="inv-asset-card shadow-sm border-0 h-100">
+    <Card
+      className="inv-asset-card shadow-sm border-0 h-100"
+      onClick={handleClick}
+      style={{ cursor: "pointer" }}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          handleClick();
+        }
+      }}
+    >
       <Card.Header className="inv-asset-card__header">
         <span className="inv-asset-card__headerLabel">Etq. bien:</span>{" "}
         <span className="inv-asset-card__headerValue">

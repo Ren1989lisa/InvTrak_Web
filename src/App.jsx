@@ -3,6 +3,7 @@ import Login from "./Pages/Login";
 import Dashboard from "./Pages/DashBoard";
 import ForgotPassword from "./Pages/ForgotPassword";
 import BienesRegistrados from "./Pages/BienesRegistrados";
+import AssetDetail from "./Pages/AssetDetail";
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/bienes-registrados" element={<BienesRegistrados />} />
+        <Route path="/activo/:id" element={<AssetDetail />} />
       </Routes>
     </BrowserRouter>
   );
