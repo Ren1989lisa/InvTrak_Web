@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Container, Row, Col } from "react-bootstrap";
 
 import NavbarMenu from "../Components/NavbarMenu";
+import SidebarMenu from "../Components/SidebarMenu";
 import SearchBar from "../Components/SearchBar";
 import AssetCard from "../Components/AssetCard";
 import PaginationComponent from "../Components/PaginationComponent";
@@ -11,6 +12,7 @@ import "../Style/bienes-registrados.css";
 
 export default function BienesRegistrados() {
   const [search, setSearch] = useState("");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const activos = Array.isArray(activosData) ? activosData : [];
   const query = search.trim().toLowerCase();
@@ -27,7 +29,16 @@ export default function BienesRegistrados() {
 
   return (
     <div className="inv-page">
-      <NavbarMenu title="Bienes registrados" />
+      <NavbarMenu
+        title="Bienes registrados"
+        onMenuClick={() => setSidebarOpen(true)}
+      />
+
+      <SidebarMenu
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        userName="Administrador"
+      />
 
       <Container fluid className="inv-content px-3 px-md-4 py-3">
         <SearchBar
