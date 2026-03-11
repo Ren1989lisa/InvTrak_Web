@@ -9,7 +9,7 @@ function Login  ()  {
     const navigate = useNavigate();
     const handleSubmit =(e)=>{
         e.preventDefault();
-        navigate("/DashBoard");
+        navigate("/bienes-registrados");
     };
     return (
     <Container fluid className="login-container">

@@ -1,0 +1,74 @@
+[
+  {
+    "id_activo": 1,
+    "codigo_interno": "MOTHUTEZD3CC1",
+    "numero_serie": "CN-0GH567-74445-321-A10B",
+    "tipo_activo": "Monitor",
+    "marca": "Lenovo",
+    "modelo": "ThinkVision SH667G",
+    "descripcion": "Monitor ThinkVision",
+    "propietario": "Fernanda Rodriguez Martinez",
+    "estatus": "Resguardado",
+    "costo": 2555.00,
+    "fecha_alta": "2025-05-15",
+    "ubicacion": {
+      "campus": "UTEZ",
+      "edificio": "D3",
+      "aula": "CC1"
+    }
+  },
+  {
+    "id_activo": 2,
+    "codigo_interno": "LADEUPEMORE1A1",
+    "numero_serie": "DL-55678-99123-AB23",
+    "tipo_activo": "Laptop",
+    "marca": "Dell",
+    "modelo": "Latitude 5420",
+    "descripcion": "Laptop empresarial Dell",
+    "propietario": "Carlos Hernandez Lopez",
+    "estatus": "Disponible",
+    "costo": 18500.00,
+    "fecha_alta": "2025-04-10",
+    "ubicacion": {
+      "campus": "UPEMOR",
+      "edificio": "E1",
+      "aula": "A1"
+    }
+  },
+  {
+    "id_activo": 3,
+    "codigo_interno": "MOMOUPEMORE2B4",
+    "numero_serie": "LOG-99887766",
+    "tipo_activo": "Mouse",
+    "marca": "Logitech",
+    "modelo": "MX Master",
+    "descripcion": "Mouse inalámbrico Logitech",
+    "propietario": "Ana Torres Ramirez",
+    "estatus": "Resguardado",
+    "costo": 1200.00,
+    "fecha_alta": "2025-03-20",
+    "ubicacion": {
+      "campus": "UPEMOR",
+      "edificio": "E2",
+      "aula": "B4"
+    }
+  },
+  {
+    "id_activo": 4,
+    "codigo_interno": "TELOUTEZD1A4",
+    "numero_serie": "LOG-22334455",
+    "tipo_activo": "Teclado",
+    "marca": "Logitech",
+    "modelo": "K380",
+    "descripcion": "Teclado bluetooth compacto",
+    "propietario": "Luis Mendoza Perez",
+    "estatus": "Disponible",
+    "costo": 850.00,
+    "fecha_alta": "2025-02-11",
+    "ubicacion": {
+      "campus": "UTEZ",
+      "edificio": "D1",
+      "aula": "A4"
+    }
+  }
+]
