@@ -1,6 +1,6 @@
 import React from 'react'
 import {Container, Row, Col, Form, Button, Card} from "react-bootstrap";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import "./../Style/login.css"
 import Logo from '../Components/Logo';  
 
@@ -47,7 +47,9 @@ function Login  ()  {
               </Form.Group>
 
               <div className="text-end mb-3 small">
-                Olvidaste tu contraseña?
+                <Link to="/forgot-password" style={{ textDecoration: "none", color: "inherit" }}>
+                  ¿Olvidaste tu contraseña?
+                </Link>
               </div>
 
               <Button
