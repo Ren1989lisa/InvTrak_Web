@@ -14,10 +14,7 @@ function formatCurrency(value) {
   }).format(number);
 }
 
-/**
- * Card grande del detalle de un activo: header con gradiente,
- * dos columnas de información, QR y botones de acción.
- */
+
 export default function AssetDetailCard({ activo }) {
   if (!activo) return null;
 

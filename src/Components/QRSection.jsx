@@ -1,8 +1,6 @@
 import { QRCodeSVG } from "qrcode.react";
 
-/**
- * Sección que muestra el código QR del activo (datos en JSON).
- */
+//Seccion que muestra el código QR del activo (datos en JSON)
 export default function QRSection({ activo }) {
   if (!activo) return null;
 
