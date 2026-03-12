@@ -7,6 +7,7 @@ import AssetDetail from "./Pages/AssetDetail";
 import PerfilUsuario from "./Pages/PerfilUsuario";
 import Usuarios from "./Pages/Usuarios";
 import RegistrarUsuario from "./Pages/RegistrarUsuario";
+import EditarPerfil from "./Pages/EditarPerfil";
 
 function App() {
   return (
@@ -20,6 +21,9 @@ function App() {
         <Route path="/usuarios/registrar" element={<RegistrarUsuario />} />
         <Route path="/activo/:id" element={<AssetDetail />} />
         <Route path="/perfil" element={<PerfilUsuario />} />
+        <Route path="/perfil/:id" element={<PerfilUsuario />} />
+        <Route path="/perfil/editar" element={<EditarPerfil />} />
+        <Route path="/perfil/:id/editar" element={<EditarPerfil />} />
       </Routes>
     </BrowserRouter>
   );

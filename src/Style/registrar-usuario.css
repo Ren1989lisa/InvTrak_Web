@@ -6,7 +6,7 @@
 }
 
 .inv-register-container {
-  max-width: 900px;
+  max-width: 760px;
 }
 
 .inv-register-card {
@@ -15,6 +15,11 @@
 
 .inv-register-card__body {
   padding: 26px;
+}
+
+.inv-register__form {
+  max-width: 540px;
+  margin-inline: auto;
 }
 
 .inv-register-card__title {

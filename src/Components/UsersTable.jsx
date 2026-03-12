@@ -1,7 +1,7 @@
 import { Card, Table } from "react-bootstrap";
 import UserRow from "./UserRow";
 
-export default function UsersTable({ usuarios = [] }) {
+export default function UsersTable({ usuarios = [], onUserSelect, onUserEdit }) {
   return (
     <Card className="inv-users-card shadow-sm border-0">
       <Card.Body className="p-0">
@@ -17,7 +17,12 @@ export default function UsersTable({ usuarios = [] }) {
           </thead>
           <tbody>
             {usuarios.map((usuario) => (
-              <UserRow key={usuario.id_usuario} usuario={usuario} />
+              <UserRow
+                key={usuario.id_usuario}
+                usuario={usuario}
+                onSelect={onUserSelect}
+                onEdit={onUserEdit}
+              />
             ))}
           </tbody>
         </Table>

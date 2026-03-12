@@ -20,10 +20,9 @@ export default function Usuarios() {
   const [openSidebar, setOpenSidebar] = useState(false);
   const [search, setSearch] = useState("");
   const [filterRol, setFilterRol] = useState("todos");
-  const { users } = useUsers();
+  const { users, currentUser, setCurrentUserId } = useUsers();
 
   const usuarios = Array.isArray(users) ? users : [];
-  const usuarioLogeado = usuarios[0];
   const query = search.trim().toLowerCase();
 
   const sidebarItems = [
@@ -54,14 +53,19 @@ export default function Usuarios() {
       <SidebarMenu
         open={openSidebar}
         onClose={() => setOpenSidebar(false)}
-        userName={usuarioLogeado?.nombre_completo}
+        userName={currentUser?.nombre_completo}
         items={sidebarItems}
         onViewProfile={() => {
           setOpenSidebar(false);
-          navigate("/perfil");
+          if (currentUser) {
+            navigate(`/perfil/${currentUser.id_usuario}`);
+          } else {
+            navigate("/perfil");
+          }
         }}
         onLogout={() => {
           setOpenSidebar(false);
+          setCurrentUserId(null);
           navigate("/");
         }}
       />
@@ -101,7 +105,11 @@ export default function Usuarios() {
         </Row>
 
         <div className="mt-3">
-          <UsersTable usuarios={usuariosFiltrados} />
+          <UsersTable
+            usuarios={usuariosFiltrados}
+            onUserSelect={(usuario) => navigate(`/perfil/${usuario.id_usuario}`)}
+            onUserEdit={(usuario) => navigate(`/perfil/${usuario.id_usuario}/editar`)}
+          />
           <PaginationComponent />
         </div>
       </Container>

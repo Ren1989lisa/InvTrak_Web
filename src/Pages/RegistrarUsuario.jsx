@@ -126,7 +126,7 @@ export default function RegistrarUsuario() {
           {error ? <Alert variant="danger">{error}</Alert> : null}
           {success ? <Alert variant="success">{success}</Alert> : null}
 
-          <Form onSubmit={handleSubmit}>
+          <Form onSubmit={handleSubmit} className="inv-register__form">
             <FormInput
               label="Nombre completo"
               name="nombre_completo"

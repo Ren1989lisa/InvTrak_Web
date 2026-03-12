@@ -1,0 +1,39 @@
+.inv-edit-profile-card {
+  margin-top: 8px;
+}
+
+.inv-edit-profile__actions {
+  margin-top: 14px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.inv-edit-profile__saveBtn,
+.inv-edit-profile__cancelBtn {
+  border-radius: 999px;
+  min-width: 140px;
+  font-weight: 700;
+}
+
+.inv-edit-profile__saveBtn {
+  background-color: #2c5e91;
+  border-color: #2c5e91;
+}
+
+.inv-edit-profile__saveBtn:hover {
+  background-color: #234d75;
+  border-color: #234d75;
+}
+
+.inv-edit-profile__cancelBtn {
+  border-color: rgba(46, 110, 158, 0.25);
+  background: #eef5fb;
+  color: #1f3f60;
+}
+
+.inv-register__input--disabledWithIcon {
+  padding-right: 2.2rem;
+}
+

@@ -23,6 +23,7 @@ export default function ProfileInfoCard({ usuario }) {
               label="Número de empleado"
               value={usuario.numero_empleado}
             />
+            <ProfileField label="Contraseña" value={usuario.password} />
             <ProfileField
               label="Área / Departamento"
               value={usuario.departamento}

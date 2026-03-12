@@ -1,13 +1,13 @@
 import { useMemo, useState } from "react";
 import { Container, Row, Col } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
-import usuariosData from "../data/usuarios.json";
 
 import NavbarMenu from "../Components/NavbarMenu";
 import SearchBar from "../Components/SearchBar";
 import AssetCard from "../Components/AssetCard";
 import PaginationComponent from "../Components/PaginationComponent";
 import SidebarMenu from "../Components/SidebarMenu";
+import { useUsers } from "../context/UsersContext";
 
 import activosData from "../data/activosDetalle.json";
 import "../Style/bienes-registrados.css";
@@ -17,7 +17,7 @@ export default function BienesRegistrados() {
   const [search, setSearch] = useState("");
   const [openSidebar, setOpenSidebar] = useState(false);
   const navigate = useNavigate();
-  const usuarioLogeado = usuariosData[0];
+  const { currentUser, setCurrentUserId } = useUsers();
 
   const activos = Array.isArray(activosData) ? activosData : [];
   const query = search.trim().toLowerCase();
@@ -51,14 +51,19 @@ export default function BienesRegistrados() {
       <SidebarMenu
        open={openSidebar}
        onClose={() => setOpenSidebar(false)}
-       userName={usuarioLogeado.nombre_completo}
+       userName={currentUser?.nombre_completo}
        items={sidebarItems}
        onViewProfile={() => {
        setOpenSidebar(false);
-       navigate("/perfil");
+       if (currentUser) {
+         navigate(`/perfil/${currentUser.id_usuario}`);
+       } else {
+         navigate("/perfil");
+       }
          }}
        onLogout={() => {
        setOpenSidebar(false);
+       setCurrentUserId(null);
        navigate("/");
         }}
       />  

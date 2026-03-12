@@ -1,21 +1,18 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Alert, Button, Card, Col, Container, Form, Row } from "react-bootstrap";
 import { useNavigate, Link } from "react-router-dom";
 import "./../Style/login.css"
 import Logo from '../Components/Logo';  
-import usuariosData from "../Data/usuarios.json";
+import { useUsers } from "../context/UsersContext";
 
 function Login  ()  {
 
     const navigate = useNavigate();
+    const { users, setCurrentUserId } = useUsers();
     const [correo, setCorreo] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
-
-    const usuarios = useMemo(
-      () => (Array.isArray(usuariosData) ? usuariosData : []),
-      []
-    );
+    const usuarios = Array.isArray(users) ? users : [];
 
     const handleSubmit =(e)=>{
         e.preventDefault();
@@ -43,6 +40,7 @@ function Login  ()  {
           return;
         }
 
+        setCurrentUserId(Number(user.id_usuario));
         navigate("/bienes-registrados");
     };
     return (

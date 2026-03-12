@@ -5,7 +5,7 @@ import NavbarMenu from "../Components/NavbarMenu";
 import SidebarMenu from "../Components/SidebarMenu";
 import AssetDetailCard from "../Components/AssetDetailCard";
 import activosData from "../data/activosDetalle.json";
-import usuariosData from "../data/usuarios.json";
+import { useUsers } from "../context/UsersContext";
 import "../Style/bienes-registrados.css";
 import "../Style/asset-detail.css";
 import "../Style/sidebar.css";
@@ -14,7 +14,7 @@ export default function AssetDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [openSidebar, setOpenSidebar] = useState(false);
-  const usuarioLogeado = usuariosData[0];
+  const { currentUser, setCurrentUserId } = useUsers();
   const activos = Array.isArray(activosData) ? activosData : [];
   const idNum = Number(id);
   const sidebarItems = [
@@ -41,14 +41,19 @@ export default function AssetDetail() {
       <SidebarMenu
         open={openSidebar}
         onClose={() => setOpenSidebar(false)}
-        userName={usuarioLogeado.nombre_completo}
+        userName={currentUser?.nombre_completo}
         items={sidebarItems}
         onViewProfile={() => {
           setOpenSidebar(false);
-          navigate("/perfil");
+          if (currentUser) {
+            navigate(`/perfil/${currentUser.id_usuario}`);
+          } else {
+            navigate("/perfil");
+          }
         }}
         onLogout={() => {
           setOpenSidebar(false);
+          setCurrentUserId(null);
           navigate("/");
         }}
       />
