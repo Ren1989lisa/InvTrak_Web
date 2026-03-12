@@ -1,0 +1,67 @@
+[
+  {
+    "id_usuario": 1,
+    "nombre_completo": "Fernanda Rodríguez Martínez",
+    "correo": "fernandarod@email.com",
+    "fecha_nacimiento": "1980-05-01",
+    "curp": "ROMF800105MDFRDN08",
+    "numero_empleado": "0001",
+    "password": "0001",
+    "rol": "admin",
+    "departamento": "Administración",
+    "activo": true,
+    "fecha_creacion": "2025-01-10"
+  },
+  {
+    "id_usuario": 2,
+    "nombre_completo": "Carlos Hernández López",
+    "correo": "carlos.hl@email.com",
+    "fecha_nacimiento": "1990-07-15",
+    "curp": "HELC900715HDFRPL03",
+    "numero_empleado": "0801",
+    "password": "0801",
+    "rol": "usuario",
+    "departamento": "Soporte Técnico",
+    "activo": true,
+    "fecha_creacion": "2025-02-12"
+  },
+  {
+    "id_usuario": 3,
+    "nombre_completo": "Ana Torres Ramírez",
+    "correo": "ana.torres@email.com",
+    "fecha_nacimiento": "1995-03-22",
+    "curp": "TORA950322MDFRNN05",
+    "numero_empleado": "0802",
+    "password": "0802",
+    "rol": "tecnico",
+    "departamento": "Mantenimiento",
+    "activo": true,
+    "fecha_creacion": "2025-02-18"
+  },
+  {
+    "id_usuario": 4,
+    "nombre_completo": "Luis Mendoza Pérez",
+    "correo": "luis.mendoza@email.com",
+    "fecha_nacimiento": "1988-11-10",
+    "curp": "MEPL881110HDFRRS07",
+    "numero_empleado": "0803",
+    "password": "0803",
+    "rol": "usuario",
+    "departamento": "Recursos Humanos",
+    "activo": true,
+    "fecha_creacion": "2025-03-01"
+  },
+  {
+    "id_usuario": 5,
+    "nombre_completo": "Sofía García Navarro",
+    "correo": "sofia.garcia@email.com",
+    "fecha_nacimiento": "1993-09-14",
+    "curp": "GANS930914MDFRRR04",
+    "numero_empleado": "0804",
+    "password": "0804",
+    "rol": "tecnico",
+    "departamento": "Soporte Técnico",
+    "activo": true,
+    "fecha_creacion": "2025-03-20"
+  }
+]

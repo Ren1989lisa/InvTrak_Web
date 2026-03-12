@@ -1,0 +1,140 @@
+.inv-sidebar__overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.35);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 220ms ease;
+  z-index: 1040;
+}
+
+.inv-sidebar__overlay--open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.inv-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 280px;
+  background: #f0f4f8;
+  box-shadow: 10px 0 28px rgba(0, 0, 0, 0.12);
+  transform: translateX(-105%);
+  transition: transform 260ms ease;
+  z-index: 1050;
+  border-top-right-radius: 14px;
+  border-bottom-right-radius: 14px;
+  overflow: hidden;
+}
+
+.inv-sidebar--open {
+  transform: translateX(0);
+}
+
+.inv-sidebar__inner {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 14px;
+  gap: 14px;
+}
+
+.inv-sidebar__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 6px;
+}
+
+.inv-sidebar__footer {
+  margin-top: auto;
+  padding-top: 10px;
+}
+
+/* UserProfileCard */
+.inv-user-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 10px;
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid rgba(46, 110, 158, 0.12);
+}
+
+.inv-user-card__avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #2c5e91 0%, #6ea3d8 100%);
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-weight: 800;
+}
+
+.inv-user-card__avatarText {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.inv-user-card__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.inv-user-card__name {
+  font-weight: 700;
+  color: #233241;
+}
+
+.inv-user-card__profileBtn {
+  border-radius: 10px;
+  padding: 4px 10px;
+  border: 1px solid rgba(46, 110, 158, 0.18);
+  background: #eef5fb;
+}
+
+/* SidebarItem */
+.inv-sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 10px;
+  border-radius: 12px;
+  text-decoration: none;
+  color: #1f3f60;
+  font-weight: 700;
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.inv-sidebar-item:hover {
+  background: rgba(110, 163, 216, 0.22);
+  color: #12324f;
+}
+
+.inv-sidebar-item--active {
+  background: rgba(44, 94, 145, 0.16);
+  color: #12324f;
+}
+
+.inv-sidebar-item__icon {
+  width: 18px;
+  height: 18px;
+  color: #2c5e91;
+  flex: 0 0 auto;
+}
+
+.inv-sidebar-item__label {
+  font-size: 0.95rem;
+}
+
+/* Logout button */
+.inv-sidebar__logoutBtn {
+  border-radius: 12px;
+  font-weight: 700;
+}
+

@@ -1,0 +1,74 @@
+.inv-profile-content {
+  max-width: 900px;
+}
+
+.inv-profile-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 12px;
+  margin-bottom: 18px;
+}
+
+.inv-profile-header__avatar {
+  width: 100px;
+  height: 100px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #e2e8f0 0%, #cbd5f5 100%);
+  display: grid;
+  place-items: center;
+  color: #2c5e91;
+  font-weight: 800;
+  font-size: 2.1rem;
+  margin-bottom: 10px;
+}
+
+.inv-profile-header__name {
+  font-weight: 700;
+  font-size: 1.15rem;
+  color: #233241;
+  text-align: center;
+}
+
+.inv-profile-cardWrapper {
+  margin-top: 8px;
+}
+
+.inv-profile-card {
+  border-radius: 14px;
+  background: #f0f4f8;
+}
+
+.inv-profile-card__body {
+  padding: 18px 18px 14px;
+}
+
+.inv-profile-card__col {
+  margin-bottom: 6px;
+}
+
+.inv-profile-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 12px;
+}
+
+.inv-profile-actions {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.inv-profile-editBtn {
+  border-radius: 999px;
+  padding-inline: 26px;
+  background-color: #2c5e91;
+  border-color: #2c5e91;
+}
+
+.inv-profile-editBtn:hover {
+  background-color: #234d75;
+  border-color: #234d75;
+}
+

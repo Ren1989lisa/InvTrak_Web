@@ -1,14 +1,48 @@
-import React from 'react'
-import {Container, Row, Col, Form, Button, Card} from "react-bootstrap";
+import { useMemo, useState } from "react";
+import { Alert, Button, Card, Col, Container, Form, Row } from "react-bootstrap";
 import { useNavigate, Link } from "react-router-dom";
 import "./../Style/login.css"
 import Logo from '../Components/Logo';  
+import usuariosData from "../Data/usuarios.json";
 
 function Login  ()  {
 
     const navigate = useNavigate();
+    const [correo, setCorreo] = useState("");
+    const [password, setPassword] = useState("");
+    const [error, setError] = useState("");
+
+    const usuarios = useMemo(
+      () => (Array.isArray(usuariosData) ? usuariosData : []),
+      []
+    );
+
     const handleSubmit =(e)=>{
         e.preventDefault();
+        setError("");
+
+        const correoNorm = correo.trim().toLowerCase();
+        const passNorm = password.trim();
+
+        const user = usuarios.find(
+          (u) => (u?.correo ?? "").toString().toLowerCase() === correoNorm
+        );
+
+        if (!user) {
+          setError("Correo o contraseña incorrectos.");
+          return;
+        }
+
+        if (user.activo !== true) {
+          setError("Tu usuario está inactivo. Contacta al administrador.");
+          return;
+        }
+
+        if ((user?.password ?? "").toString() !== passNorm) {
+          setError("Correo o contraseña incorrectos.");
+          return;
+        }
+
         navigate("/bienes-registrados");
     };
     return (
@@ -29,12 +63,20 @@ function Login  ()  {
             <Card className="login-card p-4">
 
             <h3 className="mb-4 text-center">Bienvenido</h3>
+            {error ? (
+              <Alert variant="danger" className="py-2">
+                {error}
+              </Alert>
+            ) : null}
             <Form onSubmit={handleSubmit}>
              <Form.Group className="mb-3">
                 <Form.Label>Correo Electrónico</Form.Label>
                 <Form.Control
                   type="email"
                   placeholder="your.email@example.com"
+                  value={correo}
+                  onChange={(e) => setCorreo(e.target.value)}
+                  required
                 />
               </Form.Group>
 
@@ -43,6 +85,9 @@ function Login  ()  {
                 <Form.Control
                   type="password"
                   placeholder="********"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
                 />
               </Form.Group>
 
