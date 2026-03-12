@@ -6,26 +6,124 @@ import SidebarMenu from "../Components/SidebarMenu";
 import SearchBar from "../Components/SearchBar";
 import AssetCard from "../Components/AssetCard";
 import PaginationComponent from "../Components/PaginationComponent";
+import FiltersModal from "../Components/FiltersModal";
 
-import activosData from "../data/activosDetalle.json";
+import activosData from "../Data/activosDetalle.json";
 import "../Style/bienes-registrados.css";
 
 export default function BienesRegistrados() {
   const [search, setSearch] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [appliedFilters, setAppliedFilters] = useState(null);
 
-  const activos = Array.isArray(activosData) ? activosData : [];
+  const activos = useMemo(() => (Array.isArray(activosData) ? activosData : []), []);
   const query = search.trim().toLowerCase();
 
-  const activosFiltrados = useMemo(() => {
-    if (!query) return activos;
+  // derive options for selects
+  const tipos = useMemo(() => {
+    const s = new Set();
+    activos.forEach((a) => a?.tipo_activo && s.add(a.tipo_activo));
+    return Array.from(s);
+  }, [activos]);
 
-    return activos.filter((a) => {
-      const codigo = (a?.codigo_interno ?? "").toString().toLowerCase();
-      const tipo = (a?.tipo_activo ?? "").toString().toLowerCase();
-      return codigo.includes(query) || tipo.includes(query);
+  const estados = useMemo(() => {
+    const s = new Set();
+    activos.forEach((a) => a?.estatus && s.add(a.estatus));
+    return Array.from(s);
+  }, [activos]);
+
+  const ubicaciones = useMemo(() => {
+    const s = new Set();
+    activos.forEach((a) => {
+      const u = a?.ubicacion;
+      if (!u) return;
+      const combined = [u.campus, u.edificio, u.aula].filter(Boolean).join(" ");
+      s.add(combined);
     });
-  }, [activos, query]);
+    return Array.from(s);
+  }, [activos]);
+
+  function handleApplyFilters(filters) {
+    setAppliedFilters(filters);
+  }
+
+  function handleClearFilters() {
+    setAppliedFilters(null);
+  }
+
+  const activosFiltrados = useMemo(() => {
+    // start from all activos
+    return activos.filter((a) => {
+      // search query filter (codigo or tipo)
+      if (query) {
+        const codigo = (a?.codigo_interno ?? "").toString().toLowerCase();
+        const tipo = (a?.tipo_activo ?? "").toString().toLowerCase();
+        if (!codigo.includes(query) && !tipo.includes(query)) return false;
+      }
+
+      // applied filters
+      if (appliedFilters) {
+        const {
+          etiqueta,
+          tipo: fTipo,
+          estado: fEstado,
+          ubicacion: fUbicacion,
+          fechaDesde,
+          fechaHasta,
+          precioMin,
+          precioMax,
+        } = appliedFilters;
+
+        if (etiqueta) {
+          const codigo = (a?.codigo_interno ?? "").toString().toLowerCase();
+          if (!codigo.includes(etiqueta.toLowerCase())) return false;
+        }
+
+        if (fTipo) {
+          if ((a?.tipo_activo ?? "") !== fTipo) return false;
+        }
+
+        if (fEstado) {
+          if ((a?.estatus ?? "") !== fEstado) return false;
+        }
+
+        if (fUbicacion) {
+          const u = a?.ubicacion;
+          const combined = u ? [u.campus, u.edificio, u.aula].filter(Boolean).join(" ") : "";
+          if (combined !== fUbicacion) return false;
+        }
+
+        if (fechaDesde || fechaHasta) {
+          const fecha = a?.fecha_alta ? new Date(a.fecha_alta) : null;
+          if (fecha) {
+            if (fechaDesde) {
+              const desde = new Date(fechaDesde);
+              if (fecha < desde) return false;
+            }
+            if (fechaHasta) {
+              const hasta = new Date(fechaHasta);
+              if (fecha > hasta) return false;
+            }
+          }
+        }
+
+        if (precioMin != null) {
+          if (Number.isFinite(precioMin)) {
+            if ((a?.costo ?? 0) < precioMin) return false;
+          }
+        }
+
+        if (precioMax != null) {
+          if (Number.isFinite(precioMax)) {
+            if ((a?.costo ?? 0) > precioMax) return false;
+          }
+        }
+      }
+
+      return true;
+    });
+  }, [activos, query, appliedFilters]);
 
   return (
     <div className="inv-page">
@@ -44,7 +142,18 @@ export default function BienesRegistrados() {
         <SearchBar
           value={search}
           onChange={setSearch}
+          onFilters={() => setShowFilters(true)}
           placeholder="Buscar por código o tipo de activo"
+        />
+
+        <FiltersModal
+          show={showFilters}
+          onHide={() => setShowFilters(false)}
+          onApply={handleApplyFilters}
+          onClear={handleClearFilters}
+          ubicaciones={ubicaciones}
+          tipos={tipos}
+          estados={estados}
         />
 
         <Row className="g-4 mt-2">
