@@ -1,0 +1,68 @@
+.inv-users-actions {
+  margin-top: 2px;
+  
+}
+
+.inv-users-backBtn {
+  min-width: 44px;
+  font-weight: 700;
+}
+
+.inv-users-addBtn {
+  border-radius: 10px;
+  padding-inline: 16px;
+  font-weight: 600;
+  background-color: #2f73a6;
+}
+.inv-users-addBtn:hover {
+  border-radius: 10px;
+  padding-inline: 16px;
+  font-weight: 600;
+  background-color: #165383;
+}
+
+.inv-users-filterBtn {
+  min-width: 110px;
+}
+
+.inv-users-card {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.inv-users-table thead th {
+  background: #e9f2fb;
+  color: #1f3f60;
+  font-weight: 700;
+  border-bottom: 1px solid #d8e6f4;
+  white-space: nowrap;
+}
+
+.inv-users-table td {
+  vertical-align: middle;
+}
+
+.inv-user-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.inv-user-actions__btn {
+  width: 30px;
+  height: 30px;
+  border: 1px solid rgba(46, 110, 158, 0.16);
+  border-radius: 8px;
+  background: #f5f9fe;
+  color: #2f73a6;
+  display: grid;
+  place-items: center;
+  transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+
+.inv-user-actions__btn:hover {
+  background: #dfeefe;
+  color: #1f5b88;
+  border-color: rgba(46, 110, 158, 0.32);
+}
+

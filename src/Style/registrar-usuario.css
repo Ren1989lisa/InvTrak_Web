@@ -1,0 +1,66 @@
+.inv-register-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #2c5e91 0%, #6ea3d8 100%);
+  display: flex;
+  align-items: center;
+}
+
+.inv-register-container {
+  max-width: 900px;
+}
+
+.inv-register-card {
+  border-radius: 16px;
+}
+
+.inv-register-card__body {
+  padding: 26px;
+}
+
+.inv-register-card__title {
+  text-align: center;
+  color: #1f3f60;
+  font-weight: 700;
+  margin-bottom: 18px;
+}
+
+.inv-register__label {
+  color: #2f73a6;
+  font-weight: 700;
+}
+
+.inv-register__input {
+  border-radius: 10px;
+  border: 1px solid rgba(46, 110, 158, 0.2);
+}
+
+.inv-register__submit {
+  border-radius: 999px;
+  min-width: 180px;
+  padding-inline: 22px;
+  background-color: #2c5e91;
+  border-color: #2c5e91;
+  font-weight: 700;
+}
+
+.inv-register__submit:hover {
+  background-color: #234d75;
+  border-color: #234d75;
+}
+
+.inv-register__actions {
+  margin-top: 16px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.inv-register__cancel {
+  border-radius: 999px;
+  min-width: 140px;
+  border-color: rgba(46, 110, 158, 0.25);
+  background: #eef5fb;
+  color: #1f3f60;
+  font-weight: 700;
+}
+

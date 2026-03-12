@@ -6,6 +6,9 @@ export default function SearchBar({
   onImport,
   onFilters,
   placeholder = "Buscar...",
+  showActions = true,
+  firstActionLabel = "Importar en excel",
+  secondActionLabel = "Filtros",
 }) {
   return (
     <Row className="align-items-center g-2 inv-controls">
@@ -18,27 +21,31 @@ export default function SearchBar({
         />
       </Col>
 
-      <Col xs="auto">
-        <Button
-          type="button"
-          variant="light"
-          className="inv-btn inv-btn--secondary"
-          onClick={onImport}
-        >
-          Importar en excel
-        </Button>
-      </Col>
+      {showActions ? (
+        <>
+          <Col xs="auto">
+            <Button
+              type="button"
+              variant="light"
+              className="inv-btn inv-btn--secondary"
+              onClick={onImport}
+            >
+              {firstActionLabel}
+            </Button>
+          </Col>
 
-      <Col xs="auto">
-        <Button
-          type="button"
-          variant="light"
-          className="inv-btn inv-btn--secondary"
-          onClick={onFilters}
-        >
-          Filtros
-        </Button>
-      </Col>
+          <Col xs="auto">
+            <Button
+              type="button"
+              variant="light"
+              className="inv-btn inv-btn--secondary"
+              onClick={onFilters}
+            >
+              {secondActionLabel}
+            </Button>
+          </Col>
+        </>
+      ) : null}
     </Row>
   );
 }

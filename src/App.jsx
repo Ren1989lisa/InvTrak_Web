@@ -5,6 +5,8 @@ import ForgotPassword from "./Pages/ForgotPassword";
 import BienesRegistrados from "./Pages/BienesRegistrados";
 import AssetDetail from "./Pages/AssetDetail";
 import PerfilUsuario from "./Pages/PerfilUsuario";
+import Usuarios from "./Pages/Usuarios";
+import RegistrarUsuario from "./Pages/RegistrarUsuario";
 
 function App() {
   return (
@@ -14,6 +16,8 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/bienes-registrados" element={<BienesRegistrados />} />
+        <Route path="/usuarios" element={<Usuarios />} />
+        <Route path="/usuarios/registrar" element={<RegistrarUsuario />} />
         <Route path="/activo/:id" element={<AssetDetail />} />
         <Route path="/perfil" element={<PerfilUsuario />} />
       </Routes>
