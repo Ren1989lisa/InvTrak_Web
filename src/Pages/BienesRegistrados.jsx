@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Container, Row, Col } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
+import usuariosData from "../data/usuarios.json";
 
 import NavbarMenu from "../Components/NavbarMenu";
 import SearchBar from "../Components/SearchBar";
@@ -16,6 +17,7 @@ export default function BienesRegistrados() {
   const [search, setSearch] = useState("");
   const [openSidebar, setOpenSidebar] = useState(false);
   const navigate = useNavigate();
+  const usuarioLogeado = usuariosData[0];
 
   const activos = Array.isArray(activosData) ? activosData : [];
   const query = search.trim().toLowerCase();
@@ -47,18 +49,19 @@ export default function BienesRegistrados() {
       />
 
       <SidebarMenu
-        open={openSidebar}
-        onClose={() => setOpenSidebar(false)}
-        items={sidebarItems}
-        onViewProfile={() => {
-          setOpenSidebar(false);
-          navigate("/perfil");
+       open={openSidebar}
+       onClose={() => setOpenSidebar(false)}
+       userName={usuarioLogeado.nombre_completo}
+       items={sidebarItems}
+       onViewProfile={() => {
+       setOpenSidebar(false);
+       navigate("/perfil");
+         }}
+       onLogout={() => {
+       setOpenSidebar(false);
+       navigate("/");
         }}
-        onLogout={() => {
-          setOpenSidebar(false);
-          navigate("/");
-        }}
-      />
+      />  
 
       <Container fluid className="inv-content px-3 px-md-4 py-3">
         <SearchBar

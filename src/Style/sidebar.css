@@ -53,7 +53,7 @@
   padding-top: 10px;
 }
 
-/* UserProfileCard */
+/*Card de usuarioss*/
 .inv-user-card {
   display: flex;
   align-items: center;
@@ -78,6 +78,7 @@
 .inv-user-card__avatarText {
   font-size: 1.1rem;
   line-height: 1;
+   color: white;
 }
 
 .inv-user-card__meta {

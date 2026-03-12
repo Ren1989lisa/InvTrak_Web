@@ -11,6 +11,7 @@ export default function SidebarMenu({
   onLogout,
   onViewProfile,
 }) {
+
   useEffect(() => {
     if (!open) return;
 
@@ -23,7 +24,6 @@ export default function SidebarMenu({
   }, [open, onClose]);
 
   useEffect(() => {
-    // Bloqueo simple de scroll cuando el sidebar está abierto.
     document.body.style.overflow = open ? "hidden" : "";
     return () => {
       document.body.style.overflow = "";
@@ -40,7 +40,11 @@ export default function SidebarMenu({
 
       <aside className={`inv-sidebar${open ? " inv-sidebar--open" : ""}`}>
         <div className="inv-sidebar__inner">
-          <UserProfileCard name={userName} onViewProfile={onViewProfile} />
+
+          <UserProfileCard
+            name={userName}
+            onViewProfile={onViewProfile}
+          />
 
           <nav className="inv-sidebar__nav" aria-label="Menú principal">
             {items.map((item) => (
@@ -62,6 +66,7 @@ export default function SidebarMenu({
               className="w-100 inv-sidebar__logoutBtn"
             />
           </div>
+
         </div>
       </aside>
     </>
