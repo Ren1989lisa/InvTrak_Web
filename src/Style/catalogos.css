@@ -1,0 +1,246 @@
+.inv-catalog-tabs {
+  margin-top: 6px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #2f73a6;
+}
+
+.inv-catalog-tabs__btn {
+  border: 0;
+  padding: 10px 14px;
+  color: #d8ebfa;
+  background: transparent;
+  font-weight: 700;
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.inv-catalog-tabs__btn--active {
+  color: #ffffff;
+  background: #66a2ca;
+}
+
+.inv-catalog-actions__addBtn {
+  border-radius: 10px;
+  min-height: 40px;
+  padding-inline: 16px;
+  font-weight: 700;
+  background: #0f4a84;
+  border-color: #0f4a84;
+}
+
+.inv-catalog-actions__addBtn:hover,
+.inv-catalog-actions__addBtn:focus {
+  background: #0b3d6d;
+  border-color: #0b3d6d;
+}
+
+.inv-catalog-actions__statusLabel {
+  color: #577896;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.inv-catalog-select {
+  min-width: 120px;
+  border-radius: 10px;
+  border-color: #dbe7f2;
+}
+
+.inv-catalog-input {
+  border-radius: 10px;
+  border-color: #dbe7f2;
+}
+
+.inv-catalog-table-card {
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.inv-catalog-table thead th {
+  background: #9fc5e1;
+  color: #173956;
+  border-bottom: 1px solid #87b4d4;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.inv-catalog-table tbody td {
+  color: #2a4a65;
+  vertical-align: middle;
+}
+
+.inv-catalog-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.inv-status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 72px;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.inv-status-badge--active {
+  color: #16854f;
+  background: #d9f7e8;
+}
+
+.inv-status-badge--inactive {
+  color: #ad3d46;
+  background: #fce1e4;
+}
+
+.inv-product-row__editBtn {
+  border: 0;
+  background: transparent;
+  color: #255e89;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+}
+
+.inv-product-row__editBtn:hover {
+  color: #17486b;
+}
+
+.inv-product-row__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.inv-product-row__deleteBtn {
+  border: 0;
+  background: transparent;
+  color: #b74753;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+}
+
+.inv-product-row__deleteBtn:hover {
+  color: #983843;
+}
+
+.inv-add-product-modal .modal-content {
+  border: 0;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.inv-add-product-modal__header {
+  background: #d7e7f3;
+  border-bottom: 0;
+}
+
+.inv-add-product-modal__header .modal-title {
+  color: #153a5b;
+  font-weight: 700;
+}
+
+.inv-add-product-modal__body {
+  background: #d7e7f3;
+  padding-top: 8px;
+}
+
+.inv-catalog-textarea {
+  resize: none;
+}
+
+.inv-add-product-modal__footer {
+  background: #d7e7f3;
+  border-top: 0;
+  padding-top: 0;
+}
+
+.inv-catalog-btn {
+  min-width: 120px;
+  border-radius: 12px;
+  font-weight: 700;
+}
+
+.inv-catalog-btn--cancel {
+  color: #4b7494;
+  background: #bfd6e8;
+  border-color: #bfd6e8;
+}
+
+.inv-catalog-btn--save {
+  background: #0f4a84;
+  border-color: #0f4a84;
+}
+
+.inv-catalog-btn--delete {
+  background: #d86b73;
+  border-color: #d86b73;
+}
+
+.inv-catalog-btn--delete:hover,
+.inv-catalog-btn--delete:focus {
+  background: #c45861;
+  border-color: #c45861;
+}
+
+.inv-edit-product-modal .modal-content {
+  border: 0;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.inv-edit-product-modal__header {
+  background: #d7e7f3;
+  border-bottom: 0;
+}
+
+.inv-edit-product-modal__header .modal-title {
+  color: #153a5b;
+  font-weight: 700;
+}
+
+.inv-edit-product-modal__body {
+  background: #d7e7f3;
+  padding-top: 8px;
+}
+
+.inv-edit-product-modal__footer {
+  background: #d7e7f3;
+  border-top: 0;
+  justify-content: space-between;
+}
+
+.inv-edit-label {
+  color: #153a5b;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.inv-edit-status {
+  margin-top: 6px;
+}
+
+.inv-edit-status__title {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.inv-edit-status .form-check-label {
+  color: #214862;
+  font-weight: 700;
+}
+
+.inv-edit-status .form-check-input:checked {
+  background-color: #69c38f;
+  border-color: #69c38f;
+}

@@ -1,0 +1,133 @@
+.inv-register-asset-page {
+  background: linear-gradient(135deg, #2c5e91 0%, #6ea3d8 100%);
+}
+
+.inv-register-asset__card {
+  max-width: 520px;
+  margin: 0 auto;
+  border-radius: 14px;
+}
+
+.inv-register-asset__cardBody {
+  padding: 20px;
+}
+
+.inv-register-asset__title {
+  text-align: center;
+  color: #2f6f93;
+  font-weight: 800;
+  margin-bottom: 14px;
+}
+
+.inv-register-asset__form {
+  max-width: 430px;
+  margin: 0 auto;
+}
+
+.inv-register-asset__picker {
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid rgba(46, 110, 158, 0.2);
+  background: #fff;
+  min-height: 40px;
+  padding: 7px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #1f3f60;
+}
+
+.inv-register-asset__pickerIcon {
+  color: #2f73a6;
+  font-size: 0.95rem;
+}
+
+.inv-register-asset__textarea {
+  resize: none;
+}
+
+.inv-register-asset__actions {
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.inv-register-asset__submit,
+.inv-register-asset__cancel {
+  min-width: 150px;
+  border-radius: 10px;
+  font-weight: 700;
+}
+
+.inv-register-asset__submit {
+  background: #2f73a6;
+  border-color: #2f73a6;
+}
+
+.inv-register-asset__cancel {
+  background: #d0d5df;
+  border-color: #d0d5df;
+  color: #50657a;
+}
+
+.inv-register-asset__counter {
+  margin-top: 10px;
+  text-align: center;
+  color: #5d7b95;
+  font-size: 0.9rem;
+}
+
+.inv-select-modal .modal-content {
+  border-radius: 14px;
+  border: 0;
+  overflow: hidden;
+}
+
+.inv-select-modal__header {
+  background: #d7e7f3;
+  border-bottom: 0;
+}
+
+.inv-select-modal__header .modal-title {
+  color: #0d2d4d;
+  font-weight: 800;
+}
+
+.inv-select-modal__body,
+.inv-select-modal__footer {
+  background: #d7e7f3;
+}
+
+.inv-select-modal__footer {
+  border-top: 0;
+}
+
+.inv-select-modal__label {
+  color: #0d2d4d;
+  font-weight: 700;
+}
+
+.inv-select-modal__control {
+  border-radius: 12px;
+  border: 1px solid rgba(46, 110, 158, 0.32);
+  min-height: 46px;
+  color: #5b97b8;
+}
+
+.inv-select-modal__btn {
+  min-width: 150px;
+  border-radius: 12px;
+  font-weight: 700;
+}
+
+.inv-select-modal__btn--cancel {
+  background: #eef3f9;
+  border-color: #bdd3e6;
+  color: #3e6d97;
+}
+
+.inv-select-modal__btn--save {
+  background: #022a57;
+  border-color: #022a57;
+}

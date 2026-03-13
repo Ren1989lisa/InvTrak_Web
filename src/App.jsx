@@ -8,6 +8,8 @@ import PerfilUsuario from "./Pages/PerfilUsuario";
 import Usuarios from "./Pages/Usuarios";
 import RegistrarUsuario from "./Pages/RegistrarUsuario";
 import EditarPerfil from "./Pages/EditarPerfil";
+import Catalogos from "./Pages/Catalogos";
+import RegistroBien from "./Pages/RegistroBien";
 
 function App() {
   return (
@@ -19,6 +21,8 @@ function App() {
         <Route path="/bienes-registrados" element={<BienesRegistrados />} />
         <Route path="/usuarios" element={<Usuarios />} />
         <Route path="/usuarios/registrar" element={<RegistrarUsuario />} />
+        <Route path="/catalogos" element={<Catalogos />} />
+        <Route path="/registro-bien" element={<RegistroBien />} />
         <Route path="/activo/:id" element={<AssetDetail />} />
         <Route path="/perfil" element={<PerfilUsuario />} />
         <Route path="/perfil/:id" element={<PerfilUsuario />} />

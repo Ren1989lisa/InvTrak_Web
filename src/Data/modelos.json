@@ -1,0 +1,10 @@
+[
+  { "id_modelo": 1, "nombre": "E22225H", "id_marca": 1 },
+  { "id_modelo": 2, "nombre": "E2318HN", "id_marca": 1 },
+  { "id_modelo": 3, "nombre": "V24i", "id_marca": 2 },
+  { "id_modelo": 4, "nombre": "27MP60G", "id_marca": 3 },
+  { "id_modelo": 5, "nombre": "Latitude 5420", "id_marca": 4 },
+  { "id_modelo": 6, "nombre": "ThinkPad E14", "id_marca": 5 },
+  { "id_modelo": 7, "nombre": "MX Master 3S", "id_marca": 6 },
+  { "id_modelo": 8, "nombre": "K380", "id_marca": 7 }
+]

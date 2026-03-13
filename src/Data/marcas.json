@@ -1,0 +1,9 @@
+[
+  { "id_marca": 1, "nombre": "Dell", "id_producto": 1 },
+  { "id_marca": 2, "nombre": "HP", "id_producto": 1 },
+  { "id_marca": 3, "nombre": "LG", "id_producto": 1 },
+  { "id_marca": 4, "nombre": "Dell", "id_producto": 2 },
+  { "id_marca": 5, "nombre": "Lenovo", "id_producto": 2 },
+  { "id_marca": 6, "nombre": "Logitech", "id_producto": 3 },
+  { "id_marca": 7, "nombre": "Logitech", "id_producto": 4 }
+]

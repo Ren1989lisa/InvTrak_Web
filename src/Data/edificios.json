@@ -1,0 +1,8 @@
+[
+  { "id_edificio": 1, "nombre": "D1", "id_campus": 1 },
+  { "id_edificio": 2, "nombre": "D2", "id_campus": 1 },
+  { "id_edificio": 3, "nombre": "D3", "id_campus": 1 },
+  { "id_edificio": 4, "nombre": "E1", "id_campus": 2 },
+  { "id_edificio": 5, "nombre": "E2", "id_campus": 2 },
+  { "id_edificio": 6, "nombre": "E4", "id_campus": 3 }
+]

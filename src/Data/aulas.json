@@ -1,0 +1,11 @@
+[
+  { "id_aula": 1, "nombre": "CA1", "id_edificio": 1 },
+  { "id_aula": 2, "nombre": "CA2", "id_edificio": 1 },
+  { "id_aula": 3, "nombre": "LAB1", "id_edificio": 1 },
+  { "id_aula": 4, "nombre": "CC6", "id_edificio": 2 },
+  { "id_aula": 5, "nombre": "CC7", "id_edificio": 2 },
+  { "id_aula": 6, "nombre": "CC1", "id_edificio": 3 },
+  { "id_aula": 7, "nombre": "A1", "id_edificio": 4 },
+  { "id_aula": 8, "nombre": "B4", "id_edificio": 5 },
+  { "id_aula": 9, "nombre": "C3", "id_edificio": 6 }
+]

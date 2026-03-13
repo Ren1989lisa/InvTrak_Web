@@ -1,0 +1,6 @@
+[
+  { "id_producto": 1, "nombre": "Monitor" },
+  { "id_producto": 2, "nombre": "Laptop" },
+  { "id_producto": 3, "nombre": "Mouse" },
+  { "id_producto": 4, "nombre": "Teclado" }
+]

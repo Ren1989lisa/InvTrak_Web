@@ -8,8 +8,8 @@ import AssetCard from "../Components/AssetCard";
 import PaginationComponent from "../Components/PaginationComponent";
 import SidebarMenu from "../Components/SidebarMenu";
 import { useUsers } from "../context/UsersContext";
+import { getStoredActivos } from "../activosStorage";
 
-import activosData from "../data/activosDetalle.json";
 import "../Style/bienes-registrados.css";
 import "../Style/sidebar.css";
 
@@ -19,16 +19,18 @@ export default function BienesRegistrados() {
   const navigate = useNavigate();
   const { currentUser, setCurrentUserId } = useUsers();
 
-  const activos = Array.isArray(activosData) ? activosData : [];
+  const activos = useMemo(() => getStoredActivos(), []);
   const query = search.trim().toLowerCase();
 
   const sidebarItems = [
     { icon: "grid", label: "Bienes", route: "/bienes-registrados" },
     { icon: "users", label: "Usuarios", route: "/usuarios" },
-    { icon: "box", label: "Activos", route: "/activos" },
     { icon: "folder", label: "Catalogos", route: "/catalogos" },
     { icon: "report", label: "Reportes", route: "/reportes" },
     { icon: "clock", label: "Historial", route: "/historial" },
+    { icon: "report", label: "Asignar Bien", route: "/asignar-bien" },
+    { icon: "grid", label: "Dashboard", route: "/dashboard" },
+    { icon: "box", label: "Registro de bienes", route: "/registro-bien" },
   ];
 
   const activosFiltrados = useMemo(() => {
@@ -36,7 +38,9 @@ export default function BienesRegistrados() {
 
     return activos.filter((a) => {
       const codigo = (a?.codigo_interno ?? "").toString().toLowerCase();
-      const tipo = (a?.tipo_activo ?? "").toString().toLowerCase();
+      const tipo = (a?.producto?.tipo_activo ?? a?.tipo_activo ?? "")
+        .toString()
+        .toLowerCase();
       return codigo.includes(query) || tipo.includes(query);
     });
   }, [activos, query]);

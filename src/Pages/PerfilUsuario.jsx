@@ -32,10 +32,12 @@ export default function PerfilUsuario() {
   const sidebarItems = [
     { icon: "grid", label: "Bienes", route: "/bienes-registrados" },
     { icon: "users", label: "Usuarios", route: "/usuarios" },
-    { icon: "box", label: "Activos", route: "/activos" },
     { icon: "folder", label: "Catalogos", route: "/catalogos" },
     { icon: "report", label: "Reportes", route: "/reportes" },
     { icon: "clock", label: "Historial", route: "/historial" },
+    { icon: "report", label: "Asignar Bien", route: "/asignar-bien" },
+    { icon: "grid", label: "Dashboard", route: "/dashboard" },
+    { icon: "box", label: "Registro de bienes", route: "/registro-bien" },
   ];
 
   return (
