@@ -6,16 +6,20 @@ import NavbarMenu from "../Components/NavbarMenu";
 import SearchBar from "../Components/SearchBar";
 import AssetCard from "../Components/AssetCard";
 import PaginationComponent from "../Components/PaginationComponent";
+import FiltersModal from "../Components/FiltersModal";
 import SidebarMenu from "../Components/SidebarMenu";
 import { useUsers } from "../context/UsersContext";
 import { getStoredActivos } from "../activosStorage";
 
 import "../Style/bienes-registrados.css";
 import "../Style/sidebar.css";
+import "../Style/asignacion-bien.css";
 
 export default function BienesRegistrados() {
   const [search, setSearch] = useState("");
   const [openSidebar, setOpenSidebar] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [appliedFilters, setAppliedFilters] = useState(null);
   const navigate = useNavigate();
   const { currentUser, setCurrentUserId } = useUsers();
 
@@ -33,17 +37,45 @@ export default function BienesRegistrados() {
     { icon: "box", label: "Registro de bienes", route: "/registro-bien" },
   ];
 
-  const activosFiltrados = useMemo(() => {
-    if (!query) return activos;
+  const ubicaciones = useMemo(() => {
+    const values = new Set();
+    activos.forEach((a) => {
+      const u = a?.ubicacion;
+      const text = [u?.campus, u?.edificio, u?.aula].filter(Boolean).join(" ");
+      if (text) values.add(text);
+    });
+    return Array.from(values);
+  }, [activos]);
 
+  const activosFiltrados = useMemo(() => {
     return activos.filter((a) => {
       const codigo = (a?.codigo_interno ?? "").toString().toLowerCase();
       const tipo = (a?.producto?.tipo_activo ?? a?.tipo_activo ?? "")
         .toString()
         .toLowerCase();
-      return codigo.includes(query) || tipo.includes(query);
+      const ubicacion = a?.ubicacion ?? {};
+      const ubicacionTexto = [ubicacion?.campus, ubicacion?.edificio, ubicacion?.aula]
+        .filter(Boolean)
+        .join(" ");
+      const fechaAlta = a?.fecha_alta ? new Date(a.fecha_alta) : null;
+      const costo = Number(a?.costo ?? 0);
+
+      if (query && !codigo.includes(query) && !tipo.includes(query)) return false;
+
+      if (appliedFilters) {
+        const { ubicacion: fUbicacion, fechaDesde, fechaHasta, precioMin, precioMax } =
+          appliedFilters;
+
+        if (fUbicacion && ubicacionTexto !== fUbicacion) return false;
+        if (fechaDesde && fechaAlta && fechaAlta < new Date(fechaDesde)) return false;
+        if (fechaHasta && fechaAlta && fechaAlta > new Date(fechaHasta)) return false;
+        if (precioMin != null && Number.isFinite(precioMin) && costo < precioMin) return false;
+        if (precioMax != null && Number.isFinite(precioMax) && costo > precioMax) return false;
+      }
+
+      return true;
     });
-  }, [activos, query]);
+  }, [activos, query, appliedFilters]);
 
   return (
     <div className="inv-page">
@@ -76,7 +108,16 @@ export default function BienesRegistrados() {
         <SearchBar
           value={search}
           onChange={setSearch}
+          onFilters={() => setShowFilters(true)}
           placeholder="Buscar por código o tipo de activo"
+        />
+
+        <FiltersModal
+          show={showFilters}
+          onHide={() => setShowFilters(false)}
+          onApply={setAppliedFilters}
+          onClear={() => setAppliedFilters(null)}
+          ubicaciones={ubicaciones}
         />
 
         <Row className="g-4 mt-2">

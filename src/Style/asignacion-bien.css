@@ -1,0 +1,253 @@
+.inv-assign-layout {
+  max-width: 1460px;
+}
+
+.inv-assign-panel {
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid #dbe8f3;
+  box-shadow: 0 4px 18px rgba(19, 47, 77, 0.12);
+  padding: 14px;
+}
+
+.inv-assign-panel__heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.inv-assign-panel__heading h5 {
+  color: #11395f;
+  font-weight: 800;
+}
+
+.inv-assign-panel__heading span {
+  background: #dff1ff;
+  color: #3c7aac;
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.inv-assign-input,
+.inv-assign-select {
+  border-radius: 9px;
+  border: 1px solid #b8d7ee;
+  min-height: 40px;
+}
+
+.inv-assign-filters {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.inv-assign-filter-btn {
+  min-width: 90px;
+  border-radius: 8px;
+  font-weight: 700;
+  background: #eef7ff;
+}
+
+.inv-assign-assets-list,
+.inv-assign-users-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 510px;
+  overflow: auto;
+  padding-right: 3px;
+}
+
+.inv-assign-asset-card {
+  border: 1px solid #b8d7ee;
+  background: #eef8ff;
+  border-radius: 10px;
+  text-align: left;
+  padding: 8px;
+}
+
+.inv-assign-asset-card--selected {
+  border-color: #2c77b2;
+  box-shadow: 0 0 0 2px rgba(44, 119, 178, 0.18);
+}
+
+.inv-assign-asset-card__tag {
+  background: linear-gradient(90deg, #245788 0%, #4f8bc5 100%);
+  color: #fff;
+  border-radius: 7px;
+  font-size: 0.78rem;
+  padding: 2px 8px;
+  font-weight: 700;
+}
+
+.inv-assign-asset-card__body p {
+  margin: 0 0 2px;
+  color: #173853;
+  font-size: 0.86rem;
+}
+
+.inv-assign-asset-card__footer {
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.inv-assign-asset-card__cost {
+  color: #0f3f66;
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.inv-assign-asset-card__badge {
+  background: #dff8de;
+  color: #368545;
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.inv-assign-title {
+  color: #0e3356;
+  font-weight: 800;
+}
+
+.inv-assign-subtitle {
+  color: #79a5cb;
+  font-size: 0.9rem;
+  margin-bottom: 12px;
+}
+
+.inv-assign-label {
+  font-weight: 700;
+  color: #0e3356;
+  font-size: 0.92rem;
+}
+
+.inv-selected-asset {
+  border: 1px solid #86bfe6;
+  border-radius: 10px;
+  background: #eaf6ff;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+}
+
+.inv-selected-asset__qr {
+  width: 62px;
+  height: 62px;
+  border-radius: 8px;
+  background: #fff;
+  border: 1px solid #b8d7ee;
+  display: grid;
+  place-items: center;
+  color: #0a4780;
+}
+
+.inv-selected-asset__info p {
+  margin: 0;
+  color: #143c61;
+}
+
+.inv-assign-empty {
+  border: 1px dashed #9fc6e3;
+  border-radius: 8px;
+  padding: 12px;
+  color: #5e86a8;
+  background: #f3f9ff;
+}
+
+.inv-assign-user-card {
+  border: 1px solid #b8d7ee;
+  background: #f2fbff;
+  border-radius: 10px;
+  text-align: left;
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.inv-assign-user-card--selected {
+  border-color: #2c77b2;
+  background: #e4f2ff;
+}
+
+.inv-assign-user-card__icon {
+  color: #3979aa;
+  display: inline-flex;
+}
+
+.inv-assign-user-card__name {
+  color: #366f99;
+  font-weight: 600;
+}
+
+.inv-assign-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.inv-assign-btn {
+  min-width: 120px;
+  border-radius: 10px;
+  font-weight: 700;
+}
+
+.inv-assign-btn--cancel {
+  background: #fff;
+  color: #356e9b;
+  border-color: #9dc7e7;
+}
+
+.inv-assign-btn--save {
+  background: #0a4a84;
+  border-color: #0a4a84;
+}
+
+.filters-panel {
+  background: #e1ebf5;
+}
+
+.filters-panel .offcanvas-header {
+  background: #e1ebf5;
+  color: #143c61;
+}
+
+.filters-panel .btn-close {
+  filter: none;
+}
+
+.filters-panel__title {
+  font-weight: 700;
+}
+
+.filters-panel .offcanvas-body {
+  background: #e1ebf5;
+}
+
+.filters-section__label {
+  color: #143c61;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.filters-section__content .form-control,
+.filters-section__content .form-select {
+  border-radius: 10px;
+  border-color: #b8d7ee;
+}
+
+.btn-clear,
+.btn-apply {
+  border-radius: 10px;
+  font-weight: 700;
+}
