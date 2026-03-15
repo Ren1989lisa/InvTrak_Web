@@ -14,6 +14,27 @@ function formatCurrency(value) {
   }).format(number);
 }
 
+function getOwnerDisplay(activo) {
+  const ownerName = (activo?.propietario ?? "").toString().trim();
+  const assignmentState = (activo?.estado_asignacion ?? "").toString().trim().toLowerCase();
+  const assetStatus = (activo?.estatus ?? "").toString().trim().toLowerCase();
+
+  if (!ownerName || assignmentState === "pendiente de asignacion") {
+    return "pendiente de asignacion";
+  }
+
+  if (assignmentState === "pendiente de confirmacion") {
+    return "pendiente de confirmacion";
+  }
+
+  if (assignmentState === "resguardado" || assetStatus === "resguardado") {
+    return ownerName;
+  }
+
+  // Si hay propietario pero no existe estado explícito, asumimos pendiente de confirmación.
+  return "pendiente de confirmacion";
+}
+
 
 export default function AssetDetailCard({ activo }) {
   if (!activo) return null;
@@ -45,7 +66,7 @@ export default function AssetDetailCard({ activo }) {
             <AssetInfoField label="Descripción:" value={activo.descripcion} stack />
           </Col>
           <Col xs={12} md={6} className="inv-asset-detail-card__col">
-            <AssetInfoField label="Propietario:" value={activo.propietario} />
+            <AssetInfoField label="Propietario:" value={getOwnerDisplay(activo)} />
             <AssetInfoField label="Estado:" value={activo.estatus} />
             <AssetInfoField label="Costo:" value={formatCurrency(activo.costo)} />
             <AssetInfoField label="Fecha de alta:" value={activo.fecha_alta} />

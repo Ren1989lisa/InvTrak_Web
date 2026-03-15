@@ -10,6 +10,7 @@ import RegistrarUsuario from "./Pages/RegistrarUsuario";
 import EditarPerfil from "./Pages/EditarPerfil";
 import Catalogos from "./Pages/Catalogos";
 import RegistroBien from "./Pages/RegistroBien";
+import AsignacionBien from "./Pages/AsignacionBien";
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
         <Route path="/usuarios/registrar" element={<RegistrarUsuario />} />
         <Route path="/catalogos" element={<Catalogos />} />
         <Route path="/registro-bien" element={<RegistroBien />} />
+        <Route path="/asignar-bien" element={<AsignacionBien />} />
         <Route path="/activo/:id" element={<AssetDetail />} />
         <Route path="/perfil" element={<PerfilUsuario />} />
         <Route path="/perfil/:id" element={<PerfilUsuario />} />

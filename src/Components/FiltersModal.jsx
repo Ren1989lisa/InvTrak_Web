@@ -7,12 +7,7 @@ export default function FiltersModal({
   onApply,
   onClear,
   ubicaciones = [],
-  tipos = [],
-  estados = [],
 }) {
-  const [etiqueta, setEtiqueta] = useState("");
-  const [tipo, setTipo] = useState("");
-  const [estado, setEstado] = useState("");
   const [ubicacion, setUbicacion] = useState("");
   const [fechaDesde, setFechaDesde] = useState("");
   const [fechaHasta, setFechaHasta] = useState("");
@@ -21,9 +16,6 @@ export default function FiltersModal({
 
   function handleApply() {
     const filters = {
-      etiqueta: etiqueta.trim(),
-      tipo,
-      estado,
       ubicacion,
       fechaDesde: fechaDesde || null,
       fechaHasta: fechaHasta || null,
@@ -35,9 +27,6 @@ export default function FiltersModal({
   }
 
   function handleClear() {
-    setEtiqueta("");
-    setTipo("");
-    setEstado("");
     setUbicacion("");
     setFechaDesde("");
     setFechaHasta("");
@@ -59,10 +48,18 @@ export default function FiltersModal({
             <div className="filters-section__content p-2">
               <Row>
                 <Col>
-                  <Form.Control type="date" value={fechaDesde} onChange={(e) => setFechaDesde(e.target.value)} />
+                  <Form.Control
+                    type="date"
+                    value={fechaDesde}
+                    onChange={(e) => setFechaDesde(e.target.value)}
+                  />
                 </Col>
                 <Col>
-                  <Form.Control type="date" value={fechaHasta} onChange={(e) => setFechaHasta(e.target.value)} />
+                  <Form.Control
+                    type="date"
+                    value={fechaHasta}
+                    onChange={(e) => setFechaHasta(e.target.value)}
+                  />
                 </Col>
               </Row>
             </div>
@@ -73,10 +70,20 @@ export default function FiltersModal({
           <div className="filters-section">
             <h5 className="filters-section__label">Precio</h5>
             <div className="filters-section__content">
-              <Form.Label>Min</Form.Label>
-              <Form.Control type="number" placeholder="Ingrese la cantidad" value={precioMin} onChange={(e) => setPrecioMin(e.target.value)} />
-              <Form.Label className="mt-2">Max</Form.Label>
-              <Form.Control type="number" placeholder="Ingrese la cantidad" value={precioMax} onChange={(e) => setPrecioMax(e.target.value)} />
+              <Form.Label>Mínimo</Form.Label>
+              <Form.Control
+                type="number"
+                placeholder="Ingrese la cantidad"
+                value={precioMin}
+                onChange={(e) => setPrecioMin(e.target.value)}
+              />
+              <Form.Label className="mt-2">Máximo</Form.Label>
+              <Form.Control
+                type="number"
+                placeholder="Ingrese la cantidad"
+                value={precioMax}
+                onChange={(e) => setPrecioMax(e.target.value)}
+              />
             </div>
           </div>
 
@@ -88,15 +95,21 @@ export default function FiltersModal({
               <Form.Select value={ubicacion} onChange={(e) => setUbicacion(e.target.value)}>
                 <option value="">Seleccione la ubicación</option>
                 {ubicaciones.map((u) => (
-                  <option key={u} value={u}>{u}</option>
+                  <option key={u} value={u}>
+                    {u}
+                  </option>
                 ))}
               </Form.Select>
             </div>
           </div>
 
           <div className="d-flex gap-2 mt-4 justify-content-start">
-            <Button variant="danger" onClick={handleClear} className="btn-clear">Borrar selección</Button>
-            <Button variant="primary" onClick={handleApply} className="btn-apply">Aplicar</Button>
+            <Button variant="danger" onClick={handleClear} className="btn-clear">
+              Borrar selección
+            </Button>
+            <Button variant="primary" onClick={handleApply} className="btn-apply">
+              Aplicar
+            </Button>
           </div>
         </Form>
       </Offcanvas.Body>

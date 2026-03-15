@@ -12,6 +12,7 @@ import { useUsers } from "../context/UsersContext";
 import { getStoredActivos } from "../activosStorage";
 import "../Style/bienes-registrados.css";
 import "../Style/sidebar.css";
+import "../Style/asignacion-bien.css";
 
 export default function BienesRegistrados() {
   const [search, setSearch] = useState("");
@@ -35,31 +36,12 @@ export default function BienesRegistrados() {
     { icon: "box", label: "Registro de bienes", route: "/registro-bien" },
   ];
 
-  const tipos = useMemo(() => {
-    const values = new Set();
-    activos.forEach((a) => {
-      const tipo = (a?.producto?.tipo_activo ?? a?.tipo_activo ?? "").toString().trim();
-      if (tipo) values.add(tipo);
-    });
-    return Array.from(values);
-  }, [activos]);
-
-  const estados = useMemo(() => {
-    const values = new Set();
-    activos.forEach((a) => {
-      const estado = (a?.estatus ?? "").toString().trim();
-      if (estado) values.add(estado);
-    });
-    return Array.from(values);
-  }, [activos]);
-
   const ubicaciones = useMemo(() => {
     const values = new Set();
     activos.forEach((a) => {
       const u = a?.ubicacion;
-      if (!u) return;
-      const combined = [u.campus, u.edificio, u.aula].filter(Boolean).join(" ");
-      if (combined) values.add(combined);
+      const text = [u?.campus, u?.edificio, u?.aula].filter(Boolean).join(" ");
+      if (text) values.add(text);
     });
     return Array.from(values);
   }, [activos]);
@@ -70,45 +52,24 @@ export default function BienesRegistrados() {
       const tipo = (a?.producto?.tipo_activo ?? a?.tipo_activo ?? "")
         .toString()
         .toLowerCase();
+      const ubicacion = a?.ubicacion ?? {};
+      const ubicacionTexto = [ubicacion?.campus, ubicacion?.edificio, ubicacion?.aula]
+        .filter(Boolean)
+        .join(" ");
+      const fechaAlta = a?.fecha_alta ? new Date(a.fecha_alta) : null;
+      const costo = Number(a?.costo ?? 0);
 
       if (query && !codigo.includes(query) && !tipo.includes(query)) return false;
 
       if (appliedFilters) {
-        const {
-          etiqueta,
-          tipo: fTipo,
-          estado: fEstado,
-          ubicacion: fUbicacion,
-          fechaDesde,
-          fechaHasta,
-          precioMin,
-          precioMax,
-        } = appliedFilters;
+        const { ubicacion: fUbicacion, fechaDesde, fechaHasta, precioMin, precioMax } =
+          appliedFilters;
 
-        if (etiqueta && !codigo.includes(etiqueta.toLowerCase())) return false;
-        if (fTipo && (a?.producto?.tipo_activo ?? a?.tipo_activo ?? "") !== fTipo) return false;
-        if (fEstado && (a?.estatus ?? "") !== fEstado) return false;
-
-        if (fUbicacion) {
-          const u = a?.ubicacion;
-          const combined = u ? [u.campus, u.edificio, u.aula].filter(Boolean).join(" ") : "";
-          if (combined !== fUbicacion) return false;
-        }
-
-        if (fechaDesde || fechaHasta) {
-          const fecha = a?.fecha_alta ? new Date(a.fecha_alta) : null;
-          if (fecha) {
-            if (fechaDesde && fecha < new Date(fechaDesde)) return false;
-            if (fechaHasta && fecha > new Date(fechaHasta)) return false;
-          }
-        }
-
-        if (precioMin != null && Number.isFinite(precioMin) && (a?.costo ?? 0) < precioMin) {
-          return false;
-        }
-        if (precioMax != null && Number.isFinite(precioMax) && (a?.costo ?? 0) > precioMax) {
-          return false;
-        }
+        if (fUbicacion && ubicacionTexto !== fUbicacion) return false;
+        if (fechaDesde && fechaAlta && fechaAlta < new Date(fechaDesde)) return false;
+        if (fechaHasta && fechaAlta && fechaAlta > new Date(fechaHasta)) return false;
+        if (precioMin != null && Number.isFinite(precioMin) && costo < precioMin) return false;
+        if (precioMax != null && Number.isFinite(precioMax) && costo > precioMax) return false;
       }
 
       return true;
@@ -156,8 +117,6 @@ export default function BienesRegistrados() {
           onApply={setAppliedFilters}
           onClear={() => setAppliedFilters(null)}
           ubicaciones={ubicaciones}
-          tipos={tipos}
-          estados={estados}
         />
 
         <Row className="g-4 mt-2">
