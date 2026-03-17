@@ -89,6 +89,7 @@ export default function BienesRegistrados() {
       if (appliedFilters) {
         const { ubicacion: fUbicacion, fechaDesde, fechaHasta, precioMin, precioMax } =
           appliedFilters;
+          
 
         if (fUbicacion && ubicacionTexto !== fUbicacion) return false;
         if (fechaDesde && fechaAlta && fechaAlta < new Date(fechaDesde)) return false;
