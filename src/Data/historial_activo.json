@@ -1,0 +1,53 @@
+[
+  {
+    "id_historial": 1,
+    "id_activo": 2,
+    "fecha": "2026-02-07",
+    "tipo_evento": "cambio_estatus",
+    "estatus_anterior": "en mantenimiento",
+    "estatus_nuevo": "disponible",
+    "usuario": "Fernanda Rodríguez Martínez",
+    "observacion": "Equipo reparado y listo para asignación."
+  },
+  {
+    "id_historial": 2,
+    "id_activo": 2,
+    "fecha": "2026-02-06",
+    "tipo_evento": "mantenimiento",
+    "tipo_mantenimiento": "correctivo",
+    "diagnostico": "Falla en disco duro",
+    "tecnico": "Carlos Ramírez Torres",
+    "observacion": "Se reemplazó el disco duro y se instaló sistema operativo."
+  },
+  {
+    "id_historial": 3,
+    "id_activo": 2,
+    "fecha": "2026-02-05",
+    "tipo_evento": "asignacion",
+    "reporte_relacionado": "REP-02",
+    "tecnico_asignado": "Carlos Ramírez Torres",
+    "tipo_mantenimiento": "correctivo",
+    "prioridad": "alta",
+    "observacion": "Se asignó técnico para atender el reporte prioritario."
+  },
+  {
+    "id_historial": 4,
+    "id_activo": 2,
+    "fecha": "2026-02-04",
+    "tipo_evento": "reporte",
+    "folio_reporte": "REP-02",
+    "usuario": "Luis Mendoza Pérez",
+    "diagnostico": "El equipo no inicia correctamente.",
+    "observacion": "Se registró reporte y se marcó como prioridad alta."
+  },
+  {
+    "id_historial": 5,
+    "id_activo": 1,
+    "fecha": "2026-01-30",
+    "tipo_evento": "cambio_estatus",
+    "estatus_anterior": "resguardado",
+    "estatus_nuevo": "en mantenimiento",
+    "usuario": "Sofía García Navarro",
+    "observacion": "El monitor presenta fallas intermitentes de encendido."
+  }
+]

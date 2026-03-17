@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
-import { Container, Row, Col } from "react-bootstrap";
+import { Alert, Container, Row, Col } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
+import * as XLSX from "xlsx";
 
 import NavbarMenu from "../Components/NavbarMenu";
 import SearchBar from "../Components/SearchBar";
@@ -14,15 +15,38 @@ import "../Style/bienes-registrados.css";
 import "../Style/sidebar.css";
 import "../Style/asignacion-bien.css";
 
+function buildExportRows(activos) {
+  return (Array.isArray(activos) ? activos : []).map((activo) => {
+    const producto = activo?.producto ?? {};
+    const ubicacion = activo?.ubicacion ?? {};
+    return {
+      id_activo: activo?.id_activo ?? "",
+      codigo_interno: activo?.codigo_interno ?? "",
+      numero_serie: activo?.numero_serie ?? "",
+      tipo_activo: producto?.tipo_activo ?? activo?.tipo_activo ?? "",
+      marca: producto?.marca ?? activo?.marca ?? "",
+      modelo: producto?.modelo ?? activo?.modelo ?? "",
+      descripcion: activo?.descripcion ?? "",
+      propietario: activo?.propietario ?? "",
+      estatus: activo?.estatus ?? "",
+      costo: activo?.costo ?? "",
+      fecha_alta: activo?.fecha_alta ?? "",
+      campus: ubicacion?.campus ?? "",
+      edificio: ubicacion?.edificio ?? "",
+      aula: ubicacion?.aula ?? "",
+    };
+  });
+}
+
 export default function BienesRegistrados() {
   const [search, setSearch] = useState("");
   const [openSidebar, setOpenSidebar] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [appliedFilters, setAppliedFilters] = useState(null);
+  const [activos] = useState(() => getStoredActivos());
+  const [exportFeedback, setExportFeedback] = useState(null);
   const navigate = useNavigate();
   const { currentUser, setCurrentUserId } = useUsers();
-
-  const activos = useMemo(() => getStoredActivos(), []);
   const query = search.trim().toLowerCase();
 
   const sidebarItems = [
@@ -32,6 +56,7 @@ export default function BienesRegistrados() {
     { icon: "report", label: "Reportes", route: "/reportes" },
     { icon: "clock", label: "Historial", route: "/historial" },
     { icon: "report", label: "Asignar Bien", route: "/asignar-bien" },
+    { icon: "report", label: "Asignar Reporte", route: "/asignar-reporte" },
     { icon: "grid", label: "Dashboard", route: "/dashboard" },
     { icon: "box", label: "Registro de bienes", route: "/registro-bien" },
   ];
@@ -76,6 +101,40 @@ export default function BienesRegistrados() {
     });
   }, [activos, query, appliedFilters]);
 
+  const handleExportExcel = () => {
+    setExportFeedback(null);
+    try {
+      const actuales = getStoredActivos();
+      if (!actuales.length) {
+        setExportFeedback({
+          variant: "warning",
+          message: "No hay bienes registrados para exportar.",
+        });
+        return;
+      }
+
+      const rows = buildExportRows(actuales);
+      const worksheet = XLSX.utils.json_to_sheet(rows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Bienes");
+
+      const now = new Date();
+      const datePart = `${now.getFullYear()}-${`${now.getMonth() + 1}`.padStart(2, "0")}-${`${now.getDate()}`.padStart(2, "0")}`;
+      const fileName = `bienes_registrados_${datePart}.xlsx`;
+      XLSX.writeFile(workbook, fileName);
+
+      setExportFeedback({
+        variant: "success",
+        message: `Archivo exportado correctamente: ${fileName}`,
+      });
+    } catch {
+      setExportFeedback({
+        variant: "danger",
+        message: "No fue posible generar el archivo Excel.",
+      });
+    }
+  };
+
   return (
     <div className="inv-page">
       <NavbarMenu
@@ -107,9 +166,17 @@ export default function BienesRegistrados() {
         <SearchBar
           value={search}
           onChange={setSearch}
+          onImport={handleExportExcel}
           onFilters={() => setShowFilters(true)}
           placeholder="Buscar por código o tipo de activo"
+          firstActionLabel="Exportar a Excel"
         />
+
+        {exportFeedback ? (
+          <Alert variant={exportFeedback.variant} className="mt-3 mb-0">
+            {exportFeedback.message}
+          </Alert>
+        ) : null}
 
         <FiltersModal
           show={showFilters}

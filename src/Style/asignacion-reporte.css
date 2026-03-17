@@ -1,0 +1,16 @@
+.inv-assign-report__back {
+  border-radius: 10px;
+  border: 1px solid #b9d5eb;
+  background: #eff7ff;
+  color: #1f5783;
+  font-weight: 700;
+}
+
+.inv-assign-asset-card__badge--reportado {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.inv-selected-asset--report .inv-selected-asset__qr--monitor {
+  color: #2c5e91;
+}

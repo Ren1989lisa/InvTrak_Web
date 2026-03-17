@@ -57,6 +57,7 @@ export default function RegistroBien() {
     { icon: "report", label: "Reportes", route: "/reportes" },
     { icon: "clock", label: "Historial", route: "/historial" },
     { icon: "report", label: "Asignar Bien", route: "/asignar-bien" },
+    { icon: "report", label: "Asignar Reporte", route: "/asignar-reporte" },
     { icon: "grid", label: "Dashboard", route: "/dashboard" },
     { icon: "box", label: "Registro de bienes", route: "/registro-bien" },
   ];

@@ -5,31 +5,36 @@ import { useNavigate } from "react-router-dom";
 import NavbarMenu from "../Components/NavbarMenu";
 import SidebarMenu from "../Components/SidebarMenu";
 import PrimaryButton from "../Components/PrimaryButton";
-import AssetSelectableCard from "../Components/AssetSelectableCard";
+import AssetReportSelectableCard from "../Components/AssetReportSelectableCard";
 import UserSelectableCard from "../Components/UserSelectableCard";
-import SelectedAssetCard from "../Components/SelectedAssetCard";
-import UserSearchBar from "../Components/UserSearchBar";
+import SelectedReportAssetCard from "../Components/SelectedReportAssetCard";
 import FiltersModal from "../Components/FiltersModal";
 import { useUsers } from "../context/UsersContext";
-import { getStoredActivos, saveActivos } from "../activosStorage";
-import { addResguardo, getStoredResguardos } from "../resguardosStorage";
+import { getStoredActivos } from "../activosStorage";
+import { getStoredReportes, assignTecnicoToReporte } from "../reportesStorage";
 
 import "../Style/bienes-registrados.css";
 import "../Style/sidebar.css";
 import "../Style/asignacion-bien.css";
+import "../Style/asignacion-reporte.css";
 
 function normalize(value) {
   return (value ?? "").toString().trim().toLowerCase();
 }
 
-function todayDateString() {
-  const d = new Date();
-  const month = `${d.getMonth() + 1}`.padStart(2, "0");
-  const day = `${d.getDate()}`.padStart(2, "0");
-  return `${d.getFullYear()}-${month}-${day}`;
-}
+const SIDEBAR_ITEMS = [
+  { icon: "grid", label: "Bienes", route: "/bienes-registrados" },
+  { icon: "users", label: "Usuarios", route: "/usuarios" },
+  { icon: "folder", label: "Catalogos", route: "/catalogos" },
+  { icon: "report", label: "Reportes", route: "/reportes" },
+  { icon: "clock", label: "Historial", route: "/historial" },
+  { icon: "report", label: "Asignar Bien", route: "/asignar-bien" },
+  { icon: "report", label: "Asignar Reporte", route: "/asignar-reporte" },
+  { icon: "grid", label: "Dashboard", route: "/dashboard" },
+  { icon: "box", label: "Registro de bienes", route: "/registro-bien" },
+];
 
-export default function AsignacionBien() {
+export default function AsignacionReporte() {
   const navigate = useNavigate();
   const { users, currentUser, setCurrentUserId } = useUsers();
 
@@ -38,34 +43,38 @@ export default function AsignacionBien() {
   const [assetTypeFilter, setAssetTypeFilter] = useState("todo");
   const [showAssetFilters, setShowAssetFilters] = useState(false);
   const [appliedAssetFilters, setAppliedAssetFilters] = useState(null);
-  const [userSearch, setUserSearch] = useState("");
-  const [userRoleFilter, setUserRoleFilter] = useState("todo");
+  const [tecnicoSearch, setTecnicoSearch] = useState("");
+  const [tecnicoTypeFilter, setTecnicoTypeFilter] = useState("todo");
   const [selectedAssetId, setSelectedAssetId] = useState(null);
-  const [selectedUserId, setSelectedUserId] = useState(null);
+  const [selectedTecnicoId, setSelectedTecnicoId] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
-  const [activos, setActivos] = useState(() => getStoredActivos());
+  const [reportes, setReportes] = useState(() => getStoredReportes());
+  const activos = useMemo(() => getStoredActivos(), []);
 
-  const sidebarItems = [
-    { icon: "grid", label: "Bienes", route: "/bienes-registrados" },
-    { icon: "users", label: "Usuarios", route: "/usuarios" },
-    { icon: "folder", label: "Catalogos", route: "/catalogos" },
-    { icon: "report", label: "Reportes", route: "/reportes" },
-    { icon: "clock", label: "Historial", route: "/historial" },
-    { icon: "report", label: "Asignar Bien", route: "/asignar-bien" },
-    { icon: "report", label: "Asignar Reporte", route: "/asignar-reporte" },
-    { icon: "grid", label: "Dashboard", route: "/dashboard" },
-    { icon: "box", label: "Registro de bienes", route: "/registro-bien" },
-  ];
+  const reportesPendientes = useMemo(() => {
+    return reportes.filter(
+      (r) => !r?.id_tecnico_asignado || normalize(r?.estatus) === "pendiente"
+    );
+  }, [reportes]);
 
-  const activosDisponibles = useMemo(() => {
-    return activos.filter((a) => normalize(a?.estatus) === "disponible");
-  }, [activos]);
+  const bienesReportados = useMemo(() => {
+    const result = [];
+    const seen = new Set();
+    for (const rep of reportesPendientes) {
+      const idAct = Number(rep?.id_activo);
+      if (seen.has(idAct)) continue;
+      const activo = activos.find((a) => Number(a?.id_activo) === idAct);
+      if (!activo) continue;
+      seen.add(idAct);
+      result.push({ asset: activo, reporte: rep });
+    }
+    return result;
+  }, [activos, reportesPendientes]);
 
   const filteredAssets = useMemo(() => {
     const query = normalize(assetSearch);
-
-    return activosDisponibles.filter((asset) => {
+    return bienesReportados.filter(({ asset }) => {
       const tipo = normalize(asset?.producto?.tipo_activo ?? asset?.tipo_activo);
       const etiqueta = normalize(asset?.codigo_interno);
       const descripcion = normalize(asset?.descripcion);
@@ -89,114 +98,102 @@ export default function AsignacionBien() {
           precioMin,
           precioMax,
         } = appliedAssetFilters;
-
         if (fUbicacion && ubicacionTexto !== normalize(fUbicacion)) return false;
-
         if (fechaDesde && fechaAlta && fechaAlta < new Date(fechaDesde)) return false;
         if (fechaHasta && fechaAlta && fechaAlta > new Date(fechaHasta)) return false;
-
         if (precioMin != null && Number.isFinite(precioMin) && costo < precioMin) return false;
         if (precioMax != null && Number.isFinite(precioMax) && costo > precioMax) return false;
       }
-
       return true;
     });
-  }, [activosDisponibles, assetSearch, assetTypeFilter, appliedAssetFilters]);
+  }, [bienesReportados, assetSearch, assetTypeFilter, appliedAssetFilters]);
+
+  const tecnicos = useMemo(() => {
+    return (Array.isArray(users) ? users : []).filter(
+      (u) => normalize(u?.rol) === "tecnico"
+    );
+  }, [users]);
+
+  const filteredTecnicos = useMemo(() => {
+    const query = normalize(tecnicoSearch);
+    return tecnicos.filter((user) => {
+      const name = normalize(user?.nombre_completo);
+      const employeeNumber = normalize(user?.numero_empleado);
+      const matchesQuery = !query || name.includes(query) || employeeNumber.includes(query);
+      const matchesType =
+        tecnicoTypeFilter === "todo" || normalize(user?.rol) === normalize(tecnicoTypeFilter);
+      return matchesQuery && matchesType;
+    });
+  }, [tecnicos, tecnicoSearch, tecnicoTypeFilter]);
 
   const filterUbicaciones = useMemo(() => {
     const values = new Set();
-    activosDisponibles.forEach((a) => {
-      const u = a?.ubicacion;
+    bienesReportados.forEach(({ asset }) => {
+      const u = asset?.ubicacion;
       const text = [u?.campus, u?.edificio, u?.aula].filter(Boolean).join(" ");
       if (text) values.add(text);
     });
     return Array.from(values);
-  }, [activosDisponibles]);
+  }, [bienesReportados]);
 
-  const filteredUsers = useMemo(() => {
-    const query = normalize(userSearch);
-    const list = Array.isArray(users) ? users : [];
+  const selectedItem = useMemo(() => {
+    return bienesReportados.find(
+      ({ asset }) => Number(asset?.id_activo) === Number(selectedAssetId)
+    );
+  }, [bienesReportados, selectedAssetId]);
 
-    return list.filter((user) => {
-      const role = normalize(user?.rol);
-      const name = normalize(user?.nombre_completo);
-      const employeeNumber = normalize(user?.numero_empleado);
-      const matchesQuery = !query || name.includes(query) || employeeNumber.includes(query);
-      const matchesRole = userRoleFilter === "todo" || role === normalize(userRoleFilter);
-      return matchesQuery && matchesRole;
-    });
-  }, [users, userSearch, userRoleFilter]);
+  const selectedAsset = selectedItem?.asset ?? null;
+  const selectedReporte = selectedItem?.reporte ?? null;
 
-  const selectedAsset = useMemo(
-    () => activos.find((asset) => Number(asset?.id_activo) === Number(selectedAssetId)) ?? null,
-    [activos, selectedAssetId]
+  const selectedTecnico = useMemo(
+    () =>
+      (Array.isArray(users) ? users : []).find(
+        (u) => Number(u?.id_usuario) === Number(selectedTecnicoId)
+      ) ?? null,
+    [users, selectedTecnicoId]
   );
 
-  const selectedUser = useMemo(
-    () => (Array.isArray(users) ? users : []).find((u) => Number(u?.id_usuario) === Number(selectedUserId)) ?? null,
-    [users, selectedUserId]
-  );
+  const handleSelectAsset = ({ asset }) => {
+    setSelectedAssetId(asset?.id_activo);
+  };
 
   const handleAssign = () => {
     setSuccessMessage("");
     setErrorMessage("");
 
-    if (!selectedAsset) {
-      setErrorMessage("Selecciona un activo disponible.");
+    if (!selectedAsset || !selectedReporte) {
+      setErrorMessage("Selecciona un bien reportado de la lista.");
       return;
     }
 
-    if (!selectedUser) {
-      setErrorMessage("Selecciona un usuario para asignar.");
+    if (!selectedTecnico) {
+      setErrorMessage("Selecciona un técnico para asignar.");
       return;
     }
 
-    const resguardos = getStoredResguardos();
-    const nextResguardoId =
-      Math.max(...resguardos.map((r) => Number(r?.id_resguardo) || 0), 0) + 1;
-
-    addResguardo({
-      id_resguardo: nextResguardoId,
-      id_activo: Number(selectedAsset.id_activo),
-      id_usuario: Number(selectedUser.id_usuario),
-      fecha_asignacion: todayDateString(),
-    });
-
-    const nextActivos = activos.map((asset) =>
-      Number(asset?.id_activo) === Number(selectedAsset.id_activo)
-        ? {
-            ...asset,
-            estatus: "Resguardado",
-            propietario: selectedUser.nombre_completo,
-            id_usuario_asignado: Number(selectedUser.id_usuario),
-            estado_asignacion: "pendiente de confirmacion",
-          }
-        : asset
-    );
-
-    saveActivos(nextActivos);
-    setActivos(nextActivos);
+    assignTecnicoToReporte(selectedReporte.id_reporte, selectedTecnico.id_usuario);
+    setReportes(getStoredReportes());
     setSelectedAssetId(null);
-    setSelectedUserId(null);
-    setSuccessMessage("Bien asignado correctamente");
+    setSelectedTecnicoId(null);
+    setSuccessMessage("Reporte asignado al técnico correctamente.");
   };
 
   const handleCancel = () => {
     setSelectedAssetId(null);
-    setSelectedUserId(null);
+    setSelectedTecnicoId(null);
     setErrorMessage("");
     setSuccessMessage("");
   };
 
   return (
     <div className="inv-page">
-      <NavbarMenu title="Asignación del bien" onMenuClick={() => setOpenSidebar((v) => !v)} />
+      <NavbarMenu title="Asignación del Reporte" onMenuClick={() => setOpenSidebar((v) => !v)} />
 
       <SidebarMenu
         open={openSidebar}
         onClose={() => setOpenSidebar(false)}
         userName={currentUser?.nombre_completo}
-        items={sidebarItems}
+        items={SIDEBAR_ITEMS}
         onViewProfile={() => {
           setOpenSidebar(false);
           if (currentUser) {
@@ -213,6 +210,13 @@ export default function AsignacionBien() {
       />
 
       <Container fluid className="inv-content px-3 px-md-3 py-3 inv-assign-layout">
+        <PrimaryButton
+          variant="light"
+          label="← Regresar"
+          className="inv-assign-report__back mb-2"
+          onClick={() => navigate("/bienes-registrados")}
+        />
+
         <Row className="g-3">
           <Col lg={4}>
             <section className="inv-assign-panel">
@@ -224,7 +228,7 @@ export default function AsignacionBien() {
               <Form.Control
                 value={assetSearch}
                 onChange={(e) => setAssetSearch(e.target.value)}
-                placeholder="Buscar por etiqueta, tipo o descripción"
+                placeholder="Monitor"
                 className="inv-assign-input mb-2"
               />
 
@@ -243,22 +247,23 @@ export default function AsignacionBien() {
                   <option value="todo">Tipo: Todo</option>
                   <option value="laptop">Laptop</option>
                   <option value="monitor">Monitor</option>
-                  <option value="proyector">Proyector</option>
-                  <option value="switch">Switch</option>
+                  <option value="mouse">Mouse</option>
+                  <option value="teclado">Teclado</option>
                 </Form.Select>
               </div>
 
               <div className="inv-assign-assets-list">
-                {filteredAssets.map((asset) => (
-                  <AssetSelectableCard
-                    key={asset.id_activo}
+                {filteredAssets.map(({ asset, reporte }) => (
+                  <AssetReportSelectableCard
+                    key={`${asset?.id_activo}-${reporte?.id_reporte}`}
                     asset={asset}
-                    selected={Number(selectedAssetId) === Number(asset.id_activo)}
-                    onSelect={(item) => setSelectedAssetId(item?.id_activo)}
+                    reporte={reporte}
+                    selected={Number(selectedAssetId) === Number(asset?.id_activo)}
+                    onSelect={handleSelectAsset}
                   />
                 ))}
                 {!filteredAssets.length ? (
-                  <p className="text-muted mb-0">No hay activos disponibles con ese filtro.</p>
+                  <p className="text-muted mb-0">No hay bienes reportados con ese filtro.</p>
                 ) : null}
               </div>
             </section>
@@ -267,7 +272,9 @@ export default function AsignacionBien() {
           <Col lg={8}>
             <section className="inv-assign-panel">
               <h4 className="inv-assign-title mb-1">Detalles de Asignación</h4>
-              <p className="inv-assign-subtitle">Complete los datos para asignar el activo seleccionado</p>
+              <p className="inv-assign-subtitle">
+                Complete los datos para asignar el activo seleccionado
+              </p>
 
               {successMessage ? <Alert variant="success">{successMessage}</Alert> : null}
               {errorMessage ? <Alert variant="danger">{errorMessage}</Alert> : null}
@@ -275,15 +282,22 @@ export default function AsignacionBien() {
               <div className="mb-3">
                 <label className="inv-assign-label">Activo Seleccionado</label>
                 {selectedAsset ? (
-                  <SelectedAssetCard asset={selectedAsset} />
+                  <SelectedReportAssetCard asset={selectedAsset} />
                 ) : (
-                  <div className="inv-assign-empty">Selecciona un activo de la lista izquierda.</div>
+                  <div className="inv-assign-empty">
+                    Selecciona un bien reportado de la lista izquierda.
+                  </div>
                 )}
               </div>
 
               <div className="mb-2">
-                <label className="inv-assign-label">Buscar usuario</label>
-                <UserSearchBar value={userSearch} onChange={setUserSearch} placeholder="Buscar por nombre o número de empleado" />
+                <label className="inv-assign-label">Buscar Tecnico</label>
+                <Form.Control
+                  value={tecnicoSearch}
+                  onChange={(e) => setTecnicoSearch(e.target.value)}
+                  placeholder="Karla"
+                  className="inv-assign-input"
+                />
               </div>
 
               <div className="inv-assign-filters mb-2">
@@ -295,27 +309,26 @@ export default function AsignacionBien() {
                 />
                 <Form.Select
                   className="inv-assign-select"
-                  value={userRoleFilter}
-                  onChange={(e) => setUserRoleFilter(e.target.value)}
+                  value={tecnicoTypeFilter}
+                  onChange={(e) => setTecnicoTypeFilter(e.target.value)}
                 >
                   <option value="todo">Tipo: Todo</option>
-                  <option value="usuario">Usuario</option>
-                  <option value="tecnico">Tecnico</option>
+                  <option value="tecnico">Técnico</option>
                 </Form.Select>
               </div>
 
               <label className="inv-assign-label mb-2">Usuarios encontrados</label>
               <div className="inv-assign-users-list">
-                {filteredUsers.map((user) => (
+                {filteredTecnicos.map((user) => (
                   <UserSelectableCard
                     key={user.id_usuario}
                     user={user}
-                    selected={Number(selectedUserId) === Number(user.id_usuario)}
-                    onSelect={(item) => setSelectedUserId(item?.id_usuario)}
+                    selected={Number(selectedTecnicoId) === Number(user.id_usuario)}
+                    onSelect={(item) => setSelectedTecnicoId(item?.id_usuario)}
                   />
                 ))}
-                {!filteredUsers.length ? (
-                  <p className="text-muted mb-0">No hay usuarios con ese filtro.</p>
+                {!filteredTecnicos.length ? (
+                  <p className="text-muted mb-0">No hay técnicos con ese filtro.</p>
                 ) : null}
               </div>
 
@@ -328,7 +341,7 @@ export default function AsignacionBien() {
                 />
                 <PrimaryButton
                   variant="primary"
-                  label="Asignar Bien"
+                  label="Asignar Reporte"
                   className="inv-assign-btn inv-assign-btn--save"
                   onClick={handleAssign}
                 />

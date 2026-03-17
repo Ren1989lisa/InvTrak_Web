@@ -11,6 +11,8 @@ import EditarPerfil from "./Pages/EditarPerfil";
 import Catalogos from "./Pages/Catalogos";
 import RegistroBien from "./Pages/RegistroBien";
 import AsignacionBien from "./Pages/AsignacionBien";
+import AsignacionReporte from "./Pages/AsignacionReporte";
+import Historial from "./Pages/Historial";
 
 function App() {
   return (
@@ -25,6 +27,8 @@ function App() {
         <Route path="/catalogos" element={<Catalogos />} />
         <Route path="/registro-bien" element={<RegistroBien />} />
         <Route path="/asignar-bien" element={<AsignacionBien />} />
+        <Route path="/asignar-reporte" element={<AsignacionReporte />} />
+        <Route path="/historial" element={<Historial />} />
         <Route path="/activo/:id" element={<AssetDetail />} />
         <Route path="/perfil" element={<PerfilUsuario />} />
         <Route path="/perfil/:id" element={<PerfilUsuario />} />
