@@ -1,0 +1,139 @@
+.inv-history__backBtn {
+  border-radius: 10px;
+  border: 1px solid #b9d5eb;
+  background: #eff7ff;
+  color: #1f5783;
+  font-weight: 700;
+}
+
+.inv-history__panel {
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid #d8e8f5;
+  box-shadow: 0 6px 22px rgba(25, 65, 102, 0.12);
+  padding: 16px;
+}
+
+.inv-history__assetTitle {
+  color: #133f67;
+  font-weight: 800;
+  font-size: 1.2rem;
+  margin-bottom: 8px;
+}
+
+.inv-history__filterWrap {
+  width: 100%;
+}
+
+.inv-history__filterLabel {
+  color: #1a4b74;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.inv-history__filterSelect {
+  border-radius: 10px;
+  border-color: #b9d5eb;
+  min-height: 38px;
+}
+
+.inv-history-timeline {
+  position: relative;
+  margin-top: 16px;
+  padding-left: 34px;
+}
+
+.inv-history-timeline::before {
+  content: "";
+  position: absolute;
+  left: 13px;
+  top: 8px;
+  bottom: 8px;
+  width: 4px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #2c5e91 0%, #84b1dc 100%);
+}
+
+.inv-history-event {
+  position: relative;
+  margin-bottom: 14px;
+}
+
+.inv-history-event__dot {
+  position: absolute;
+  left: -33px;
+  top: 18px;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: #2f6395;
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-size: 0.8rem;
+  box-shadow: 0 0 0 4px #e8f2fb;
+}
+
+.inv-history-event__card {
+  background: #f2f6fa;
+  border: 1px solid #d5e2ee;
+  border-radius: 12px;
+  padding: 12px;
+  color: #1e3a55;
+}
+
+.inv-history-event__date {
+  margin: 0;
+  color: #4c7ca7;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.inv-history-event__title {
+  margin: 2px 0 8px;
+  color: #15466f;
+  font-weight: 800;
+  font-size: 1rem;
+}
+
+.inv-history-event__obs {
+  margin-top: 8px;
+  border-top: 1px dashed #bfd3e5;
+  padding-top: 8px;
+}
+
+.inv-history-event__obsLabel {
+  color: #1d5989;
+  font-weight: 700;
+}
+
+.inv-history__empty {
+  margin-top: 16px;
+  border: 1px dashed #a8c4db;
+  border-radius: 10px;
+  background: #f3f8fd;
+  color: #4c7497;
+  padding: 14px;
+  text-align: center;
+  font-weight: 600;
+}
+
+@media (max-width: 767px) {
+  .inv-history__panel {
+    padding: 12px;
+  }
+
+  .inv-history-timeline {
+    padding-left: 26px;
+  }
+
+  .inv-history-timeline::before {
+    left: 9px;
+  }
+
+  .inv-history-event__dot {
+    left: -25px;
+    width: 22px;
+    height: 22px;
+  }
+}
