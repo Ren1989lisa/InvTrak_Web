@@ -28,7 +28,7 @@ function isValidEmail(email) {
 export default function EditarPerfil() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { users, setUsers, currentUser, setCurrentUserId } = useUsers();
+  const { users, setUsers, currentUser, setCurrentUserId, menuItems } = useUsers();
   const [openSidebar, setOpenSidebar] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -50,18 +50,6 @@ export default function EditarPerfil() {
     : null;
   const usuario = usuarioSeleccionado ?? usuarios[0];
   const perfilRoute = usuario ? `/perfil/${usuario.id_usuario}` : "/perfil";
-
-  const sidebarItems = [
-    { icon: "grid", label: "Bienes", route: "/bienes-registrados" },
-    { icon: "users", label: "Usuarios", route: "/usuarios" },
-    { icon: "folder", label: "Catalogos", route: "/catalogos" },
-    { icon: "report", label: "Reportes", route: "/reportes" },
-    { icon: "clock", label: "Historial", route: "/historial" },
-    { icon: "report", label: "Asignar Bien", route: "/asignar-bien" },
-    { icon: "report", label: "Asignar Reporte", route: "/asignar-reporte" },
-    { icon: "grid", label: "Dashboard", route: "/dashboard" },
-    { icon: "box", label: "Registro de bienes", route: "/registro-bien" },
-  ];
 
   useEffect(() => {
     if (!usuario) return;
@@ -163,7 +151,7 @@ export default function EditarPerfil() {
         open={openSidebar}
         onClose={() => setOpenSidebar(false)}
         userName={currentUser?.nombre_completo}
-        items={sidebarItems}
+        items={menuItems}
         onViewProfile={() => {
           setOpenSidebar(false);
           if (currentUser) {

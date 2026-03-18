@@ -31,7 +31,7 @@ function todayDateString() {
 
 export default function AsignacionBien() {
   const navigate = useNavigate();
-  const { users, currentUser, setCurrentUserId } = useUsers();
+  const { users, currentUser, setCurrentUserId, menuItems } = useUsers();
 
   const [openSidebar, setOpenSidebar] = useState(false);
   const [assetSearch, setAssetSearch] = useState("");
@@ -45,18 +45,6 @@ export default function AsignacionBien() {
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [activos, setActivos] = useState(() => getStoredActivos());
-
-  const sidebarItems = [
-    { icon: "grid", label: "Bienes", route: "/bienes-registrados" },
-    { icon: "users", label: "Usuarios", route: "/usuarios" },
-    { icon: "folder", label: "Catalogos", route: "/catalogos" },
-    { icon: "report", label: "Reportes", route: "/reportes" },
-    { icon: "clock", label: "Historial", route: "/historial" },
-    { icon: "report", label: "Asignar Bien", route: "/asignar-bien" },
-    { icon: "report", label: "Asignar Reporte", route: "/asignar-reporte" },
-    { icon: "grid", label: "Dashboard", route: "/dashboard" },
-    { icon: "box", label: "Registro de bienes", route: "/registro-bien" },
-  ];
 
   const activosDisponibles = useMemo(() => {
     return activos.filter((a) => normalize(a?.estatus) === "disponible");
@@ -196,7 +184,7 @@ export default function AsignacionBien() {
         open={openSidebar}
         onClose={() => setOpenSidebar(false)}
         userName={currentUser?.nombre_completo}
-        items={sidebarItems}
+        items={menuItems}
         onViewProfile={() => {
           setOpenSidebar(false);
           if (currentUser) {

@@ -1,0 +1,249 @@
+/* Dashboard - InvTrak */
+.inv-dashboard {
+  min-height: 100vh;
+  background: #f4f7fb;
+  padding-bottom: 2rem;
+}
+
+.inv-dashboard__header {
+  margin-bottom: 1.75rem;
+}
+
+.inv-dashboard__title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #233241;
+  margin: 0 0 0.25rem 0;
+}
+
+.inv-dashboard__subtitle {
+  font-size: 0.95rem;
+  color: #64748b;
+  margin: 0;
+}
+
+/* Tarjetas de métricas */
+.inv-dashboard__metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 1.75rem;
+}
+
+.inv-metric-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(46, 110, 158, 0.08);
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.inv-metric-card__icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #2c5e91 0%, #6ea3d8 100%);
+  color: #fff;
+  font-size: 1.4rem;
+}
+
+.inv-metric-card__value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #2c5e91;
+  line-height: 1.2;
+  margin-bottom: 0.15rem;
+}
+
+.inv-metric-card__label {
+  font-size: 0.9rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* Tarjetas de gráficos */
+.inv-dashboard__charts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  margin-bottom: 1.75rem;
+}
+
+@media (max-width: 992px) {
+  .inv-dashboard__charts {
+    grid-template-columns: 1fr;
+  }
+}
+
+.inv-chart-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(46, 110, 158, 0.08);
+}
+
+.inv-chart-card__title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #233241;
+  margin: 0 0 1rem 0;
+}
+
+/* Activos más reportados */
+.inv-dashboard__reported {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(46, 110, 158, 0.08);
+  margin-bottom: 1.75rem;
+}
+
+.inv-reported__title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #233241;
+  margin: 0 0 1rem 0;
+}
+
+.inv-reported__header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.inv-reported__headerLabel {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.inv-reported__row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.inv-reported__row:last-child {
+  margin-bottom: 0;
+}
+
+.inv-reported__tipo {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #233241;
+  min-width: 120px;
+}
+
+.inv-reported__bar-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.inv-reported__bar {
+  height: 12px;
+  border-radius: 6px;
+  background: rgba(110, 163, 216, 0.25);
+  overflow: hidden;
+  flex: 1;
+}
+
+.inv-reported__bar-fill {
+  height: 100%;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #2c5e91 0%, #6ea3d8 100%);
+  transition: width 0.3s ease;
+}
+
+.inv-reported__cantidad {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #2c5e91;
+  min-width: 70px;
+  text-align: right;
+}
+
+/* Mantenimientos por técnico */
+.inv-dashboard__feed {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(46, 110, 158, 0.08);
+}
+
+.inv-feed__title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #233241;
+  margin: 0 0 1rem 0;
+}
+
+.inv-feed__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.inv-feed__item {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 10px;
+  transition: background 0.15s ease;
+}
+
+.inv-feed__item:hover {
+  background: #f8fafc;
+}
+
+.inv-feed__bullet {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #2c5e91;
+  flex-shrink: 0;
+  margin-top: 0.4rem;
+}
+
+.inv-feed__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.inv-feed__event-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #233241;
+  margin-bottom: 0.2rem;
+}
+
+.inv-feed__event-desc {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin-bottom: 0.25rem;
+}
+
+.inv-feed__reparo-label {
+  font-weight: 600;
+  color: #2c5e91;
+  margin-right: 0.25rem;
+}
+
+.inv-feed__event-time {
+  font-size: 0.8rem;
+  color: #94a3b8;
+}

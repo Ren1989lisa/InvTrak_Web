@@ -39,23 +39,11 @@ export default function Historial() {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
-  const { currentUser, setCurrentUserId } = useUsers();
+  const { currentUser, setCurrentUserId, menuItems } = useUsers();
 
   const [openSidebar, setOpenSidebar] = useState(false);
   const [search, setSearch] = useState("");
   const [eventFilter, setEventFilter] = useState("todo");
-
-  const sidebarItems = [
-    { icon: "grid", label: "Bienes", route: "/bienes-registrados" },
-    { icon: "users", label: "Usuarios", route: "/usuarios" },
-    { icon: "folder", label: "Catalogos", route: "/catalogos" },
-    { icon: "report", label: "Reportes", route: "/reportes" },
-    { icon: "clock", label: "Historial", route: "/historial" },
-    { icon: "report", label: "Asignar Bien", route: "/asignar-bien" },
-    { icon: "report", label: "Asignar Reporte", route: "/asignar-reporte" },
-    { icon: "grid", label: "Dashboard", route: "/dashboard" },
-    { icon: "box", label: "Registro de bienes", route: "/registro-bien" },
-  ];
 
   const assetIdFromState = Number(location.state?.id_activo);
   const assetIdFromQuery = Number(searchParams.get("id_activo"));
@@ -121,7 +109,7 @@ export default function Historial() {
         open={openSidebar}
         onClose={() => setOpenSidebar(false)}
         userName={currentUser?.nombre_completo}
-        items={sidebarItems}
+        items={menuItems}
         onViewProfile={() => {
           setOpenSidebar(false);
           if (currentUser) {

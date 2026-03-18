@@ -15,7 +15,7 @@ import "../Style/sidebar.css";
 export default function PerfilUsuario() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { users, currentUser, setCurrentUserId } = useUsers();
+  const { users, currentUser, setCurrentUserId, menuItems, defaultRoute, isAdmin } = useUsers();
   const [openSidebar, setOpenSidebar] = useState(false);
 
   const usuarios = useMemo(
@@ -27,19 +27,11 @@ export default function PerfilUsuario() {
   const usuarioSeleccionado = Number.isFinite(idNum)
     ? usuarios.find((u) => Number(u?.id_usuario) === idNum)
     : null;
-  const usuario = usuarioSeleccionado ?? usuarios[0];
-  const rutaRegreso = usuarioSeleccionado ? "/usuarios" : "/bienes-registrados";
-  const sidebarItems = [
-    { icon: "grid", label: "Bienes", route: "/bienes-registrados" },
-    { icon: "users", label: "Usuarios", route: "/usuarios" },
-    { icon: "folder", label: "Catalogos", route: "/catalogos" },
-    { icon: "report", label: "Reportes", route: "/reportes" },
-    { icon: "clock", label: "Historial", route: "/historial" },
-    { icon: "report", label: "Asignar Bien", route: "/asignar-bien" },
-    { icon: "report", label: "Asignar Reporte", route: "/asignar-reporte" },
-    { icon: "grid", label: "Dashboard", route: "/dashboard" },
-    { icon: "box", label: "Registro de bienes", route: "/registro-bien" },
-  ];
+  const usuario = usuarioSeleccionado ?? currentUser ?? usuarios[0];
+  const rutaRegreso =
+    isAdmin && usuarioSeleccionado && Number(usuarioSeleccionado?.id_usuario) !== Number(currentUser?.id_usuario)
+      ? "/usuarios"
+      : defaultRoute;
 
   return (
     <div className="inv-page">
@@ -49,7 +41,7 @@ export default function PerfilUsuario() {
         open={openSidebar}
         onClose={() => setOpenSidebar(false)}
         userName={currentUser?.nombre_completo}
-        items={sidebarItems}
+        items={menuItems}
         onViewProfile={() => {
           setOpenSidebar(false);
           if (currentUser) {

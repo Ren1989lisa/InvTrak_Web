@@ -31,7 +31,7 @@ function todayDateString() {
 
 export default function RegistroBien() {
   const navigate = useNavigate();
-  const { currentUser, setCurrentUserId } = useUsers();
+  const { currentUser, setCurrentUserId, menuItems } = useUsers();
   const [openSidebar, setOpenSidebar] = useState(false);
   const [showProductModal, setShowProductModal] = useState(false);
   const [showLocationModal, setShowLocationModal] = useState(false);
@@ -49,18 +49,6 @@ export default function RegistroBien() {
     estatus: "Disponible",
     costo: "",
   });
-
-  const sidebarItems = [
-    { icon: "grid", label: "Bienes", route: "/bienes-registrados" },
-    { icon: "users", label: "Usuarios", route: "/usuarios" },
-    { icon: "folder", label: "Catalogos", route: "/catalogos" },
-    { icon: "report", label: "Reportes", route: "/reportes" },
-    { icon: "clock", label: "Historial", route: "/historial" },
-    { icon: "report", label: "Asignar Bien", route: "/asignar-bien" },
-    { icon: "report", label: "Asignar Reporte", route: "/asignar-reporte" },
-    { icon: "grid", label: "Dashboard", route: "/dashboard" },
-    { icon: "box", label: "Registro de bienes", route: "/registro-bien" },
-  ];
 
   const estatusOptions = useMemo(
     () => [
@@ -173,7 +161,7 @@ export default function RegistroBien() {
         open={openSidebar}
         onClose={() => setOpenSidebar(false)}
         userName={currentUser?.nombre_completo}
-        items={sidebarItems}
+        items={menuItems}
         onViewProfile={() => {
           setOpenSidebar(false);
           if (currentUser) {

@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Alert, Button, Card, Col, Container, Form, Row } from "react-bootstrap";
 import { useNavigate, Link } from "react-router-dom";
-import "./../Style/login.css"
-import Logo from '../Components/Logo';  
+import "./../Style/login.css";
+import Logo from "../Components/Logo";
 import { useUsers } from "../context/UsersContext";
 
 function Login  ()  {
@@ -41,7 +41,9 @@ function Login  ()  {
         }
 
         setCurrentUserId(Number(user.id_usuario));
-        navigate("/bienes-registrados");
+        const rol = (user?.rol ?? "").toString().toLowerCase();
+        const ruta = rol === "admin" ? "/dashboard" : rol === "tecnico" ? "/mis-reparaciones" : "/mis-bienes";
+        navigate(ruta);
     };
     return (
     <Container fluid className="login-container">

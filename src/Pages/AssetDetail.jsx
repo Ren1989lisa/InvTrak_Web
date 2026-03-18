@@ -14,20 +14,9 @@ export default function AssetDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [openSidebar, setOpenSidebar] = useState(false);
-  const { currentUser, setCurrentUserId } = useUsers();
+  const { currentUser, setCurrentUserId, menuItems } = useUsers();
   const activos = useMemo(() => getStoredActivos(), []);
   const idNum = Number(id);
-  const sidebarItems = [
-    { icon: "grid", label: "Bienes", route: "/bienes-registrados" },
-    { icon: "users", label: "Usuarios", route: "/usuarios" },
-    { icon: "folder", label: "Catalogos", route: "/catalogos" },
-    { icon: "report", label: "Reportes", route: "/reportes" },
-    { icon: "clock", label: "Historial", route: "/historial" },
-    { icon: "report", label: "Asignar Bien", route: "/asignar-bien" },
-    { icon: "report", label: "Asignar Reporte", route: "/asignar-reporte" },
-    { icon: "grid", label: "Dashboard", route: "/dashboard" },
-    { icon: "box", label: "Registro de bienes", route: "/registro-bien" },
-  ];
 
   const activo = useMemo(
     () => activos.find((a) => a.id_activo === idNum),
@@ -45,7 +34,7 @@ export default function AssetDetail() {
         open={openSidebar}
         onClose={() => setOpenSidebar(false)}
         userName={currentUser?.nombre_completo}
-        items={sidebarItems}
+        items={menuItems}
         onViewProfile={() => {
           setOpenSidebar(false);
           if (currentUser) {

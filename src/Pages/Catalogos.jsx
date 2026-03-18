@@ -116,7 +116,7 @@ function buildLocationDataFromActivos(activos) {
 
 export default function Catalogos() {
   const navigate = useNavigate();
-  const { currentUser, setCurrentUserId } = useUsers();
+  const { currentUser, setCurrentUserId, menuItems } = useUsers();
   const [openSidebar, setOpenSidebar] = useState(false);
   const [activeTab, setActiveTab] = useState("producto");
   const [search, setSearch] = useState("");
@@ -138,18 +138,6 @@ export default function Catalogos() {
   const [marcas, setMarcas] = useState(catalogData.marcas);
   const [modelos, setModelos] = useState(catalogData.modelos);
   const [locations, setLocations] = useState(initialLocations);
-
-  const sidebarItems = [
-    { icon: "grid", label: "Bienes", route: "/bienes-registrados" },
-    { icon: "users", label: "Usuarios", route: "/usuarios" },
-    { icon: "folder", label: "Catalogos", route: "/catalogos" },
-    { icon: "report", label: "Reportes", route: "/reportes" },
-    { icon: "clock", label: "Historial", route: "/historial" },
-    { icon: "report", label: "Asignar Bien", route: "/asignar-bien" },
-    { icon: "report", label: "Asignar Reporte", route: "/asignar-reporte" },
-    { icon: "grid", label: "Dashboard", route: "/dashboard" },
-    { icon: "box", label: "Registro de bienes", route: "/registro-bien" },
-  ];
 
   const catalogRows = useMemo(() => {
     return productos
@@ -394,7 +382,7 @@ export default function Catalogos() {
         open={openSidebar}
         onClose={() => setOpenSidebar(false)}
         userName={currentUser?.nombre_completo}
-        items={sidebarItems}
+        items={menuItems}
         onViewProfile={() => {
           setOpenSidebar(false);
           if (currentUser) {

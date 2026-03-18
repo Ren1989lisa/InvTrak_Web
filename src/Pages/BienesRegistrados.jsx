@@ -46,20 +46,8 @@ export default function BienesRegistrados() {
   const [activos] = useState(() => getStoredActivos());
   const [exportFeedback, setExportFeedback] = useState(null);
   const navigate = useNavigate();
-  const { currentUser, setCurrentUserId } = useUsers();
+  const { currentUser, setCurrentUserId, menuItems } = useUsers();
   const query = search.trim().toLowerCase();
-
-  const sidebarItems = [
-    { icon: "grid", label: "Bienes", route: "/bienes-registrados" },
-    { icon: "users", label: "Usuarios", route: "/usuarios" },
-    { icon: "folder", label: "Catalogos", route: "/catalogos" },
-    { icon: "report", label: "Reportes", route: "/reportes" },
-    { icon: "clock", label: "Historial", route: "/historial" },
-    { icon: "report", label: "Asignar Bien", route: "/asignar-bien" },
-    { icon: "report", label: "Asignar Reporte", route: "/asignar-reporte" },
-    { icon: "grid", label: "Dashboard", route: "/dashboard" },
-    { icon: "box", label: "Registro de bienes", route: "/registro-bien" },
-  ];
 
   const ubicaciones = useMemo(() => {
     const values = new Set();
@@ -147,7 +135,7 @@ export default function BienesRegistrados() {
         open={openSidebar}
         onClose={() => setOpenSidebar(false)}
         userName={currentUser?.nombre_completo}
-        items={sidebarItems}
+        items={menuItems}
         onViewProfile={() => {
           setOpenSidebar(false);
           if (currentUser) {
