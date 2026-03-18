@@ -274,24 +274,6 @@ export default function AsignacionBien() {
                 <UserSearchBar value={userSearch} onChange={setUserSearch} placeholder="Buscar por nombre o número de empleado" />
               </div>
 
-              <div className="inv-assign-filters mb-2">
-                <PrimaryButton
-                  variant="light"
-                  label="Filtrar"
-                  className="inv-assign-filter-btn"
-                  onClick={() => {}}
-                />
-                <Form.Select
-                  className="inv-assign-select"
-                  value={userRoleFilter}
-                  onChange={(e) => setUserRoleFilter(e.target.value)}
-                >
-                  <option value="todo">Tipo: Todo</option>
-                  <option value="usuario">Usuario</option>
-                  <option value="tecnico">Tecnico</option>
-                </Form.Select>
-              </div>
-
               <label className="inv-assign-label mb-2">Usuarios encontrados</label>
               <div className="inv-assign-users-list">
                 {filteredUsers.map((user) => (

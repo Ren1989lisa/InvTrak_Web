@@ -47,3 +47,17 @@ export function assignTecnicoToReporte(idReporte, idTecnico) {
   saveReportes(updated);
   return updated;
 }
+
+export function addReporte(reporte) {
+  const current = getStoredReportes();
+  const nextId = Math.max(...current.map((r) => Number(r?.id_reporte) || 0), 0) + 1;
+  const nextFolio = `REP-${String(nextId).padStart(2, "0")}`;
+  const nuevo = {
+    ...reporte,
+    id_reporte: nextId,
+    folio: reporte.folio ?? nextFolio,
+  };
+  const next = [...current, nuevo];
+  saveReportes(next);
+  return next;
+}

@@ -283,26 +283,9 @@ export default function AsignacionReporte() {
                 <Form.Control
                   value={tecnicoSearch}
                   onChange={(e) => setTecnicoSearch(e.target.value)}
-                  placeholder="Karla"
+                  placeholder="Ingrese el nombre del técnico"
                   className="inv-assign-input"
                 />
-              </div>
-
-              <div className="inv-assign-filters mb-2">
-                <PrimaryButton
-                  variant="light"
-                  label="Filtrar"
-                  className="inv-assign-filter-btn"
-                  onClick={() => {}}
-                />
-                <Form.Select
-                  className="inv-assign-select"
-                  value={tecnicoTypeFilter}
-                  onChange={(e) => setTecnicoTypeFilter(e.target.value)}
-                >
-                  <option value="todo">Tipo: Todo</option>
-                  <option value="tecnico">Técnico</option>
-                </Form.Select>
               </div>
 
               <label className="inv-assign-label mb-2">Usuarios encontrados</label>

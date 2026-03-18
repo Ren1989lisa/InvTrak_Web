@@ -15,7 +15,11 @@ export default function ProtectedRoute({ children, requiredRole = null }) {
 
   const path = location.pathname;
 
-  if (requiredRole === "admin" && (currentUser?.rol ?? "").toString().toLowerCase() !== "admin") {
+  const rol = (currentUser?.rol ?? "").toString().toLowerCase();
+  if (requiredRole === "admin" && rol !== "admin") {
+    return <Navigate to={defaultRoute} replace />;
+  }
+  if (requiredRole === "usuario" && rol !== "usuario") {
     return <Navigate to={defaultRoute} replace />;
   }
 

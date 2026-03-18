@@ -16,6 +16,7 @@ import AsignacionBien from "./Pages/AsignacionBien";
 import AsignacionReporte from "./Pages/AsignacionReporte";
 import Historial from "./Pages/Historial";
 import ConfirmaResguardo from "./Pages/ConfirmaResguardo";
+import ReportarBien from "./Pages/ReportarBien";
 import ProtectedRoute from "./Components/ProtectedRoute";
 
 function App() {
@@ -28,6 +29,7 @@ function App() {
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/bienes-registrados" element={<ProtectedRoute><BienesRegistrados /></ProtectedRoute>} />
         <Route path="/mis-bienes" element={<ProtectedRoute><MisBienes /></ProtectedRoute>} />
+        <Route path="/reportar-bien" element={<ProtectedRoute requiredRole="usuario"><ReportarBien /></ProtectedRoute>} />
         <Route path="/mis-reparaciones" element={<ProtectedRoute><MisReparaciones /></ProtectedRoute>} />
         <Route path="/usuarios" element={<ProtectedRoute requiredRole="admin"><Usuarios /></ProtectedRoute>} />
         <Route path="/usuarios/registrar" element={<ProtectedRoute requiredRole="admin"><RegistrarUsuario /></ProtectedRoute>} />

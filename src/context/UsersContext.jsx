@@ -18,9 +18,10 @@ const MENU_ADMIN = [
   { icon: "box", label: "Registro de bienes", route: "/registro-bien" },
 ];
 
-// Menú para usuario (solo mis bienes y perfil)
+// Menú para usuario (mis bienes, reportar bien y perfil)
 const MENU_USUARIO = [
   { icon: "grid", label: "Mis bienes", route: "/mis-bienes" },
+  { icon: "report", label: "Reportar bien", route: "/reportar-bien" },
   { icon: "users", label: "Mi perfil", route: "/perfil" },
 ];
 
@@ -38,7 +39,7 @@ function getMenuByRol(rol) {
   return MENU_USUARIO;
 }
 
-const RUTAS_USUARIO = ["/mis-bienes", "/perfil"];
+const RUTAS_USUARIO = ["/mis-bienes", "/perfil", "/reportar-bien"];
 const RUTAS_TECNICO = ["/mis-reparaciones", "/perfil"];
 
 function canAccessRoute(rol, path) {
