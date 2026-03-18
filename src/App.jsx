@@ -15,6 +15,7 @@ import RegistroBien from "./Pages/RegistroBien";
 import AsignacionBien from "./Pages/AsignacionBien";
 import AsignacionReporte from "./Pages/AsignacionReporte";
 import Historial from "./Pages/Historial";
+import ConfirmaResguardo from "./Pages/ConfirmaResguardo";
 import ProtectedRoute from "./Components/ProtectedRoute";
 
 function App() {
@@ -36,6 +37,7 @@ function App() {
         <Route path="/asignar-reporte" element={<ProtectedRoute requiredRole="admin"><AsignacionReporte /></ProtectedRoute>} />
         <Route path="/historial" element={<ProtectedRoute requiredRole="admin"><Historial /></ProtectedRoute>} />
         <Route path="/activo/:id" element={<ProtectedRoute><AssetDetail /></ProtectedRoute>} />
+        <Route path="/confirmar-resguardo/:id" element={<ProtectedRoute><ConfirmaResguardo /></ProtectedRoute>} />
         <Route path="/perfil" element={<ProtectedRoute><PerfilUsuario /></ProtectedRoute>} />
         <Route path="/perfil/:id" element={<ProtectedRoute><PerfilUsuario /></ProtectedRoute>} />
         <Route path="/perfil/editar" element={<ProtectedRoute><EditarPerfil /></ProtectedRoute>} />

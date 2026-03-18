@@ -49,12 +49,15 @@ function canAccessRoute(rol, path) {
 
   if (r === "usuario") {
     if (RUTAS_USUARIO.some((ruta) => p === ruta)) return true;
-    if (p.startsWith("/perfil/") || p.startsWith("/activo/")) return true;
+    if (p.endsWith("/editar")) return false;
+    if (p.startsWith("/perfil/") || p.startsWith("/activo/") || p.startsWith("/confirmar-resguardo/"))
+      return true;
     return false;
   }
 
   if (r === "tecnico") {
     if (RUTAS_TECNICO.some((ruta) => p === ruta)) return true;
+    if (p.endsWith("/editar")) return false;
     if (p.startsWith("/perfil/") || p.startsWith("/activo/")) return true;
     return false;
   }

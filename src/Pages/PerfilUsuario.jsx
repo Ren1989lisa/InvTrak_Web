@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Container, Button } from "react-bootstrap";
+import { Container, Button, Alert } from "react-bootstrap";
 
 import NavbarMenu from "../Components/NavbarMenu";
 import SidebarMenu from "../Components/SidebarMenu";
@@ -8,6 +8,8 @@ import ProfileHeader from "../Components/ProfileHeader";
 import ProfileInfoCard from "../Components/ProfileInfoCard";
 import PrimaryButton from "../Components/PrimaryButton";
 import { useUsers } from "../context/UsersContext";
+import { usePendientesResguardo } from "../hooks/usePendientesResguardo";
+import { openQRFilePicker } from "../utils/decodeQRFromFile";
 import "../Style/bienes-registrados.css";
 import "../Style/profile.css";
 import "../Style/sidebar.css";
@@ -17,6 +19,9 @@ export default function PerfilUsuario() {
   const { id } = useParams();
   const { users, currentUser, setCurrentUserId, menuItems, defaultRoute, isAdmin } = useUsers();
   const [openSidebar, setOpenSidebar] = useState(false);
+  const [qrError, setQrError] = useState("");
+  const pendientesResguardo = usePendientesResguardo(currentUser);
+  const isUsuario = (currentUser?.rol ?? "").toString().toLowerCase() === "usuario";
 
   const usuarios = useMemo(
     () => (Array.isArray(users) ? users : []),
@@ -35,7 +40,28 @@ export default function PerfilUsuario() {
 
   return (
     <div className="inv-page">
-      <NavbarMenu title="Perfil" onMenuClick={() => setOpenSidebar((v) => !v)} />
+      <NavbarMenu
+        title="Perfil"
+        onMenuClick={() => setOpenSidebar((v) => !v)}
+        notificationItems={
+          isUsuario
+            ? pendientesResguardo.map((a) => ({
+                ...a,
+                onSubirQR: (item) => {
+                  setQrError("");
+                  openQRFilePicker({
+                    codigoEsperado: item.codigo_interno,
+                    onSuccess: (idActivo) => {
+                      const targetId = idActivo ?? item.id_activo;
+                      navigate(`/confirmar-resguardo/${targetId}`);
+                    },
+                    onError: (msg) => setQrError(msg),
+                  });
+                },
+              }))
+            : null
+        }
+      />
 
       <SidebarMenu
         open={openSidebar}
@@ -61,6 +87,16 @@ export default function PerfilUsuario() {
         fluid
         className="inv-content px-3 px-md-4 py-3 inv-profile-content"
       >
+        {qrError && (
+          <Alert
+            variant="danger"
+            dismissible
+            onClose={() => setQrError("")}
+            className="mb-2"
+          >
+            {qrError}
+          </Alert>
+        )}
         <Button
           type="button"
           variant="link"
@@ -76,14 +112,16 @@ export default function PerfilUsuario() {
             <div className="inv-profile-cardWrapper">
               <ProfileInfoCard usuario={usuario} />
             </div>
-            <div className="inv-profile-actions">
-              <PrimaryButton
-                variant="primary"
-                label="Editar Perfil"
-                className="inv-profile-editBtn"
-                onClick={() => navigate(`/perfil/${usuario.id_usuario}/editar`)}
-              />
-            </div>
+            {isAdmin && (
+              <div className="inv-profile-actions">
+                <PrimaryButton
+                  variant="primary"
+                  label="Editar Perfil"
+                  className="inv-profile-editBtn"
+                  onClick={() => navigate(`/perfil/${usuario.id_usuario}/editar`)}
+                />
+              </div>
+            )}
           </>
         )}
       </Container>
