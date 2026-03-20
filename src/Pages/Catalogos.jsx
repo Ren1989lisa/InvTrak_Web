@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Alert, Container, Form, Row, Col } from "react-bootstrap";
+import { Alert, Container, Form, Row, Col, Button } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 
 import NavbarMenu from "../Components/NavbarMenu";
@@ -435,6 +435,7 @@ export default function Catalogos() {
             ) : null}
 
             <Row className="align-items-center g-2 mt-2 inv-catalog-actions">
+
               <Col xs={12} md="auto">
                 <PrimaryButton
                   variant="primary"

@@ -42,7 +42,7 @@ function Login  ()  {
 
         setCurrentUserId(Number(user.id_usuario));
         const rol = (user?.rol ?? "").toString().toLowerCase();
-        const ruta = rol === "admin" ? "/dashboard" : rol === "tecnico" ? "/mis-reparaciones" : "/mis-bienes";
+        const ruta = rol === "admin" ? "/bienes-registrados" : rol === "tecnico" ? "/mis-reparaciones" : "/mis-bienes";
         navigate(ruta);
     };
     return (

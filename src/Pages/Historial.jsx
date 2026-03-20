@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Col, Container, Row } from "react-bootstrap";
+import { Col, Container, Row, Button } from "react-bootstrap";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 
 import NavbarMenu from "../Components/NavbarMenu";
@@ -126,12 +126,16 @@ export default function Historial() {
       />
 
       <Container fluid className="inv-content px-3 px-md-4 py-3">
-        <PrimaryButton
-          variant="light"
-          label="← Regresar"
-          className="inv-history__backBtn"
-          onClick={() => navigate("/bienes-registrados")}
-        />
+         <Col xs="auto">
+          <Button
+          type="button"
+          variant="link"
+          className="inv-back-btn"
+          onClick={() => navigate(-1)}>
+          ← Regresar
+        </Button>
+        </Col>
+
 
         <section className="inv-history__panel mt-3">
           <h2 className="inv-history__assetTitle">Activo: {assetDisplayName}</h2>

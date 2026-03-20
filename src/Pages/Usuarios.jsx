@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Col, Container, Row } from "react-bootstrap";
+import { Col, Container, Row, Button } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 
 import NavbarMenu from "../Components/NavbarMenu";
@@ -64,13 +64,15 @@ export default function Usuarios() {
       <Container fluid className="inv-content px-3 px-md-4 py-3">
         <Row className="align-items-center g-2 inv-users-actions">
           <Col xs="auto">
-            <PrimaryButton
-              variant="light"
-              label="←"
-              className="inv-btn inv-btn--secondary inv-users-backBtn"
-              onClick={() => navigate("/bienes-registrados")}
-            />
-          </Col>
+          <Button
+          type="button"
+          variant="link"
+          className="inv-back-btn"
+          onClick={() => navigate(-1)}
+        >
+          ← Regresar
+        </Button>
+        </Col>
 
           <Col>
             <SearchBar

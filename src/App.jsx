@@ -26,7 +26,6 @@ function App() {
         <Route path="/" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
 
-        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/bienes-registrados" element={<ProtectedRoute><BienesRegistrados /></ProtectedRoute>} />
         <Route path="/mis-bienes" element={<ProtectedRoute><MisBienes /></ProtectedRoute>} />
         <Route path="/reportar-bien" element={<ProtectedRoute requiredRole="usuario"><ReportarBien /></ProtectedRoute>} />
@@ -38,6 +37,7 @@ function App() {
         <Route path="/asignar-bien" element={<ProtectedRoute requiredRole="admin"><AsignacionBien /></ProtectedRoute>} />
         <Route path="/asignar-reporte" element={<ProtectedRoute requiredRole="admin"><AsignacionReporte /></ProtectedRoute>} />
         <Route path="/historial" element={<ProtectedRoute requiredRole="admin"><Historial /></ProtectedRoute>} />
+        <Route path="/dashboard" element={<ProtectedRoute requiredRole="admin"><Dashboard/></ProtectedRoute>} />
         <Route path="/activo/:id" element={<ProtectedRoute><AssetDetail /></ProtectedRoute>} />
         <Route path="/confirmar-resguardo/:id" element={<ProtectedRoute><ConfirmaResguardo /></ProtectedRoute>} />
         <Route path="/perfil" element={<ProtectedRoute><PerfilUsuario /></ProtectedRoute>} />
