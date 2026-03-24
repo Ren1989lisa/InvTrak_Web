@@ -8,10 +8,18 @@ export default function FormSelect({
   onChange,
   options = [],
   disabled = false,
+  error,
+  isInvalid,
+  feedback,
+  placeholder = "Seleccionar...",
+  className,
 }) {
+  const hasError = error ?? feedback ?? isInvalid;
+  const errorMessage = error ?? feedback;
+
   const selectClassName = `inv-register__input${
     disabled ? " inv-register__input--disabledWithIcon" : ""
-  }`;
+  }${className ? ` ${className}` : ""}`.trim();
 
   return (
     <Form.Group className="mb-3">
@@ -22,9 +30,10 @@ export default function FormSelect({
           value={value}
           onChange={onChange}
           disabled={disabled}
+          isInvalid={!!hasError}
           className={selectClassName}
         >
-          <option value="">Seleccionar...</option>
+          <option value="">{placeholder}</option>
           {options.map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}
@@ -39,6 +48,9 @@ export default function FormSelect({
           />
         ) : null}
       </div>
+      {errorMessage ? (
+        <Form.Control.Feedback type="invalid">{errorMessage}</Form.Control.Feedback>
+      ) : null}
     </Form.Group>
   );
 }

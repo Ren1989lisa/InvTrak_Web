@@ -72,7 +72,6 @@ export default function Dashboard() {
   const activos = useMemo(() => getStoredActivos(), []);
   const reportes = useMemo(() => getStoredReportes(), []);
 
-  // Métricas de vista general
   const metrics = useMemo(() => {
     const total = activos.length;
     const enMantenimiento = activos.filter(
@@ -102,7 +101,6 @@ export default function Dashboard() {
     };
   }, [activos, reportes]);
 
-  // Gráfico: tiempo promedio de atención (simulado con reportes)
   const chartTiempoData = useMemo(() => {
     const reportesConFecha = reportes
       .filter((r) => r?.fecha_reporte)
@@ -142,7 +140,6 @@ export default function Dashboard() {
         ];
   }, [reportes]);
 
-  // Gráfico: estado de bienes
   const estadoBienesData = useMemo(() => {
     const byStatus = {};
     activos.forEach((a) => {
@@ -164,7 +161,6 @@ export default function Dashboard() {
     ];
   }, [estadoBienesData, activos.length]);
 
-  // Activos más reportados
   const activosReportados = useMemo(() => {
     const map = {};
     reportes.forEach((r) => {
@@ -185,7 +181,6 @@ export default function Dashboard() {
     }));
   }, [activosReportados]);
 
-  // Si no hay reportes, mostrar datos de ejemplo basados en tipo
   const reportedDisplay = useMemo(() => {
     if (reportedWithMax.length > 0) return reportedWithMax;
     const byTipo = {};
@@ -201,7 +196,6 @@ export default function Dashboard() {
     return arr.map((a) => ({ ...a, porcentaje: (a.cantidad / max) * 100 }));
   }, [reportedWithMax, activos]);
 
-  // Feed: Mantenimientos por técnico (nombre del técnico + qué reparó)
   const feedEvents = useMemo(() => {
     const events = [];
     const allHistorial = Array.isArray(historialData) ? historialData : [];
@@ -253,7 +247,6 @@ export default function Dashboard() {
       });
     });
 
-    // Agregar altas recientes de activos (sin técnico de reparación)
     activos
       .filter((a) => a?.fecha_alta)
       .sort((a, b) => new Date(b.fecha_alta) - new Date(a.fecha_alta))
@@ -305,7 +298,6 @@ export default function Dashboard() {
 
       <Container fluid className="inv-content px-3 px-md-4 py-3">
 
-        {/* Métricas */}
         <div className="inv-dashboard__metrics">
           <div className="inv-metric-card">
             <div className="inv-metric-card__icon">
@@ -345,7 +337,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Gráficos */}
         <div className="inv-dashboard__charts">
           <div className="inv-chart-card">
             <h3 className="inv-chart-card__title">Tiempo promedio de atención</h3>
@@ -408,7 +399,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Activos más reportados */}
         <div className="inv-dashboard__reported">
           <h3 className="inv-reported__title">Activos más reportados</h3>
           <div className="inv-reported__header">
@@ -437,7 +427,6 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Mantenimientos por técnico */}
         <div className="inv-dashboard__feed">
           <h3 className="inv-feed__title">Mantenimientos por técnico</h3>
           <div className="inv-feed__grid">

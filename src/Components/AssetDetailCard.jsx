@@ -34,7 +34,6 @@ function getOwnerDisplay(activo) {
     return ownerName;
   }
 
-  // Si hay propietario pero no existe estado explícito, asumimos pendiente de confirmación.
   return "pendiente de confirmacion";
 }
 

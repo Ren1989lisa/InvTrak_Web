@@ -2,10 +2,6 @@ import { useMemo } from "react";
 import { getStoredActivos } from "../activosStorage";
 import { getStoredResguardos } from "../resguardosStorage";
 
-/**
- * Devuelve los bienes pendientes de resguardo para un usuario (rol usuario).
- * Son activos asignados con estado_asignacion pendiente de confirmación.
- */
 export function usePendientesResguardo(currentUser) {
   const activos = useMemo(() => getStoredActivos(), []);
   const resguardos = useMemo(() => getStoredResguardos(), []);

@@ -3,7 +3,9 @@ import { Alert, Button, Card, Col, Container, Form, Row } from "react-bootstrap"
 import { useNavigate, Link } from "react-router-dom";
 import "./../Style/login.css";
 import Logo from "../Components/Logo";
+import FormInput from "../Components/FormInput";
 import { useUsers } from "../context/UsersContext";
+import { getDefaultRouteByRole } from "../config/routes";
 
 function Login  ()  {
 
@@ -41,8 +43,7 @@ function Login  ()  {
         }
 
         setCurrentUserId(Number(user.id_usuario));
-        const rol = (user?.rol ?? "").toString().toLowerCase();
-        const ruta = rol === "admin" ? "/bienes-registrados" : rol === "tecnico" ? "/mis-reparaciones" : "/mis-bienes";
+        const ruta = getDefaultRouteByRole(user?.rol);
         navigate(ruta);
     };
     return (
@@ -69,27 +70,24 @@ function Login  ()  {
               </Alert>
             ) : null}
             <Form onSubmit={handleSubmit}>
-             <Form.Group className="mb-3">
-                <Form.Label>Correo Electrónico</Form.Label>
-                <Form.Control
-                  type="email"
-                  placeholder="your.email@example.com"
-                  value={correo}
-                  onChange={(e) => setCorreo(e.target.value)}
-                  required
-                />
-              </Form.Group>
-
-              <Form.Group className="mb-3">
-                <Form.Label>Contraseña</Form.Label>
-                <Form.Control
-                  type="password"
-                  placeholder="********"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </Form.Group>
+              <FormInput
+                label="Correo Electrónico"
+                name="correo"
+                type="email"
+                placeholder="your.email@example.com"
+                value={correo}
+                onChange={(e) => setCorreo(e.target.value)}
+                required
+              />
+              <FormInput
+                label="Contraseña"
+                name="password"
+                type="password"
+                placeholder="********"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
 
               <div className="text-end mb-3 small">
                 <Link to="/forgot-password" style={{ textDecoration: "none", color: "inherit" }}>

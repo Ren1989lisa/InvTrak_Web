@@ -1,10 +1,6 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useUsers } from "../context/UsersContext";
 
-/**
- * Protege rutas según rol. Si no hay sesión, redirige a login.
- * Si hay sesión pero no tiene acceso a la ruta, redirige a la ruta por defecto de su rol.
- */
 export default function ProtectedRoute({ children, requiredRole = null }) {
   const location = useLocation();
   const { currentUserId, currentUser, canAccess, defaultRoute } = useUsers();

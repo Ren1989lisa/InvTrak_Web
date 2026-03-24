@@ -1,9 +1,5 @@
 import { Button } from "react-bootstrap";
 
-/**
- * Botones de acción del detalle: PDF, JPG, Imprimir.
- * Lógica de descarga puede conectarse después.
- */
 export default function ActionButtons({ onDownloadPDF, onDownloadJPG, onPrint }) {
   const handlePrint = () => {
     if (typeof onPrint === "function") {

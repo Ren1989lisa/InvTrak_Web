@@ -9,6 +9,7 @@ import FormInput from "../Components/FormInput";
 import FormSelect from "../Components/FormSelect";
 import PrimaryButton from "../Components/PrimaryButton";
 import { useUsers } from "../context/UsersContext";
+import { isValidEmail } from "../utils/validations";
 
 import "../Style/bienes-registrados.css";
 import "../Style/sidebar.css";
@@ -20,10 +21,6 @@ const ROL_OPTIONS = [
   { value: "tecnico", label: "tecnico" },
   { value: "admin", label: "admin" },
 ];
-
-function isValidEmail(email) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
 
 export default function EditarPerfil() {
   const navigate = useNavigate();

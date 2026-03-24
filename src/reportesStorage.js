@@ -56,8 +56,20 @@ export function addReporte(reporte) {
     ...reporte,
     id_reporte: nextId,
     folio: reporte.folio ?? nextFolio,
+    fotos_evidencia: reporte.fotos_evidencia ?? [],
   };
   const next = [...current, nuevo];
   saveReportes(next);
   return next;
+}
+
+export function updateReporteEstatus(idReporte, nuevoEstatus) {
+  const reportes = getStoredReportes();
+  const updated = reportes.map((r) =>
+    Number(r?.id_reporte) === Number(idReporte)
+      ? { ...r, estatus: nuevoEstatus }
+      : r
+  );
+  saveReportes(updated);
+  return updated;
 }

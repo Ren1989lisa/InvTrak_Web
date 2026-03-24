@@ -8,6 +8,8 @@ import { BsImage } from "react-icons/bs";
 
 import NavbarMenu from "../Components/NavbarMenu";
 import SidebarMenu from "../Components/SidebarMenu";
+import FormInput from "../Components/FormInput";
+import FormSelect from "../Components/FormSelect";
 import { useUsers } from "../context/UsersContext";
 import { getStoredActivos, saveActivos } from "../activosStorage";
 import { getStoredResguardos } from "../resguardosStorage";
@@ -84,7 +86,15 @@ export default function ReportarBien() {
     setArchivos((prev) => prev.filter((_, i) => i !== idx));
   };
 
-  const handleSubmit = (e) => {
+  const fileToBase64 = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMessage("");
     setSuccessMessage("");
@@ -103,6 +113,16 @@ export default function ReportarBien() {
       return;
     }
 
+    let fotosEvidencia = [];
+    try {
+      fotosEvidencia = await Promise.all(
+        archivos.filter((f) => f.type.startsWith("image/")).map(fileToBase64)
+      );
+    } catch {
+      setErrorMessage("No se pudieron procesar las imágenes.");
+      return;
+    }
+
     addReporte({
       id_activo: activo.id_activo,
       folio: null,
@@ -111,6 +131,7 @@ export default function ReportarBien() {
       estatus: "pendiente",
       id_tecnico_asignado: null,
       fecha_reporte: todayDateString(),
+      fotos_evidencia: fotosEvidencia,
     });
 
     const updated = activos.map((a) =>
@@ -190,56 +211,46 @@ export default function ReportarBien() {
                 <Form onSubmit={handleSubmit}>
                   <Row className="g-3">
                     <Col xs={12} md={6}>
-                      <Form.Group>
-                        <Form.Label>Etiqueta del bien</Form.Label>
-                        <div className="inv-reportar-input-wrap">
-                          <BiBarcodeReader className="inv-reportar-input-icon" />
-                          <Form.Control
-                            type="text"
-                            placeholder="Ingresa la etiqueta del bien"
-                            value={etiqueta}
-                            onChange={(e) => setEtiqueta(e.target.value)}
-                            list="etiquetas-sugeridas"
-                            className="inv-reportar-input"
-                          />
-                          <datalist id="etiquetas-sugeridas">
-                            {misBienes.map((a) => (
-                              <option key={a.id_activo} value={a.codigo_interno} />
-                            ))}
-                          </datalist>
-                        </div>
-                      </Form.Group>
+                      <FormInput
+                        label="Etiqueta del bien"
+                        name="etiqueta"
+                        type="text"
+                        placeholder="Ingresa la etiqueta del bien"
+                        value={etiqueta}
+                        onChange={(e) => setEtiqueta(e.target.value)}
+                        list="etiquetas-sugeridas"
+                        className="inv-reportar-input"
+                        leftIcon={<BiBarcodeReader className="inv-reportar-input-icon" />}
+                      />
+                      <datalist id="etiquetas-sugeridas">
+                        {misBienes.map((a) => (
+                          <option key={a.id_activo} value={a.codigo_interno} />
+                        ))}
+                      </datalist>
                     </Col>
                     <Col xs={12} md={6}>
-                      <Form.Group>
-                        <Form.Label>Estatus del Producto</Form.Label>
-                        <Form.Select
-                          value={estatus}
-                          onChange={(e) => setEstatus(e.target.value)}
-                          className="inv-reportar-select"
-                        >
-                          <option value="">Selecciona el estatus</option>
-                          {ESTATUS_OPCIONES.map((opt) => (
-                            <option key={opt.value} value={opt.value}>
-                              {opt.label}
-                            </option>
-                          ))}
-                        </Form.Select>
-                      </Form.Group>
+                      <FormSelect
+                        label="Estatus del Producto"
+                        name="estatus"
+                        value={estatus}
+                        onChange={(e) => setEstatus(e.target.value)}
+                        options={ESTATUS_OPCIONES}
+                        placeholder="Selecciona el estatus"
+                        className="inv-reportar-select"
+                      />
                     </Col>
                   </Row>
 
-                  <Form.Group className="mt-3">
-                    <Form.Label>Descripción de problema</Form.Label>
-                    <Form.Control
-                      as="textarea"
-                      rows={4}
-                      placeholder="Describe los detalles del problema..."
-                      value={descripcion}
-                      onChange={(e) => setDescripcion(e.target.value)}
-                      className="inv-reportar-textarea"
-                    />
-                  </Form.Group>
+                  <FormInput
+                    label="Descripción de problema"
+                    name="descripcion"
+                    as="textarea"
+                    rows={4}
+                    placeholder="Describe los detalles del problema..."
+                    value={descripcion}
+                    onChange={(e) => setDescripcion(e.target.value)}
+                    className="inv-reportar-textarea"
+                  />
 
                   <Form.Group className="mt-4">
                     <Form.Label>Subir Imágenes o videos</Form.Label>

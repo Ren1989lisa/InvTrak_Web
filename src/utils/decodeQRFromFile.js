@@ -1,11 +1,5 @@
 import jsQR from "jsqr";
 
-/**
- * Decodifica un código QR desde un archivo de imagen.
- * El QR del sistema contiene JSON.stringify(activo) con codigo_interno.
- * @param {File} file - Archivo de imagen (PNG, JPG, etc.)
- * @returns {Promise<{ codigo_interno: string } | null>}
- */
 export function decodeQRFromFile(file) {
   return new Promise((resolve) => {
     if (!file || !file.type.startsWith("image/")) {
@@ -53,13 +47,6 @@ export function decodeQRFromFile(file) {
   });
 }
 
-/**
- * Abre el explorador de archivos para seleccionar una imagen QR.
- * @param {Object} options
- * @param {string} options.codigoEsperado - codigo_interno que debe coincidir
- * @param {function(string)} options.onSuccess - llamado con id_activo para navegar
- * @param {function(string)} options.onError - llamado con mensaje de error
- */
 export function openQRFilePicker({ codigoEsperado, onSuccess, onError }) {
   const input = document.createElement("input");
   input.type = "file";

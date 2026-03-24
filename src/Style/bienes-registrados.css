@@ -29,7 +29,6 @@
   line-height: 1;
 }
 
-/* Notificación (rol usuario) */
 .inv-navbar__notifications {
   margin-left: auto;
 }
@@ -220,11 +219,10 @@
   border-radius: 6px !important;
 }
 
-/* panel lateral de filtros */
 .filters-panel {
   width: 360px;
   max-width: 90%;
-  background: #e6f2f8; /* fondo claro azul */
+  background: #e6f2f8;
   border-left: 1px solid rgba(47,115,166,0.08);
   box-shadow: -6px 0 18px rgba(15,36,51,0.06);
 }
@@ -254,7 +252,6 @@
   padding: 10px 6px 0 6px;
 }
 
-/* inputs y selects con estilo similar */
 .filters-panel .form-control,
 .filters-panel select,
 .filters-panel .form-select {
@@ -290,7 +287,6 @@
   padding: 8px 18px;
 }
 
-/* ajuste interno de filas de fechas */
 .filters-panel .row > .col {
   padding-left: 6px;
   padding-right: 6px;

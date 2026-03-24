@@ -106,9 +106,9 @@ export default function MisReparaciones() {
     });
   }, [reportesConActivo, query]);
 
-  const handleClick = (activo) => {
-    if (activo?.id_activo) {
-      navigate(`/activo/${activo.id_activo}`);
+  const handleClick = (reporte) => {
+    if (reporte?.id_reporte) {
+      navigate(`/reporte/${reporte.id_reporte}`);
     }
   };
 
@@ -157,7 +157,7 @@ export default function MisReparaciones() {
                 <ReparacionCard
                   reporte={reporte}
                   activo={activo}
-                  onClick={() => handleClick(activo)}
+                  onClick={() => handleClick(reporte)}
                 />
               </Col>
             ))}

@@ -7,6 +7,7 @@ import FormInput from "../Components/FormInput";
 import FormSelect from "../Components/FormSelect";
 import PrimaryButton from "../Components/PrimaryButton";
 import { useUsers } from "../context/UsersContext";
+import { isValidEmail } from "../utils/validations";
 import "../Style/registrar-usuario.css";
 
 const INITIAL_FORM = {
@@ -24,10 +25,6 @@ const ROL_OPTIONS = [
   { value: "tecnico", label: "tecnico" },
   { value: "admin", label: "admin" },
 ];
-
-function isValidEmail(email) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
 
 export default function RegistrarUsuario() {
   const navigate = useNavigate();
