@@ -18,6 +18,9 @@ export default function ProtectedRoute({ children, requiredRole = null }) {
   if (requiredRole === "usuario" && rol !== "usuario") {
     return <Navigate to={defaultRoute} replace />;
   }
+  if (requiredRole === "tecnico" && rol !== "tecnico") {
+    return <Navigate to={defaultRoute} replace />;
+  }
 
   if (!canAccess(path)) {
     return <Navigate to={defaultRoute} replace />;

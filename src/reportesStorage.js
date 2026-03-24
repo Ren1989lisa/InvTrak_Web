@@ -73,3 +73,14 @@ export function updateReporteEstatus(idReporte, nuevoEstatus) {
   saveReportes(updated);
   return updated;
 }
+
+export function updateReporteTecnico(idReporte, datos) {
+  const reportes = getStoredReportes();
+  const updated = reportes.map((r) =>
+    Number(r?.id_reporte) === Number(idReporte)
+      ? { ...r, ...datos }
+      : r
+  );
+  saveReportes(updated);
+  return updated;
+}

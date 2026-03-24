@@ -22,6 +22,7 @@ const Historial = lazy(() => import("../Pages/Historial"));
 const ConfirmaResguardo = lazy(() => import("../Pages/ConfirmaResguardo"));
 const ReportarBien = lazy(() => import("../Pages/ReportarBien"));
 const InformacionReporte = lazy(() => import("../Pages/InformacionReporte"));
+const ReporteTecnico = lazy(() => import("../Pages/ReporteTecnico"));
 
 const { LOGIN, FORGOT_PASSWORD } = ROUTES;
 const {
@@ -39,6 +40,7 @@ const {
   DASHBOARD,
   ACTIVO_DETALLE,
   REPORTE_DETALLE,
+  REPORTE_TECNICO,
   CONFIRMAR_RESGUARDO,
   PERFIL,
   PERFIL_ID,
@@ -172,6 +174,14 @@ export default function AppRoutes() {
           element={
             <ProtectedRoute>
               <InformacionReporte />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={REPORTE_TECNICO}
+          element={
+            <ProtectedRoute requiredRole="tecnico">
+              <ReporteTecnico />
             </ProtectedRoute>
           }
         />

@@ -18,6 +18,7 @@ export const PROTECTED_ROUTES = {
   DASHBOARD: "/dashboard",
   ACTIVO_DETALLE: "/activo/:id",
   REPORTE_DETALLE: "/reporte/:id",
+  REPORTE_TECNICO: "/reporte/:id/reporte-tecnico",
   CONFIRMAR_RESGUARDO: "/confirmar-resguardo/:id",
   PERFIL: "/perfil",
   PERFIL_ID: "/perfil/:id",

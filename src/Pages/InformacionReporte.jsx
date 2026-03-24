@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Button, Card, Carousel, Col, Container, Modal, Row } from "react-bootstrap";
+import { Button, Card, Carousel, Col, Container, Row } from "react-bootstrap";
 import { useNavigate, useParams } from "react-router-dom";
 import { BsInfoCircle } from "react-icons/bs";
 import { BsImage } from "react-icons/bs";
@@ -7,7 +7,7 @@ import { BsImage } from "react-icons/bs";
 import NavbarMenu from "../Components/NavbarMenu";
 import SidebarMenu from "../Components/SidebarMenu";
 import { useUsers } from "../context/UsersContext";
-import { getStoredReportes, updateReporteEstatus } from "../reportesStorage";
+import { getStoredReportes } from "../reportesStorage";
 import { getStoredActivos } from "../activosStorage";
 import { getEstadoDisplay } from "../config/estatusActivo";
 import "../Style/bienes-registrados.css";
@@ -36,8 +36,6 @@ export default function InformacionReporte() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [openSidebar, setOpenSidebar] = useState(false);
-  const [showModalEstado, setShowModalEstado] = useState(false);
-  const [nuevoEstado, setNuevoEstado] = useState("");
 
   const { currentUser, setCurrentUserId, menuItems } = useUsers();
 
@@ -77,14 +75,6 @@ export default function InformacionReporte() {
   ]
     .filter(Boolean)
     .join(" ") || activo?.codigo_interno || "Activo";
-
-  const handleCambiarEstado = () => {
-    if (nuevoEstado) {
-      updateReporteEstatus(idReporte, nuevoEstado);
-      setShowModalEstado(false);
-      setNuevoEstado("");
-    }
-  };
 
   if (!reporte) {
     return (
@@ -200,7 +190,7 @@ export default function InformacionReporte() {
             <Button
               variant="primary"
               className="inv-reporte-info-btn"
-              onClick={() => setShowModalEstado(true)}
+              onClick={() => navigate(`/reporte/${idReporte}/reporte-tecnico`)}
             >
               <BsInfoCircle className="me-2" />
               Cambiar estado de reporte
@@ -208,35 +198,6 @@ export default function InformacionReporte() {
           </div>
         )}
       </Container>
-
-      <Modal show={showModalEstado} onHide={() => setShowModalEstado(false)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>Cambiar estado de reporte</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <label className="form-label">Nuevo estado</label>
-          <select
-            className="form-select"
-            value={nuevoEstado}
-            onChange={(e) => setNuevoEstado(e.target.value)}
-          >
-            <option value="">Selecciona...</option>
-            {ESTADOS_OPCIONES.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModalEstado(false)}>
-            Cancelar
-          </Button>
-          <Button variant="primary" onClick={handleCambiarEstado} disabled={!nuevoEstado}>
-            Guardar
-          </Button>
-        </Modal.Footer>
-      </Modal>
     </div>
   );
 }
