@@ -1,52 +1,60 @@
 import { useState } from "react";
 import { Alert, Button, Card, Col, Container, Form, Row } from "react-bootstrap";
 import { useNavigate, Link } from "react-router-dom";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import "./../Style/login.css";
 import Logo from "../Components/Logo";
 import FormInput from "../Components/FormInput";
 import { useUsers } from "../context/UsersContext";
 import { getDefaultRouteByRole } from "../config/routes";
+import { loginSchema } from "../utils/schemas";
 
-function Login  ()  {
+function Login() {
+  const navigate = useNavigate();
+  const { users, setCurrentUserId } = useUsers();
+  const [error, setError] = useState("");
+  const usuarios = Array.isArray(users) ? users : [];
 
-    const navigate = useNavigate();
-    const { users, setCurrentUserId } = useUsers();
-    const [correo, setCorreo] = useState("");
-    const [password, setPassword] = useState("");
-    const [error, setError] = useState("");
-    const usuarios = Array.isArray(users) ? users : [];
+  const {
+    control,
+    handleSubmit: submitForm,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { correo: "", password: "" },
+  });
 
-    const handleSubmit =(e)=>{
-        e.preventDefault();
-        setError("");
+  const handleSubmit = submitForm((data) => {
+    setError("");
+    const correoNorm = data.correo.trim().toLowerCase();
+    const passNorm = data.password.trim();
 
-        const correoNorm = correo.trim().toLowerCase();
-        const passNorm = password.trim();
+    const user = usuarios.find(
+      (u) => (u?.correo ?? "").toString().toLowerCase() === correoNorm
+    );
 
-        const user = usuarios.find(
-          (u) => (u?.correo ?? "").toString().toLowerCase() === correoNorm
-        );
+    if (!user) {
+      setError("Correo o contraseña incorrectos.");
+      return;
+    }
 
-        if (!user) {
-          setError("Correo o contraseña incorrectos.");
-          return;
-        }
+    if (user.activo !== true) {
+      setError("Tu usuario está inactivo. Contacta al administrador.");
+      return;
+    }
 
-        if (user.activo !== true) {
-          setError("Tu usuario está inactivo. Contacta al administrador.");
-          return;
-        }
+    if ((user?.password ?? "").toString() !== passNorm) {
+      setError("Correo o contraseña incorrectos.");
+      return;
+    }
 
-        if ((user?.password ?? "").toString() !== passNorm) {
-          setError("Correo o contraseña incorrectos.");
-          return;
-        }
+    setCurrentUserId(Number(user.id_usuario));
+    const ruta = getDefaultRouteByRole(user?.rol);
+    navigate(ruta);
+  });
 
-        setCurrentUserId(Number(user.id_usuario));
-        const ruta = getDefaultRouteByRole(user?.rol);
-        navigate(ruta);
-    };
-    return (
+  return (
     <Container fluid className="login-container">
         <Row className= "vh-100 align-items-center">
             <Col md={6} className="text-center text-light">
@@ -70,23 +78,37 @@ function Login  ()  {
               </Alert>
             ) : null}
             <Form onSubmit={handleSubmit}>
-              <FormInput
-                label="Correo Electrónico"
+              <Controller
                 name="correo"
-                type="email"
-                placeholder="your.email@example.com"
-                value={correo}
-                onChange={(e) => setCorreo(e.target.value)}
-                required
+                control={control}
+                render={({ field, fieldState }) => (
+                  <FormInput
+                    label="Correo Electrónico"
+                    name={field.name}
+                    type="email"
+                    placeholder="your.email@example.com"
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    error={fieldState.error?.message}
+                  />
+                )}
               />
-              <FormInput
-                label="Contraseña"
+              <Controller
                 name="password"
-                type="password"
-                placeholder="********"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
+                control={control}
+                render={({ field, fieldState }) => (
+                  <FormInput
+                    label="Contraseña"
+                    name={field.name}
+                    type="password"
+                    placeholder="********"
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    error={fieldState.error?.message}
+                  />
+                )}
               />
 
               <div className="text-end mb-3 small">

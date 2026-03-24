@@ -5,6 +5,7 @@ import { jsPDF } from "jspdf";
 import AssetInfoField from "./AssetInfoField";
 import QRSection from "./QRSection";
 import ActionButtons from "./ActionButtons";
+import { getEstadoDisplay } from "../config/estatusActivo";
 import "../Style/bienes-registrados.css";
 
 function formatCurrency(value) {
@@ -20,7 +21,6 @@ function formatCurrency(value) {
 function getOwnerDisplay(activo) {
   const ownerName = (activo?.propietario ?? "").toString().trim();
   const assignmentState = (activo?.estado_asignacion ?? "").toString().trim().toLowerCase();
-  const assetStatus = (activo?.estatus ?? "").toString().trim().toLowerCase();
 
   if (!ownerName || assignmentState === "pendiente de asignacion") {
     return "pendiente de asignacion";
@@ -30,13 +30,12 @@ function getOwnerDisplay(activo) {
     return "pendiente de confirmacion";
   }
 
-  if (assignmentState === "resguardado" || assetStatus === "resguardado") {
+  if (assignmentState === "confirmado" || assignmentState === "resguardado") {
     return ownerName;
   }
 
   return "pendiente de confirmacion";
 }
-
 
 export default function AssetDetailCard({ activo }) {
   const cardRef = useRef(null);
@@ -124,7 +123,7 @@ export default function AssetDetailCard({ activo }) {
               </Col>
               <Col xs={12} md={6} className="inv-asset-detail-card__col">
                 <AssetInfoField label="Propietario:" value={getOwnerDisplay(activo)} />
-                <AssetInfoField label="Estado:" value={activo.estatus} />
+                <AssetInfoField label="Estado:" value={getEstadoDisplay(activo)} />
                 <AssetInfoField label="Costo:" value={formatCurrency(activo.costo)} />
                 <AssetInfoField label="Fecha de alta:" value={activo.fecha_alta} />
               </Col>

@@ -1,16 +1,18 @@
 import { useMemo, useState } from "react";
 import { Alert, Container, Form } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 import FormContainer from "../Components/FormContainer";
 import FormInput from "../Components/FormInput";
 import FormSelect from "../Components/FormSelect";
 import PrimaryButton from "../Components/PrimaryButton";
 import { useUsers } from "../context/UsersContext";
-import { isValidEmail } from "../utils/validations";
+import { usuarioSchema } from "../utils/schemas";
 import "../Style/registrar-usuario.css";
 
-const INITIAL_FORM = {
+const INITIAL_VALUES = {
   nombre_completo: "",
   correo: "",
   fecha_nacimiento: "",
@@ -29,41 +31,23 @@ const ROL_OPTIONS = [
 export default function RegistrarUsuario() {
   const navigate = useNavigate();
   const { users, addUser } = useUsers();
-  const [form, setForm] = useState(INITIAL_FORM);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
   const usersList = useMemo(() => (Array.isArray(users) ? users : []), [users]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-  };
+  const {
+    control,
+    handleSubmit,
+    reset,
+  } = useForm({
+    resolver: zodResolver(usuarioSchema),
+    defaultValues: INITIAL_VALUES,
+  });
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const onSubmit = handleSubmit((data) => {
     setError("");
     setSuccess("");
-
-    const data = Object.fromEntries(
-      Object.entries(form).map(([k, v]) => [k, typeof v === "string" ? v.trim() : v])
-    );
-
-    const hasEmpty = Object.values(data).some((value) => !value);
-    if (hasEmpty) {
-      setError("Todos los campos son obligatorios.");
-      return;
-    }
-
-    if (!isValidEmail(data.correo)) {
-      setError("El correo electrónico no tiene un formato válido.");
-      return;
-    }
-
-    if (data.curp.length !== 18) {
-      setError("La CURP debe tener exactamente 18 caracteres.");
-      return;
-    }
 
     const empleadoDuplicado = usersList.some(
       (u) => (u?.numero_empleado ?? "").toString() === data.numero_empleado
@@ -110,11 +94,11 @@ export default function RegistrarUsuario() {
 
     addUser(nuevoUsuario);
     setSuccess("Usuario registrado correctamente.");
-    setForm(INITIAL_FORM);
+    reset(INITIAL_VALUES);
     window.setTimeout(() => {
       navigate("/usuarios");
     }, 900);
-  };
+  });
 
   return (
     <div className="inv-register-page">
@@ -123,57 +107,112 @@ export default function RegistrarUsuario() {
           {error ? <Alert variant="danger">{error}</Alert> : null}
           {success ? <Alert variant="success">{success}</Alert> : null}
 
-          <Form onSubmit={handleSubmit} className="inv-register__form">
-            <FormInput
-              label="Nombre completo"
+          <Form onSubmit={onSubmit} className="inv-register__form">
+            <Controller
               name="nombre_completo"
-              value={form.nombre_completo}
-              onChange={handleChange}
-              placeholder="Ingresa el nombre completo"
+              control={control}
+              render={({ field, fieldState }) => (
+                <FormInput
+                  label="Nombre completo"
+                  name={field.name}
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  placeholder="Ingresa el nombre completo"
+                  error={fieldState.error?.message}
+                />
+              )}
             />
-            <FormInput
-              label="Correo electrónico"
+            <Controller
               name="correo"
-              type="email"
-              value={form.correo}
-              onChange={handleChange}
-              placeholder="ejemplo@correo.com"
+              control={control}
+              render={({ field, fieldState }) => (
+                <FormInput
+                  label="Correo electrónico"
+                  name={field.name}
+                  type="email"
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  placeholder="ejemplo@correo.com"
+                  error={fieldState.error?.message}
+                />
+              )}
             />
-            <FormInput
-              label="Fecha de nacimiento"
+            <Controller
               name="fecha_nacimiento"
-              type="date"
-              value={form.fecha_nacimiento}
-              onChange={handleChange}
+              control={control}
+              render={({ field, fieldState }) => (
+                <FormInput
+                  label="Fecha de nacimiento"
+                  name={field.name}
+                  type="date"
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  error={fieldState.error?.message}
+                />
+              )}
             />
-            <FormInput
-              label="CURP"
+            <Controller
               name="curp"
-              value={form.curp}
-              onChange={handleChange}
-              placeholder="18 caracteres"
+              control={control}
+              render={({ field, fieldState }) => (
+                <FormInput
+                  label="CURP"
+                  name={field.name}
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  placeholder="18 caracteres"
+                  error={fieldState.error?.message}
+                />
+              )}
             />
-            <FormSelect
-              label="Rol"
+            <Controller
               name="rol"
-              value={form.rol}
-              onChange={handleChange}
-              options={ROL_OPTIONS}
+              control={control}
+              render={({ field, fieldState }) => (
+                <FormSelect
+                  label="Rol"
+                  name={field.name}
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  options={ROL_OPTIONS}
+                  error={fieldState.error?.message}
+                />
+              )}
             />
-            <FormInput
-              label="Número de empleado"
+            <Controller
               name="numero_empleado"
-              value={form.numero_empleado}
-              onChange={handleChange}
-              placeholder="Ej. 0810"
+              control={control}
+              render={({ field, fieldState }) => (
+                <FormInput
+                  label="Número de empleado"
+                  name={field.name}
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  placeholder="Ej. 0810"
+                  error={fieldState.error?.message}
+                />
+              )}
             />
-
-            <FormInput
-              label="Área o departamento"
+            <Controller
               name="departamento"
-              value={form.departamento}
-              onChange={handleChange}
-              placeholder="Ej. Soporte Técnico"
+              control={control}
+              render={({ field, fieldState }) => (
+                <FormInput
+                  label="Área o departamento"
+                  name={field.name}
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  placeholder="Ej. Soporte Técnico"
+                  error={fieldState.error?.message}
+                />
+              )}
             />
 
             <div className="inv-register__actions">

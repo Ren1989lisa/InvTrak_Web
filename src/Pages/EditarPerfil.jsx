@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Alert, Button, Card, Col, Container, Form, Row } from "react-bootstrap";
 import { useNavigate, useParams } from "react-router-dom";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 import NavbarMenu from "../Components/NavbarMenu";
 import SidebarMenu from "../Components/SidebarMenu";
@@ -9,7 +11,7 @@ import FormInput from "../Components/FormInput";
 import FormSelect from "../Components/FormSelect";
 import PrimaryButton from "../Components/PrimaryButton";
 import { useUsers } from "../context/UsersContext";
-import { isValidEmail } from "../utils/validations";
+import { editarPerfilSchema } from "../utils/schemas";
 
 import "../Style/bienes-registrados.css";
 import "../Style/sidebar.css";
@@ -29,16 +31,6 @@ export default function EditarPerfil() {
   const [openSidebar, setOpenSidebar] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [form, setForm] = useState({
-    nombre_completo: "",
-    correo: "",
-    fecha_nacimiento: "",
-    curp: "",
-    rol: "",
-    numero_empleado: "",
-    departamento: "",
-    password: "",
-  });
 
   const usuarios = useMemo(() => (Array.isArray(users) ? users : []), [users]);
   const idNum = Number(id);
@@ -48,9 +40,27 @@ export default function EditarPerfil() {
   const usuario = usuarioSeleccionado ?? usuarios[0];
   const perfilRoute = usuario ? `/perfil/${usuario.id_usuario}` : "/perfil";
 
+  const {
+    control,
+    handleSubmit,
+    reset,
+  } = useForm({
+    resolver: zodResolver(editarPerfilSchema),
+    defaultValues: {
+      nombre_completo: "",
+      correo: "",
+      fecha_nacimiento: "",
+      curp: "",
+      rol: "",
+      numero_empleado: "",
+      departamento: "",
+      password: "",
+    },
+  });
+
   useEffect(() => {
     if (!usuario) return;
-    setForm({
+    reset({
       nombre_completo: usuario.nombre_completo ?? "",
       correo: usuario.correo ?? "",
       fecha_nacimiento: usuario.fecha_nacimiento ?? "",
@@ -60,36 +70,11 @@ export default function EditarPerfil() {
       departamento: usuario.departamento ?? "",
       password: usuario.password ?? "",
     });
-  }, [usuario]);
+  }, [usuario, reset]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const onSubmit = handleSubmit((data) => {
     setError("");
     setSuccess("");
-
-    const data = Object.fromEntries(
-      Object.entries(form).map(([k, v]) => [k, typeof v === "string" ? v.trim() : v])
-    );
-
-    if (Object.values(data).some((value) => !value)) {
-      setError("Todos los campos son obligatorios.");
-      return;
-    }
-
-    if (!isValidEmail(data.correo)) {
-      setError("El correo electrónico no tiene un formato válido.");
-      return;
-    }
-
-    if (data.curp.length !== 18) {
-      setError("La CURP debe tener exactamente 18 caracteres.");
-      return;
-    }
 
     const empleadoDuplicado = usuarios.some(
       (u) =>
@@ -126,16 +111,13 @@ export default function EditarPerfil() {
     setUsers((prev) =>
       prev.map((u) =>
         Number(u?.id_usuario) === Number(usuario?.id_usuario)
-          ? {
-              ...u,
-              ...data,
-            }
+          ? { ...u, ...data }
           : u
       )
     );
 
     setSuccess("Perfil actualizado correctamente");
-  };
+  });
 
   return (
     <div className="inv-page">
@@ -183,90 +165,140 @@ export default function EditarPerfil() {
                 {error ? <Alert variant="danger">{error}</Alert> : null}
                 {success ? <Alert variant="success">{success}</Alert> : null}
 
-                <Form onSubmit={handleSubmit}>
+                <Form onSubmit={onSubmit}>
                   <Row>
                     <Col xs={12} md={6}>
-                      <FormInput
-                        label="Nombre completo"
+                      <Controller
                         name="nombre_completo"
-                        value={form.nombre_completo}
-                        onChange={handleChange}
-                        disabled
+                        control={control}
+                        render={({ field }) => (
+                          <FormInput
+                            label="Nombre completo"
+                            name={field.name}
+                            value={field.value}
+                            onChange={field.onChange}
+                            disabled
+                          />
+                        )}
                       />
                     </Col>
                     <Col xs={12} md={6}>
-                      <FormInput
-                        label="Correo electrónico"
+                      <Controller
                         name="correo"
-                        type="email"
-                        value={form.correo}
-                        onChange={handleChange}
-                        disabled
+                        control={control}
+                        render={({ field }) => (
+                          <FormInput
+                            label="Correo electrónico"
+                            name={field.name}
+                            type="email"
+                            value={field.value}
+                            onChange={field.onChange}
+                            disabled
+                          />
+                        )}
                       />
                     </Col>
                   </Row>
 
                   <Row>
                     <Col xs={12} md={6}>
-                      <FormInput
-                        label="Fecha de nacimiento"
+                      <Controller
                         name="fecha_nacimiento"
-                        type="date"
-                        value={form.fecha_nacimiento}
-                        onChange={handleChange}
-                        disabled
+                        control={control}
+                        render={({ field }) => (
+                          <FormInput
+                            label="Fecha de nacimiento"
+                            name={field.name}
+                            type="date"
+                            value={field.value}
+                            onChange={field.onChange}
+                            disabled
+                          />
+                        )}
                       />
                     </Col>
                     <Col xs={12} md={6}>
-                      <FormInput
-                        label="CURP"
+                      <Controller
                         name="curp"
-                        value={form.curp}
-                        onChange={handleChange}
-                        disabled
+                        control={control}
+                        render={({ field }) => (
+                          <FormInput
+                            label="CURP"
+                            name={field.name}
+                            value={field.value}
+                            onChange={field.onChange}
+                            disabled
+                          />
+                        )}
                       />
                     </Col>
                   </Row>
 
                   <Row>
                     <Col xs={12} md={6}>
-                      <FormSelect
-                        label="Rol"
+                      <Controller
                         name="rol"
-                        value={form.rol}
-                        onChange={handleChange}
-                        options={ROL_OPTIONS}
-                        disabled
+                        control={control}
+                        render={({ field }) => (
+                          <FormSelect
+                            label="Rol"
+                            name={field.name}
+                            value={field.value}
+                            onChange={field.onChange}
+                            options={ROL_OPTIONS}
+                            disabled
+                          />
+                        )}
                       />
                     </Col>
                     <Col xs={12} md={6}>
-                      <FormInput
-                        label="Número de empleado"
+                      <Controller
                         name="numero_empleado"
-                        value={form.numero_empleado}
-                        onChange={handleChange}
-                        disabled
+                        control={control}
+                        render={({ field }) => (
+                          <FormInput
+                            label="Número de empleado"
+                            name={field.name}
+                            value={field.value}
+                            onChange={field.onChange}
+                            disabled
+                          />
+                        )}
                       />
                     </Col>
                   </Row>
 
                   <Row>
                     <Col xs={12} md={6}>
-                      <FormInput
-                        label="Área / Departamento"
+                      <Controller
                         name="departamento"
-                        value={form.departamento}
-                        onChange={handleChange}
-                        disabled
+                        control={control}
+                        render={({ field }) => (
+                          <FormInput
+                            label="Área / Departamento"
+                            name={field.name}
+                            value={field.value}
+                            onChange={field.onChange}
+                            disabled
+                          />
+                        )}
                       />
                     </Col>
                     <Col xs={12} md={6}>
-                      <FormInput
-                        label="Contraseña"
+                      <Controller
                         name="password"
-                        type="password"
-                        value={form.password}
-                        onChange={handleChange}
+                        control={control}
+                        render={({ field, fieldState }) => (
+                          <FormInput
+                            label="Contraseña"
+                            name={field.name}
+                            type="password"
+                            value={field.value}
+                            onChange={field.onChange}
+                            onBlur={field.onBlur}
+                            error={fieldState.error?.message}
+                          />
+                        )}
                       />
                     </Col>
                   </Row>

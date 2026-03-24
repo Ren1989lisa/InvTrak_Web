@@ -1,16 +1,24 @@
-import { useState } from "react";
 import { Container, Row, Col, Card, Form, Button } from "react-bootstrap";
 import { Link } from "react-router-dom";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import FormInput from "../Components/FormInput";
+import { forgotPasswordSchema } from "../utils/schemas";
 import "../Style/forgot-password.css";
 
 function ForgotPassword() {
-  const [email, setEmail] = useState("");
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(forgotPasswordSchema),
+    defaultValues: { email: "" },
+  });
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log("Enviar link de recuperación a:", email);
-  };
+  const onSubmit = handleSubmit((data) => {
+    console.log("Enviar link de recuperación a:", data.email);
+  });
 
   return (
     <Container
@@ -44,16 +52,23 @@ function ForgotPassword() {
               contraseña
             </p>
 
-            <Form onSubmit={handleSubmit}>
-              <FormInput
-                label="Correo electrónico"
+            <Form onSubmit={onSubmit}>
+              <Controller
                 name="email"
-                type="email"
-                placeholder="your.email@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="forgot-password-input"
-                required
+                control={control}
+                render={({ field, fieldState }) => (
+                  <FormInput
+                    label="Correo electrónico"
+                    name={field.name}
+                    type="email"
+                    placeholder="your.email@example.com"
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    error={fieldState.error?.message}
+                    className="forgot-password-input"
+                  />
+                )}
               />
 
               <p className="mb-3 forgot-password-help-text">

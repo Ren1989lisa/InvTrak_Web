@@ -6,6 +6,7 @@ export default function FormSelect({
   name,
   value,
   onChange,
+  onBlur,
   options = [],
   disabled = false,
   error,
@@ -29,6 +30,7 @@ export default function FormSelect({
           name={name}
           value={value}
           onChange={onChange}
+          onBlur={onBlur}
           disabled={disabled}
           isInvalid={!!hasError}
           className={selectClassName}

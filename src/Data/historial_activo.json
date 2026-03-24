@@ -4,8 +4,8 @@
     "id_activo": 2,
     "fecha": "2026-02-07",
     "tipo_evento": "cambio_estatus",
-    "estatus_anterior": "en mantenimiento",
-    "estatus_nuevo": "disponible",
+    "estatus_anterior": "MANTENIMIENTO",
+    "estatus_nuevo": "DISPONIBLE",
     "usuario": "Fernanda Rodríguez Martínez",
     "observacion": "Equipo reparado y listo para asignación."
   },
@@ -45,8 +45,8 @@
     "id_activo": 1,
     "fecha": "2026-01-30",
     "tipo_evento": "cambio_estatus",
-    "estatus_anterior": "resguardado",
-    "estatus_nuevo": "en mantenimiento",
+    "estatus_anterior": "RESGUARDADO",
+    "estatus_nuevo": "MANTENIMIENTO",
     "usuario": "Sofía García Navarro",
     "observacion": "El monitor presenta fallas intermitentes de encendido."
   }

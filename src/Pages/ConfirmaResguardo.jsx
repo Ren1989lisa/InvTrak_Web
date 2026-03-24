@@ -6,6 +6,7 @@ import SidebarMenu from "../Components/SidebarMenu";
 import AssetInfoField from "../Components/AssetInfoField";
 import { useUsers } from "../context/UsersContext";
 import { getStoredActivos, saveActivos } from "../activosStorage";
+import { ESTATUS_ACTIVO, getEstadoDisplay } from "../config/estatusActivo";
 import "../Style/bienes-registrados.css";
 import "../Style/asset-detail.css";
 import "../Style/sidebar.css";
@@ -100,7 +101,7 @@ export default function ConfirmaResguardo() {
         ? {
             ...a,
             estado_asignacion: "confirmado",
-            estatus: "Resguardado",
+            estatus: ESTATUS_ACTIVO.RESGUARDADO,
           }
         : a
     );
@@ -198,7 +199,7 @@ export default function ConfirmaResguardo() {
                       label="Tipo de activo:"
                       value={producto.tipo_activo ?? activo.tipo_activo}
                     />
-                    <AssetInfoField label="Estado:" value={activo.estatus} />
+                    <AssetInfoField label="Estado:" value={getEstadoDisplay(activo)} />
                     <AssetInfoField label="Ubicación:" value={ubicacionStr} />
                     <AssetInfoField label="Costo:" value={formatCurrency(activo.costo)} />
                     <AssetInfoField label="Descripción:" value={activo.descripcion} />

@@ -25,6 +25,7 @@ import SidebarMenu from "../Components/SidebarMenu";
 import { useUsers } from "../context/UsersContext";
 import { getStoredActivos } from "../activosStorage";
 import { getStoredReportes } from "../reportesStorage";
+import { normalize } from "../utils/catalogUtils";
 import historialData from "../Data/historial_activo.json";
 import "../Style/bienes-registrados.css";
 import "../Style/sidebar.css";
@@ -76,7 +77,7 @@ export default function Dashboard() {
     const total = activos.length;
     const enMantenimiento = activos.filter(
       (a) =>
-        (a?.estatus ?? "").toLowerCase().includes("mantenimiento") ||
+        normalize(a?.estatus) === "mantenimiento" ||
         reportes.some(
           (r) =>
             Number(r?.id_activo) === Number(a?.id_activo) &&
@@ -85,12 +86,10 @@ export default function Dashboard() {
     ).length;
     const activosOk = activos.filter(
       (a) =>
-        ["disponible", "resguardado"].includes(
-          (a?.estatus ?? "").toLowerCase()
-        )
+        ["disponible", "resguardado"].includes(normalize(a?.estatus ?? ""))
     ).length;
     const deBaja = activos.filter((a) =>
-      (a?.estatus ?? "").toLowerCase().includes("baja")
+      normalize(a?.estatus) === "baja"
     ).length;
 
     return {

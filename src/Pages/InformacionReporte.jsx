@@ -9,6 +9,7 @@ import SidebarMenu from "../Components/SidebarMenu";
 import { useUsers } from "../context/UsersContext";
 import { getStoredReportes, updateReporteEstatus } from "../reportesStorage";
 import { getStoredActivos } from "../activosStorage";
+import { getEstadoDisplay } from "../config/estatusActivo";
 import "../Style/bienes-registrados.css";
 import "../Style/sidebar.css";
 import "../Style/informacion-reporte.css";
@@ -165,7 +166,7 @@ export default function InformacionReporte() {
           <Card.Body className="inv-reporte-info-card-body">
             <div className="inv-reporte-info-row">
               <span className="inv-reporte-info-label">Estatus Producto</span>
-              <span className="inv-reporte-info-value">{activo?.estatus ?? "Activo"}</span>
+              <span className="inv-reporte-info-value">{getEstadoDisplay(activo) ?? "DISPONIBLE"}</span>
             </div>
             <div className="inv-reporte-info-row">
               <span className="inv-reporte-info-label">Tipo de Activo</span>

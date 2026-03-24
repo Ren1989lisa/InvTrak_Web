@@ -12,6 +12,7 @@ import UserSearchBar from "../Components/UserSearchBar";
 import FiltersModal from "../Components/FiltersModal";
 import { useUsers } from "../context/UsersContext";
 import { getStoredActivos, saveActivos } from "../activosStorage";
+import { ESTATUS_ACTIVO } from "../config/estatusActivo";
 import { addResguardo, getStoredResguardos } from "../resguardosStorage";
 
 import "../Style/bienes-registrados.css";
@@ -47,7 +48,7 @@ export default function AsignacionBien() {
   const [activos, setActivos] = useState(() => getStoredActivos());
 
   const activosDisponibles = useMemo(() => {
-    return activos.filter((a) => normalize(a?.estatus) === "disponible");
+    return activos.filter((a) => normalize(a?.estatus) === normalize(ESTATUS_ACTIVO.DISPONIBLE));
   }, [activos]);
 
   const filteredAssets = useMemo(() => {
@@ -154,7 +155,7 @@ export default function AsignacionBien() {
       Number(asset?.id_activo) === Number(selectedAsset.id_activo)
         ? {
             ...asset,
-            estatus: "Resguardado",
+            estatus: ESTATUS_ACTIVO.RESGUARDADO,
             propietario: selectedUser.nombre_completo,
             id_usuario_asignado: Number(selectedUser.id_usuario),
             estado_asignacion: "pendiente de confirmacion",

@@ -10,7 +10,7 @@
     },
     "descripcion": "Monitor ThinkVision",
     "propietario": "Fernanda Rodriguez Martinez",
-    "estatus": "Resguardado",
+    "estatus": "RESGUARDADO",
     "costo": 2555.00,
     "fecha_alta": "2025-05-15",
     "ubicacion": {
@@ -30,7 +30,7 @@
     },
     "descripcion": "Laptop empresarial Dell",
     "propietario": "Carlos Hernandez Lopez",
-    "estatus": "Disponible",
+    "estatus": "DISPONIBLE",
     "costo": 18500.00,
     "fecha_alta": "2025-04-10",
     "ubicacion": {
@@ -50,7 +50,7 @@
     },
     "descripcion": "Mouse inalámbrico Logitech",
     "propietario": "Ana Torres Ramirez",
-    "estatus": "Resguardado",
+    "estatus": "RESGUARDADO",
     "costo": 1200.00,
     "fecha_alta": "2025-03-20",
     "imagen": "/assets/codigoQR.png",
@@ -70,7 +70,7 @@
     "modelo": "K380"},
     "descripcion": "Teclado bluetooth compacto",
     "propietario": "Luis Mendoza Perez",
-    "estatus": "Disponible",
+    "estatus": "DISPONIBLE",
     "costo": 850.00,
     "fecha_alta": "2025-02-11",
     "ubicacion": {

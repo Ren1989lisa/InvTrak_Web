@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Card } from "react-bootstrap";
+import { getEstadoDisplay } from "../config/estatusActivo";
 import "../Style/bienes-registrados.css";
 
 
@@ -77,7 +78,7 @@ export default function AssetCard({ activo }) {
           </div>
           <div className="inv-field__col">
             <span className="inv-field__label">Estado:</span>
-            <span className="inv-field__value">{activo?.estatus}</span>
+            <span className="inv-field__value">{getEstadoDisplay(activo)}</span>
           </div>
         </div>
       </Card.Body>

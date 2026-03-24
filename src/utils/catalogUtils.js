@@ -8,7 +8,9 @@ export function getNextId(list, key) {
 }
 
 export function mapStatusToCatalogStatus(status) {
-  return normalize(status) === "inactivo" ? "Inactivo" : "Activo";
+  const s = normalize(status);
+  if (s === "baja" || s === "inactivo") return "Inactivo";
+  return "Activo";
 }
 
 export function buildCatalogDataFromActivos(activos) {
