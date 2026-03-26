@@ -86,7 +86,7 @@ function Login() {
                     label="Correo Electrónico"
                     name={field.name}
                     type="email"
-                    placeholder="your.email@example.com"
+                    placeholder="correo@ejemplo.com"
                     value={field.value}
                     onChange={field.onChange}
                     onBlur={field.onBlur}

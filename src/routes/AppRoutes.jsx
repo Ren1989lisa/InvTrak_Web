@@ -69,7 +69,7 @@ export default function AppRoutes() {
           path={BIENES_REGISTRADOS}
           element={
             <ProtectedRoute>
-              <BienesRegistrados />
+              <BienesRegistrados/>
             </ProtectedRoute>
           }
         />
