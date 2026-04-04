@@ -10,19 +10,17 @@ const OPTIONS = [
 
 export default function HistoryFilter({ value = "todo", onChange }) {
   return (
-    <div className="inv-history__filterWrap">
-      <Form.Label className="inv-history__filterLabel mb-1">Tipo de evento</Form.Label>
-      <Form.Select
-        value={value}
-        onChange={(e) => onChange?.(e.target.value)}
-        className="inv-history__filterSelect"
-      >
-        {OPTIONS.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </Form.Select>
-    </div>
+    <Form.Select
+      value={value}
+      onChange={(e) => onChange?.(e.target.value)}
+      className="inv-history-filter-select"
+      aria-label="Filtrar por tipo de evento"
+    >
+      {OPTIONS.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </Form.Select>
   );
 }

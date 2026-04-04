@@ -1,16 +1,15 @@
 import { useMemo, useState } from "react";
-import { Col, Container, Row, Button } from "react-bootstrap";
+import { Col, Container, Form, InputGroup, Row, Button } from "react-bootstrap";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { BsSearch } from "react-icons/bs";
 
 import NavbarMenu from "../Components/NavbarMenu";
 import SidebarMenu from "../Components/SidebarMenu";
-import SearchBar from "../Components/SearchBar";
-import PrimaryButton from "../Components/PrimaryButton";
 import HistoryFilter from "../Components/HistoryFilter";
 import TimelineContainer from "../Components/TimelineContainer";
 import { useUsers } from "../context/UsersContext";
+import { getStoredActivos } from "../activosStorage";
 
-import activosData from "../Data/activosDetalle.json";
 import historialData from "../Data/historial_activo.json";
 import "../Style/bienes-registrados.css";
 import "../Style/sidebar.css";
@@ -20,7 +19,7 @@ function normalize(value) {
   return (value ?? "").toString().trim().toLowerCase();
 }
 
-function eventTitle(tipo) {
+function eventTitleSearch(tipo) {
   switch (tipo) {
     case "cambio_estatus":
       return "cambio de estatus";
@@ -49,36 +48,37 @@ export default function Historial() {
   const assetIdFromQuery = Number(searchParams.get("id_activo"));
   const allEvents = Array.isArray(historialData) ? historialData : [];
 
+  const activos = useMemo(() => getStoredActivos(), []);
+
+  const activosById = useMemo(() => {
+    const map = {};
+    activos.forEach((a) => {
+      map[Number(a?.id_activo)] = a;
+    });
+    return map;
+  }, [activos]);
+
+  const enrichedEvents = useMemo(() => {
+    return allEvents.map((event) => {
+      const id = Number(event?.id_activo);
+      const codigo = activosById[id]?.codigo_interno ?? "—";
+      return { ...event, codigo_activo: codigo };
+    });
+  }, [allEvents, activosById]);
+
   const selectedAssetId = useMemo(() => {
     if (Number.isFinite(assetIdFromState) && assetIdFromState > 0) return assetIdFromState;
     if (Number.isFinite(assetIdFromQuery) && assetIdFromQuery > 0) return assetIdFromQuery;
-    return Number(allEvents[0]?.id_activo) || Number(activosData[0]?.id_activo) || null;
-  }, [assetIdFromState, assetIdFromQuery, allEvents]);
-
-  const selectedAsset = useMemo(() => {
-    return (Array.isArray(activosData) ? activosData : []).find(
-      (item) => Number(item?.id_activo) === Number(selectedAssetId)
-    );
-  }, [selectedAssetId]);
-
-  const assetDisplayName = useMemo(() => {
-    if (!selectedAsset) return "Activo no encontrado";
-    const producto = selectedAsset?.producto ?? {};
-    const nombre = [
-      producto?.tipo_activo ?? selectedAsset?.tipo_activo,
-      producto?.marca ?? selectedAsset?.marca,
-      producto?.modelo ?? selectedAsset?.modelo,
-    ]
-      .filter(Boolean)
-      .join(" ");
-    return nombre || selectedAsset?.codigo_interno || "Activo";
-  }, [selectedAsset]);
+    return null;
+  }, [assetIdFromState, assetIdFromQuery]);
 
   const orderedEvents = useMemo(() => {
-    return allEvents
-      .filter((event) => Number(event?.id_activo) === Number(selectedAssetId))
+    return enrichedEvents
+      .filter((event) =>
+        selectedAssetId ? Number(event?.id_activo) === Number(selectedAssetId) : true
+      )
       .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
-  }, [allEvents, selectedAssetId]);
+  }, [enrichedEvents, selectedAssetId]);
 
   const filteredEvents = useMemo(() => {
     const query = normalize(search);
@@ -90,11 +90,14 @@ export default function Historial() {
       if (!query) return true;
 
       const searchableFields = [
-        eventTitle(event?.tipo_evento),
+        eventTitleSearch(event?.tipo_evento),
         event?.usuario,
         event?.tecnico,
         event?.tecnico_asignado,
         event?.observacion,
+        event?.codigo_activo,
+        event?.estatus_anterior,
+        event?.estatus_nuevo,
       ];
 
       return searchableFields.some((field) => normalize(field).includes(query));
@@ -102,7 +105,7 @@ export default function Historial() {
   }, [orderedEvents, search, eventFilter]);
 
   return (
-    <div className="inv-page">
+    <div className="inv-page inv-history-page">
       <NavbarMenu title="Historial" onMenuClick={() => setOpenSidebar((v) => !v)} />
 
       <SidebarMenu
@@ -125,37 +128,38 @@ export default function Historial() {
         }}
       />
 
-      <Container fluid className="inv-content px-3 px-md-4 py-3">
-         <Col xs="auto">
-          <Button
+      <Container fluid className="inv-content inv-history-content px-3 px-md-4 py-3">
+        <Button
           type="button"
           variant="link"
-          className="inv-back-btn"
-          onClick={() => navigate(-1)}>
+          className="inv-history-back"
+          onClick={() => navigate(-1)}
+        >
           ← Regresar
         </Button>
-        </Col>
 
-
-        <section className="inv-history__panel mt-3">
-          <h2 className="inv-history__assetTitle">Activo: {assetDisplayName}</h2>
-
-          <Row className="g-2 align-items-end mt-1">
-            <Col md={8}>
-              <SearchBar
+        <Row className="g-2 align-items-stretch mt-2 inv-history-toolbar">
+          <Col xs={12} md>
+            <InputGroup className="inv-history-search">
+              <InputGroup.Text className="inv-history-search__icon" aria-hidden="true">
+                <BsSearch />
+              </InputGroup.Text>
+              <Form.Control
+                type="search"
                 value={search}
-                onChange={setSearch}
-                placeholder="Buscar por tipo de evento, usuario u observación"
-                showActions={false}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar por código, usuario o evento..."
+                className="inv-history-search__input"
+                aria-label="Buscar en historial"
               />
-            </Col>
-            <Col md={4}>
-              <HistoryFilter value={eventFilter} onChange={setEventFilter} />
-            </Col>
-          </Row>
+            </InputGroup>
+          </Col>
+          <Col xs={12} md="auto">
+            <HistoryFilter value={eventFilter} onChange={setEventFilter} />
+          </Col>
+        </Row>
 
-          <TimelineContainer events={filteredEvents} />
-        </section>
+        <TimelineContainer events={filteredEvents} />
       </Container>
     </div>
   );

@@ -19,12 +19,14 @@ const MENU_ADMIN = [
 ];
 
 const MENU_USUARIO = [
+  { icon: "grid", label: "Bienes registrados", route: "/bienes-registrados" },
   { icon: "grid", label: "Mis bienes", route: "/mis-bienes" },
   { icon: "report", label: "Reportar bien", route: "/reportar-bien" },
   { icon: "users", label: "Mi perfil", route: "/perfil" },
 ];
 
 const MENU_TECNICO = [
+  { icon: "grid", label: "Bienes registrados", route: "/bienes-registrados" },
   { icon: "report", label: "Mis reparaciones", route: "/mis-reparaciones" },
   { icon: "users", label: "Mi perfil", route: "/perfil" },
 ];
@@ -37,8 +39,8 @@ function getMenuByRol(rol) {
   return MENU_USUARIO;
 }
 
-const RUTAS_USUARIO = ["/mis-bienes", "/perfil", "/reportar-bien"];
-const RUTAS_TECNICO = ["/mis-reparaciones", "/perfil"];
+const RUTAS_USUARIO = ["/bienes-registrados", "/mis-bienes", "/perfil", "/reportar-bien"];
+const RUTAS_TECNICO = ["/bienes-registrados", "/mis-reparaciones", "/perfil"];
 
 function canAccessRoute(rol, path) {
   const r = (rol ?? "").toString().toLowerCase();
