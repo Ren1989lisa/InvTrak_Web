@@ -10,16 +10,17 @@ import FormSelect from "../Components/FormSelect";
 import PrimaryButton from "../Components/PrimaryButton";
 import { useUsers } from "../context/UsersContext";
 import { usuarioSchema } from "../utils/schemas";
+import { ROL_ID_BY_NOMBRE, ESTATUS_USUARIO } from "../config/databaseEnums";
 import "../Style/registrar-usuario.css";
 
 const INITIAL_VALUES = {
-  nombre_completo: "",
+  nombre: "",
   correo: "",
   fecha_nacimiento: "",
   curp: "",
   rol: "",
   numero_empleado: "",
-  departamento: "",
+  area: "",
 };
 
 const ROL_OPTIONS = [
@@ -80,15 +81,16 @@ export default function RegistrarUsuario() {
 
     const nuevoUsuario = {
       id_usuario: maxId + 1,
-      nombre_completo: data.nombre_completo,
+      nombre: data.nombre,
       correo: data.correo,
       fecha_nacimiento: data.fecha_nacimiento,
       curp: data.curp,
       numero_empleado: data.numero_empleado,
       rol: data.rol,
-      departamento: data.departamento,
+      id_rol: ROL_ID_BY_NOMBRE[data.rol],
+      area: data.area,
       password: data.numero_empleado,
-      activo: true,
+      estatus: ESTATUS_USUARIO.ACTIVO,
       fecha_creacion: new Date().toISOString().slice(0, 10),
     };
 
@@ -109,7 +111,7 @@ export default function RegistrarUsuario() {
 
           <Form onSubmit={onSubmit} className="inv-register__form">
             <Controller
-              name="nombre_completo"
+              name="nombre"
               control={control}
               render={({ field, fieldState }) => (
                 <FormInput
@@ -200,7 +202,7 @@ export default function RegistrarUsuario() {
               )}
             />
             <Controller
-              name="departamento"
+              name="area"
               control={control}
               render={({ field, fieldState }) => (
                 <FormInput

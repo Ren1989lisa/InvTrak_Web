@@ -18,6 +18,7 @@ import { getStoredResguardos } from "../resguardosStorage";
 import { addReporte } from "../reportesStorage";
 import { reportarBienSchema } from "../utils/schemas";
 import { ESTATUS_ACTIVO } from "../config/estatusActivo";
+import { ESTATUS_REPORTE_DANIO, PRIORIDAD } from "../config/databaseEnums";
 import "../Style/bienes-registrados.css";
 import "../Style/sidebar.css";
 import "../Style/reportar-bien.css";
@@ -111,7 +112,7 @@ export default function ReportarBien() {
     const codigo = data.etiqueta.trim();
 
     const activo = misBienes.find(
-      (a) => (a?.codigo_interno ?? "").toString().trim().toUpperCase() === codigo.toUpperCase()
+      (a) => (a?.etiqueta_bien ?? "").toString().trim().toUpperCase() === codigo.toUpperCase()
     );
     if (!activo) {
       setErrorMessage("La etiqueta no corresponde a ninguno de tus bienes registrados.");
@@ -131,9 +132,11 @@ export default function ReportarBien() {
     addReporte({
       id_activo: activo.id_activo,
       folio: null,
-      descripcion: (data.descripcion ?? "").trim() || `Reporte de bien ${activo.codigo_interno}`,
-      prioridad: "media",
-      estatus: "pendiente",
+      tipo_falla: null,
+      descripcion: (data.descripcion ?? "").trim() || `Reporte de bien ${activo.etiqueta_bien}`,
+      prioridad: PRIORIDAD.MEDIA,
+      id_prioridad: null,
+      estatus: ESTATUS_REPORTE_DANIO.PENDIENTE,
       id_tecnico_asignado: null,
       fecha_reporte: todayDateString(),
       fotos_evidencia: fotosEvidencia,
@@ -234,7 +237,7 @@ export default function ReportarBien() {
                             />
                             <datalist id="etiquetas-sugeridas">
                               {misBienes.map((a) => (
-                                <option key={a.id_activo} value={a.codigo_interno} />
+                                <option key={a.id_activo} value={a.etiqueta_bien} />
                               ))}
                             </datalist>
                           </>

@@ -11,15 +11,16 @@ import { useUsers } from "../context/UsersContext";
 import { getStoredReportes, updateReporteTecnico } from "../reportesStorage";
 import { getStoredActivos, saveActivos } from "../activosStorage";
 import { ESTATUS_ACTIVO } from "../config/estatusActivo";
+import { ESTATUS_MANTENIMIENTO } from "../config/databaseEnums";
 import "../Style/bienes-registrados.css";
 import "../Style/sidebar.css";
 import "../Style/reporte-tecnico.css";
 
 const ESTATUS_FINAL_OPTIONS = [
-  { value: "pendiente", label: "Pendiente" },
-  { value: "en_proceso", label: "En proceso" },
-  { value: "en_mantenimiento", label: "En mantenimiento" },
-  { value: "resuelto", label: "Resuelto" },
+  { value: ESTATUS_MANTENIMIENTO.PENDIENTE, label: "Pendiente" },
+  { value: ESTATUS_MANTENIMIENTO.EN_PROCESO, label: "En proceso" },
+  { value: ESTATUS_MANTENIMIENTO.EN_MANTENIMIENTO, label: "En mantenimiento" },
+  { value: ESTATUS_MANTENIMIENTO.RESUELTO, label: "Resuelto" },
 ];
 
 export default function ReporteTecnico() {
@@ -51,7 +52,7 @@ export default function ReporteTecnico() {
   );
 
   const etiquetaBien = useMemo(
-    () => activo?.codigo_interno ?? reporte?.folio ?? "",
+    () => activo?.etiqueta_bien ?? reporte?.folio ?? "",
     [activo, reporte]
   );
 

@@ -6,6 +6,7 @@ import AssetInfoField from "./AssetInfoField";
 import QRSection from "./QRSection";
 import ActionButtons from "./ActionButtons";
 import { getEstadoDisplay } from "../config/estatusActivo";
+import { ESTADO_RESGUARDO } from "../config/databaseEnums";
 import "../Style/bienes-registrados.css";
 
 function formatCurrency(value) {
@@ -22,19 +23,19 @@ function getOwnerDisplay(activo) {
   const ownerName = (activo?.propietario ?? "").toString().trim();
   const assignmentState = (activo?.estado_asignacion ?? "").toString().trim().toLowerCase();
 
-  if (!ownerName || assignmentState === "pendiente de asignacion") {
-    return "pendiente de asignacion";
+  if (!ownerName || assignmentState === ESTADO_RESGUARDO.PENDIENTE_ASIGNACION) {
+    return ESTADO_RESGUARDO.PENDIENTE_ASIGNACION;
   }
 
-  if (assignmentState === "pendiente de confirmacion") {
-    return "pendiente de confirmacion";
+  if (assignmentState === ESTADO_RESGUARDO.PENDIENTE_CONFIRMACION) {
+    return ESTADO_RESGUARDO.PENDIENTE_CONFIRMACION;
   }
 
-  if (assignmentState === "confirmado" || assignmentState === "resguardado") {
+  if (assignmentState === ESTADO_RESGUARDO.CONFIRMADO || assignmentState === "resguardado") {
     return ownerName;
   }
 
-  return "pendiente de confirmacion";
+  return ESTADO_RESGUARDO.PENDIENTE_CONFIRMACION;
 }
 
 export default function AssetDetailCard({ activo }) {
@@ -59,14 +60,14 @@ export default function AssetDetailCard({ activo }) {
     const imgW = pdf.internal.pageSize.getWidth();
     const imgH = (canvas.height * imgW) / canvas.width;
     pdf.addImage(imgData, "JPEG", 0, 0, imgW, imgH);
-    pdf.save(`activo-${activo?.codigo_interno ?? "activo"}.pdf`);
+    pdf.save(`activo-${activo?.etiqueta_bien ?? "activo"}.pdf`);
   }, [activo, captureCard]);
 
   const handleDownloadJPG = useCallback(async () => {
     const canvas = await captureCard();
     if (!canvas) return;
     const link = document.createElement("a");
-    link.download = `activo-${activo?.codigo_interno ?? "activo"}.jpg`;
+    link.download = `activo-${activo?.etiqueta_bien ?? "activo"}.jpg`;
     link.href = canvas.toDataURL("image/jpeg", 0.95);
     link.click();
   }, [activo, captureCard]);
@@ -106,7 +107,7 @@ export default function AssetDetailCard({ activo }) {
           <Card.Header className="inv-asset-detail-card__header">
             <span className="inv-asset-card__headerLabel">Etq. bien:</span>{" "}
             <span className="inv-asset-card__headerValue">
-              {activo.codigo_interno}
+              {activo.etiqueta_bien}
             </span>
           </Card.Header>
 

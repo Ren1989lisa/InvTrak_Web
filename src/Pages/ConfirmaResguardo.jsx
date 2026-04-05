@@ -7,6 +7,7 @@ import AssetInfoField from "../Components/AssetInfoField";
 import { useUsers } from "../context/UsersContext";
 import { getStoredActivos, saveActivos } from "../activosStorage";
 import { ESTATUS_ACTIVO, getEstadoDisplay } from "../config/estatusActivo";
+import { ESTADO_RESGUARDO } from "../config/databaseEnums";
 import "../Style/bienes-registrados.css";
 import "../Style/asset-detail.css";
 import "../Style/sidebar.css";
@@ -100,7 +101,7 @@ export default function ConfirmaResguardo() {
       Number(a?.id_activo) === idNum
         ? {
             ...a,
-            estado_asignacion: "confirmado",
+            estado_asignacion: ESTADO_RESGUARDO.CONFIRMADO,
             estatus: ESTATUS_ACTIVO.RESGUARDADO,
           }
         : a
@@ -189,7 +190,7 @@ export default function ConfirmaResguardo() {
           <Col xs={12} md={10} lg={8}>
             <Card className="inv-confirmar-card shadow-sm border-0">
               <Card.Header className="inv-confirmar-card__header">
-                Etq. bien: {activo.codigo_interno}
+                Etq. bien: {activo.etiqueta_bien}
               </Card.Header>
               <Card.Body className="inv-confirmar-card__body">
                 <Row>

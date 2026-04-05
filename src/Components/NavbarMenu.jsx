@@ -65,7 +65,7 @@ export default function NavbarMenu({
                     {notificationItems.map((item) => (
                       <div key={item.id_activo} className="inv-navbar__dropdown-item">
                         <div className="inv-navbar__dropdown-item-info">
-                          <div>Etq. bien: {item.codigo_interno}</div>
+                          <div>Etq. bien: {item.etiqueta_bien}</div>
                           <div>Producto: {item.productoNombre}</div>
                         </div>
                         <Button

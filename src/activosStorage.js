@@ -1,4 +1,5 @@
 import activosSeed from "./Data/activosDetalle.json";
+import { normalizeActivosList, normalizeActivo } from "./utils/entityFields";
 
 const STORAGE_KEY = "invtrack_activos";
 
@@ -11,28 +12,28 @@ function sanitizeActivos(list) {
 }
 
 export function getStoredActivos() {
-  if (!canUseStorage()) return sanitizeActivos(activosSeed);
+  if (!canUseStorage()) return normalizeActivosList(sanitizeActivos(activosSeed));
 
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) {
-      const seed = sanitizeActivos(activosSeed);
+      const seed = normalizeActivosList(sanitizeActivos(activosSeed));
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(seed));
       return seed;
     }
 
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) throw new Error("Formato inválido de activos");
-    return parsed;
+    return normalizeActivosList(parsed);
   } catch {
-    const seed = sanitizeActivos(activosSeed);
+    const seed = normalizeActivosList(sanitizeActivos(activosSeed));
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(seed));
     return seed;
   }
 }
 
 export function saveActivos(list) {
-  const safe = sanitizeActivos(list);
+  const safe = normalizeActivosList(sanitizeActivos(list));
   if (!canUseStorage()) return safe;
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(safe));
   return safe;
@@ -40,7 +41,7 @@ export function saveActivos(list) {
 
 export function addActivo(activo) {
   const current = getStoredActivos();
-  const next = [...current, activo];
+  const next = [...current, normalizeActivo(activo)];
   saveActivos(next);
   return next;
 }

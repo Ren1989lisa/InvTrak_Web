@@ -1,3 +1,5 @@
+import { TIPO_EVENTO_HISTORIAL } from "../config/databaseEnums";
+
 export function formatHistorialDate(value) {
   if (!value) return "—";
   const parsed = new Date(value);
@@ -22,13 +24,13 @@ export function formatEstatusLabel(raw) {
 
 export function eventTitle(tipo) {
   switch (tipo) {
-    case "cambio_estatus":
+    case TIPO_EVENTO_HISTORIAL.CAMBIO_ESTATUS:
       return "Cambio de Estatus";
-    case "mantenimiento":
+    case TIPO_EVENTO_HISTORIAL.MANTENIMIENTO:
       return "Mantenimiento";
-    case "asignacion":
+    case TIPO_EVENTO_HISTORIAL.ASIGNACION:
       return "Asignación de técnico";
-    case "reporte":
+    case TIPO_EVENTO_HISTORIAL.REPORTE:
       return "Reporte";
     default:
       return "Evento";

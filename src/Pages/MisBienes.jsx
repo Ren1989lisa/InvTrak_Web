@@ -48,7 +48,7 @@ export default function MisBienes() {
 
   const activosFiltrados = useMemo(() => {
     return misBienes.filter((a) => {
-      const codigo = (a?.codigo_interno ?? "").toString().toLowerCase();
+      const codigo = (a?.etiqueta_bien ?? "").toString().toLowerCase();
       const tipo = (a?.producto?.tipo_activo ?? a?.tipo_activo ?? "").toString().toLowerCase();
       if (!query) return true;
       return codigo.includes(query) || tipo.includes(query);
@@ -67,7 +67,7 @@ export default function MisBienes() {
                 onSubirQR: (item) => {
                   setQrError("");
                   openQRFilePicker({
-                    codigoEsperado: item.codigo_interno,
+                    codigoEsperado: item.etiqueta_bien,
                     onSuccess: (idActivo) => {
                       const targetId = idActivo ?? item.id_activo;
                       navigate(`/confirmar-resguardo/${targetId}`);

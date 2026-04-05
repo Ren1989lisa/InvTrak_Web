@@ -12,6 +12,8 @@ import FormSelect from "../Components/FormSelect";
 import PrimaryButton from "../Components/PrimaryButton";
 import { useUsers } from "../context/UsersContext";
 import { editarPerfilSchema } from "../utils/schemas";
+import { normalizeUsuario } from "../utils/entityFields";
+import { ROL_ID_BY_NOMBRE } from "../config/databaseEnums";
 
 import "../Style/bienes-registrados.css";
 import "../Style/sidebar.css";
@@ -47,13 +49,13 @@ export default function EditarPerfil() {
   } = useForm({
     resolver: zodResolver(editarPerfilSchema),
     defaultValues: {
-      nombre_completo: "",
+      nombre: "",
       correo: "",
       fecha_nacimiento: "",
       curp: "",
       rol: "",
       numero_empleado: "",
-      departamento: "",
+      area: "",
       password: "",
     },
   });
@@ -61,13 +63,13 @@ export default function EditarPerfil() {
   useEffect(() => {
     if (!usuario) return;
     reset({
-      nombre_completo: usuario.nombre_completo ?? "",
+      nombre: usuario.nombre ?? usuario.nombre_completo ?? "",
       correo: usuario.correo ?? "",
       fecha_nacimiento: usuario.fecha_nacimiento ?? "",
       curp: usuario.curp ?? "",
       rol: usuario.rol ?? "",
       numero_empleado: usuario.numero_empleado ?? "",
-      departamento: usuario.departamento ?? "",
+      area: usuario.area ?? usuario.departamento ?? "",
       password: usuario.password ?? "",
     });
   }, [usuario, reset]);
@@ -111,7 +113,15 @@ export default function EditarPerfil() {
     setUsers((prev) =>
       prev.map((u) =>
         Number(u?.id_usuario) === Number(usuario?.id_usuario)
-          ? { ...u, ...data }
+          ? normalizeUsuario({
+              ...u,
+              ...data,
+              nombre: data.nombre,
+              area: data.area,
+              rol: data.rol,
+              id_rol: ROL_ID_BY_NOMBRE[data.rol],
+              password: data.password ?? u.password,
+            })
           : u
       )
     );
@@ -129,7 +139,7 @@ export default function EditarPerfil() {
       <SidebarMenu
         open={openSidebar}
         onClose={() => setOpenSidebar(false)}
-        userName={currentUser?.nombre_completo}
+        userName={currentUser?.nombre ?? currentUser?.nombre_completo}
         items={menuItems}
         onViewProfile={() => {
           setOpenSidebar(false);
@@ -158,7 +168,7 @@ export default function EditarPerfil() {
 
         {usuario ? (
           <>
-            <ProfileHeader name={usuario.nombre_completo} />
+            <ProfileHeader name={usuario.nombre ?? usuario.nombre_completo} />
 
             <Card className="inv-profile-card shadow-sm border-0 inv-edit-profile-card">
               <Card.Body className="inv-profile-card__body">
@@ -169,7 +179,7 @@ export default function EditarPerfil() {
                   <Row>
                     <Col xs={12} md={6}>
                       <Controller
-                        name="nombre_completo"
+                        name="nombre"
                         control={control}
                         render={({ field }) => (
                           <FormInput
@@ -271,7 +281,7 @@ export default function EditarPerfil() {
                   <Row>
                     <Col xs={12} md={6}>
                       <Controller
-                        name="departamento"
+                        name="area"
                         control={control}
                         render={({ field }) => (
                           <FormInput

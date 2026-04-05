@@ -40,7 +40,7 @@ export default function AssetCard({ activo }) {
       <Card.Header className="inv-asset-card__header">
         <span className="inv-asset-card__headerLabel">Etq. bien:</span>{" "}
         <span className="inv-asset-card__headerValue">
-          {activo?.codigo_interno}
+          {activo?.etiqueta_bien}
         </span>
       </Card.Header>
 

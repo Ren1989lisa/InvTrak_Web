@@ -31,8 +31,8 @@ export function decodeQRFromFile(file) {
       }
       try {
         const parsed = JSON.parse(code.data);
-        const codigo = parsed?.codigo_interno ?? parsed?.codigo ?? null;
-        resolve(codigo ? { codigo_interno: String(codigo), raw: parsed } : null);
+        const codigo = parsed?.etiqueta_bien ?? parsed?.codigo_interno ?? parsed?.codigo ?? null;
+        resolve(codigo ? { etiqueta_bien: String(codigo), raw: parsed } : null);
       } catch {
         resolve(null);
       }
@@ -66,7 +66,7 @@ export function openQRFilePicker({ codigoEsperado, onSuccess, onError }) {
       return;
     }
 
-    const codigoQR = (result.codigo_interno ?? "").toString().trim();
+    const codigoQR = (result.etiqueta_bien ?? result.codigo_interno ?? "").toString().trim();
     const codigoEsperadoNorm = (codigoEsperado ?? "").toString().trim();
 
     if (codigoQR !== codigoEsperadoNorm) {

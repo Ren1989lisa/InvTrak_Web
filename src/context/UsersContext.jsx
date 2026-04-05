@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import usuariosSeed from "../data/usuarios.json";
+import usuariosSeed from "../Data/usuarios.json";
 import { getDefaultRouteByRole } from "../config/routes";
+import { normalizeUsuario, normalizeUsuariosList } from "../utils/entityFields";
 
 const STORAGE_KEY = "invtrack_users";
 const STORAGE_CURRENT_USER_KEY = "invtrack_current_user_id";
@@ -70,11 +71,13 @@ function canAccessRoute(rol, path) {
 function loadUsers() {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return Array.isArray(usuariosSeed) ? usuariosSeed : [];
+    if (!raw) {
+      return normalizeUsuariosList(Array.isArray(usuariosSeed) ? usuariosSeed : []);
+    }
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    return Array.isArray(parsed) ? normalizeUsuariosList(parsed) : [];
   } catch {
-    return Array.isArray(usuariosSeed) ? usuariosSeed : [];
+    return normalizeUsuariosList(Array.isArray(usuariosSeed) ? usuariosSeed : []);
   }
 }
 
@@ -106,7 +109,7 @@ export function UsersProvider({ children }) {
   }, [currentUserId]);
 
   const addUser = (user) => {
-    setUsers((prev) => [...prev, user]);
+    setUsers((prev) => [...prev, normalizeUsuario(user)]);
   };
 
   const currentUser =

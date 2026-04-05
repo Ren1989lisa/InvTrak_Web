@@ -50,7 +50,7 @@ export default function PerfilUsuario() {
                 onSubirQR: (item) => {
                   setQrError("");
                   openQRFilePicker({
-                    codigoEsperado: item.codigo_interno,
+                    codigoEsperado: item.etiqueta_bien,
                     onSuccess: (idActivo) => {
                       const targetId = idActivo ?? item.id_activo;
                       navigate(`/confirmar-resguardo/${targetId}`);
@@ -108,7 +108,7 @@ export default function PerfilUsuario() {
 
         {usuario && (
           <>
-            <ProfileHeader name={usuario.nombre_completo} />
+            <ProfileHeader name={usuario.nombre ?? usuario.nombre_completo} />
             <div className="inv-profile-cardWrapper">
               <ProfileInfoCard usuario={usuario} />
             </div>

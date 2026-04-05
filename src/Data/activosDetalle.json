@@ -1,7 +1,7 @@
 [
   {
     "id_activo": 1,
-    "codigo_interno": "MOTHUTEZD3CC1",
+    "etiqueta_bien": "MOTHUTEZD3CC1",
     "numero_serie": "CN-0GH567-74445-321-A10B",
     "producto": {
       "tipo_activo": "Monitor",
@@ -21,7 +21,7 @@
   },
   {
     "id_activo": 2,
-    "codigo_interno": "LADEUPEMORE1A1",
+    "etiqueta_bien": "LADEUPEMORE1A1",
     "numero_serie": "DL-55678-99123-AB23",
     "producto": {
       "tipo_activo": "Laptop",
@@ -41,7 +41,7 @@
   },
   {
     "id_activo": 3,
-    "codigo_interno": "MOMOUPEMORE2B4",
+    "etiqueta_bien": "MOMOUPEMORE2B4",
     "numero_serie": "LOG-99887766",
     "producto": {
       "tipo_activo": "Mouse",
@@ -63,7 +63,7 @@
   },
   {
     "id_activo": 4,
-    "codigo_interno": "TELOUTEZD1A4",
+    "etiqueta_bien": "TELOUTEZD1A4",
     "numero_serie": "LOG-22334455",
     "producto": {"tipo_activo": "Teclado",
     "marca": "Logitech",

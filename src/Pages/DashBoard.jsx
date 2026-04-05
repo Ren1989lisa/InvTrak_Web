@@ -203,7 +203,7 @@ export default function Dashboard() {
 
     allHistorial.forEach((h) => {
       const activo = activosMap.get(Number(h?.id_activo));
-      const codigo = activo?.codigo_interno ?? `#${h?.id_activo}`;
+      const codigo = activo?.etiqueta_bien ?? `#${h?.id_activo}`;
       const tipoActivo = activo?.producto?.tipo_activo ?? activo?.tipo_activo ?? "bien";
       const reporte = reportesMap.get(h?.folio_reporte ?? h?.reporte_relacionado);
 
@@ -256,9 +256,9 @@ export default function Dashboard() {
         tipo: "alta",
         title: "Nuevo bien agregado",
         tecnico: "Administrador",
-        reparo: `${a?.producto?.tipo_activo ?? "Bien"} ${a?.codigo_interno ?? ""}`,
+        reparo: `${a?.producto?.tipo_activo ?? "Bien"} ${a?.etiqueta_bien ?? ""}`,
         labelReparo: "Registró",
-        codigo: a?.codigo_interno,
+        codigo: a?.etiqueta_bien,
         tiempo: formatTimeAgo(a?.fecha_alta),
         fecha: a?.fecha_alta,
       });

@@ -27,7 +27,7 @@ export default function Usuarios() {
 
   const usuariosFiltrados = useMemo(() => {
     return usuarios.filter((u) => {
-      const nombre = (u?.nombre_completo ?? "").toString().toLowerCase();
+      const nombre = (u?.nombre ?? u?.nombre_completo ?? "").toString().toLowerCase();
       const rol = (u?.rol ?? "").toString().toLowerCase();
 
       const matchesSearch = !query || nombre.includes(query) || rol.includes(query);

@@ -31,7 +31,7 @@ export default function SelectedReportAssetCard({ asset }) {
       </div>
       <div className="inv-selected-asset__info">
         <p>
-          <strong>Etq. bien:</strong> {asset?.codigo_interno || "-"} - NO:{asset?.id_activo ?? "-"}
+          <strong>Etq. bien:</strong> {asset?.etiqueta_bien || "-"} - NO:{asset?.id_activo ?? "-"}
         </p>
         <p>
           {tipo} {modelo}

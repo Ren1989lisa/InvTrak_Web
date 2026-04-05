@@ -25,7 +25,7 @@ export default function AssetReportSelectableCard({ asset, reporte, selected = f
     >
       <div className="inv-assign-asset-card__top">
         <span className="inv-assign-asset-card__tag">
-          Etq. bien: {asset?.codigo_interno || "N/A"} - NO:{asset?.id_activo ?? "-"}
+          Etq. bien: {asset?.etiqueta_bien || "N/A"} - NO:{asset?.id_activo ?? "-"}
         </span>
       </div>
 

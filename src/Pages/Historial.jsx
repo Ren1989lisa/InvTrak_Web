@@ -61,7 +61,7 @@ export default function Historial() {
   const enrichedEvents = useMemo(() => {
     return allEvents.map((event) => {
       const id = Number(event?.id_activo);
-      const codigo = activosById[id]?.codigo_interno ?? "—";
+      const codigo = activosById[id]?.etiqueta_bien ?? "—";
       return { ...event, codigo_activo: codigo };
     });
   }, [allEvents, activosById]);

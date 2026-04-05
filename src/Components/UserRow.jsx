@@ -19,9 +19,9 @@ export default function UserRow({ usuario, onSelect, onEdit }) {
       }}
     >
       <td>{usuario.id_usuario}</td>
-      <td>{usuario.nombre_completo}</td>
+      <td>{usuario.nombre ?? usuario.nombre_completo}</td>
       <td className="text-capitalize">{usuario.rol}</td>
-      <td>{usuario.departamento}</td>
+      <td>{usuario.area ?? usuario.departamento}</td>
       <td>
         <UserActions onEdit={() => onEdit?.(usuario)} />
       </td>

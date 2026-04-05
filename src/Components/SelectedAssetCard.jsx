@@ -32,7 +32,7 @@ export default function SelectedAssetCard({ asset }) {
       </div>
       <div className="inv-selected-asset__info">
         <p>
-          <strong>Etq. bien:</strong> {asset?.codigo_interno || "-"}
+          <strong>Etq. bien:</strong> {asset?.etiqueta_bien || "-"}
         </p>
         <p>
           <strong>Tipo de activo:</strong> {tipo}

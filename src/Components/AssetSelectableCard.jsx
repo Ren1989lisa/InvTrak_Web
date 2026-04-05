@@ -25,7 +25,7 @@ export default function AssetSelectableCard({ asset, selected = false, onSelect 
     >
       <div className="inv-assign-asset-card__top">
         <span className="inv-assign-asset-card__tag">
-          Etq. bien: {asset?.codigo_interno || "N/A"}
+          Etq. bien: {asset?.etiqueta_bien || "N/A"}
         </span>
       </div>
 

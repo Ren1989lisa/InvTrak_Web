@@ -8,6 +8,7 @@ import Logo from "../Components/Logo";
 import FormInput from "../Components/FormInput";
 import { useUsers } from "../context/UsersContext";
 import { getDefaultRouteByRole } from "../config/routes";
+import { isUsuarioActivo } from "../utils/entityFields";
 import { loginSchema } from "../utils/schemas";
 
 function Login() {
@@ -39,7 +40,7 @@ function Login() {
       return;
     }
 
-    if (user.activo !== true) {
+    if (!isUsuarioActivo(user)) {
       setError("Tu usuario está inactivo. Contacta al administrador.");
       return;
     }

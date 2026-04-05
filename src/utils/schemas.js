@@ -10,13 +10,13 @@ export const forgotPasswordSchema = z.object({
 });
 
 export const usuarioSchema = z.object({
-  nombre_completo: z.string().min(1, "El nombre es obligatorio"),
+  nombre: z.string().min(1, "El nombre es obligatorio"),
   correo: z.string().min(1, "El correo es obligatorio").email("Correo inválido"),
   fecha_nacimiento: z.string().min(1, "La fecha de nacimiento es obligatoria"),
   curp: z.string().length(18, "La CURP debe tener exactamente 18 caracteres"),
   rol: z.string().min(1, "El rol es obligatorio"),
   numero_empleado: z.string().min(1, "El número de empleado es obligatorio"),
-  departamento: z.string().min(1, "El área o departamento es obligatorio"),
+  area: z.string().min(1, "El área es obligatorio"),
 });
 
 export const editarPerfilSchema = usuarioSchema.extend({

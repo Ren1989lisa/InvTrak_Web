@@ -10,15 +10,16 @@ import { useUsers } from "../context/UsersContext";
 import { getStoredReportes } from "../reportesStorage";
 import { getStoredActivos } from "../activosStorage";
 import { getEstadoDisplay } from "../config/estatusActivo";
+import { ESTATUS_REPORTE_DANIO } from "../config/databaseEnums";
 import "../Style/bienes-registrados.css";
 import "../Style/sidebar.css";
 import "../Style/informacion-reporte.css";
 
 const ESTADOS_OPCIONES = [
-  { value: "pendiente", label: "Pendiente" },
-  { value: "en_proceso", label: "En proceso" },
-  { value: "en_mantenimiento", label: "En mantenimiento" },
-  { value: "resuelto", label: "Resuelto" },
+  { value: ESTATUS_REPORTE_DANIO.PENDIENTE, label: "Pendiente" },
+  { value: ESTATUS_REPORTE_DANIO.EN_PROCESO, label: "En proceso" },
+  { value: ESTATUS_REPORTE_DANIO.EN_MANTENIMIENTO, label: "En mantenimiento" },
+  { value: ESTATUS_REPORTE_DANIO.RESUELTO, label: "Resuelto" },
 ];
 
 function getEstadoLabel(estatus) {
@@ -74,7 +75,7 @@ export default function InformacionReporte() {
     producto?.modelo ?? activo?.modelo,
   ]
     .filter(Boolean)
-    .join(" ") || activo?.codigo_interno || "Activo";
+    .join(" ") || activo?.etiqueta_bien || "Activo";
 
   if (!reporte) {
     return (
@@ -150,7 +151,7 @@ export default function InformacionReporte() {
           <Card.Header className="inv-reporte-info-card-header">
             <span className="inv-reporte-info-card-header-label">ID</span>
             <span className="inv-reporte-info-card-header-value">
-              {activo?.codigo_interno ?? reporte?.folio ?? "-"}
+              {activo?.etiqueta_bien ?? reporte?.folio ?? "-"}
             </span>
           </Card.Header>
           <Card.Body className="inv-reporte-info-card-body">

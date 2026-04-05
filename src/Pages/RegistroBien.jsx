@@ -15,6 +15,7 @@ import { useUsers } from "../context/UsersContext";
 import { addActivo, getStoredActivos } from "../activosStorage";
 import { registroBienSchema } from "../utils/schemas";
 import { ESTATUS_ACTIVO, ESTATUS_ACTIVO_OPTIONS } from "../config/estatusActivo";
+import { ESTADO_RESGUARDO } from "../config/databaseEnums";
 
 import productosData from "../Data/productos.json";
 import marcasData from "../Data/marcas.json";
@@ -109,7 +110,7 @@ export default function RegistroBien() {
     const costNumber = Number(data.costo);
     const newAsset = {
       id_activo: nextId,
-      codigo_interno: codigoInterno,
+      etiqueta_bien: codigoInterno,
       numero_serie: data.numero_serie.trim(),
       producto: {
         tipo_activo: selectedProduct.nombre,
@@ -118,7 +119,7 @@ export default function RegistroBien() {
       },
       descripcion: data.descripcion.trim(),
       propietario: "",
-      estado_asignacion: "pendiente de asignacion",
+      estado_asignacion: ESTADO_RESGUARDO.PENDIENTE_ASIGNACION,
       estatus: data.estatus,
       costo: Number(costNumber.toFixed(2)),
       fecha_alta: data.fecha_alta,
