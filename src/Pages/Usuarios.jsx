@@ -20,7 +20,7 @@ export default function Usuarios() {
   const [openSidebar, setOpenSidebar] = useState(false);
   const [search, setSearch] = useState("");
   const [filterRol, setFilterRol] = useState("todos");
-  const { users, currentUser, setCurrentUserId, menuItems } = useUsers();
+  const { users, currentUser, logout, menuItems } = useUsers();
 
   const usuarios = Array.isArray(users) ? users : [];
   const query = search.trim().toLowerCase();
@@ -56,8 +56,8 @@ export default function Usuarios() {
         }}
         onLogout={() => {
           setOpenSidebar(false);
-          setCurrentUserId(null);
-          navigate("/");
+          logout();
+          navigate("/login");
         }}
       />
 

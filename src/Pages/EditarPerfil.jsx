@@ -29,7 +29,7 @@ const ROL_OPTIONS = [
 export default function EditarPerfil() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { users, setUsers, currentUser, setCurrentUserId, menuItems } = useUsers();
+  const { users, updateCurrentUser, currentUser, logout, menuItems } = useUsers();
   const [openSidebar, setOpenSidebar] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -110,21 +110,19 @@ export default function EditarPerfil() {
       }
     }
 
-    setUsers((prev) =>
-      prev.map((u) =>
-        Number(u?.id_usuario) === Number(usuario?.id_usuario)
-          ? normalizeUsuario({
-              ...u,
-              ...data,
-              nombre: data.nombre,
-              area: data.area,
-              rol: data.rol,
-              id_rol: ROL_ID_BY_NOMBRE[data.rol],
-              password: data.password ?? u.password,
-            })
-          : u
-      )
-    );
+    if (Number(currentUser?.id_usuario) === Number(usuario?.id_usuario)) {
+      updateCurrentUser(
+        normalizeUsuario({
+          ...currentUser,
+          ...data,
+          nombre: data.nombre,
+          area: data.area,
+          rol: data.rol,
+          id_rol: ROL_ID_BY_NOMBRE[data.rol],
+          password: data.password ?? currentUser?.password,
+        })
+      );
+    }
 
     setSuccess("Perfil actualizado correctamente");
   });
@@ -151,8 +149,8 @@ export default function EditarPerfil() {
         }}
         onLogout={() => {
           setOpenSidebar(false);
-          setCurrentUserId(null);
-          navigate("/");
+          logout();
+          navigate("/login");
         }}
       />
 

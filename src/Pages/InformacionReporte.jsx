@@ -38,7 +38,7 @@ export default function InformacionReporte() {
   const navigate = useNavigate();
   const [openSidebar, setOpenSidebar] = useState(false);
 
-  const { currentUser, setCurrentUserId, menuItems } = useUsers();
+  const { currentUser, logout, menuItems } = useUsers();
 
   const reportes = useMemo(() => getStoredReportes(), []);
   const activos = useMemo(() => getStoredActivos(), []);
@@ -109,8 +109,8 @@ export default function InformacionReporte() {
         }}
         onLogout={() => {
           setOpenSidebar(false);
-          setCurrentUserId(null);
-          navigate("/");
+          logout();
+          navigate("/login");
         }}
       />
 

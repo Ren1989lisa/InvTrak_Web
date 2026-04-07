@@ -20,7 +20,7 @@ import "../../Style/catalogos.css";
 
 export default function Catalogos() {
   const navigate = useNavigate();
-  const { currentUser, setCurrentUserId, menuItems } = useUsers();
+  const { currentUser, logout, menuItems } = useUsers();
   const [openSidebar, setOpenSidebar] = useState(false);
   const [activeTab, setActiveTab] = useState("producto");
 
@@ -87,8 +87,8 @@ export default function Catalogos() {
         }}
         onLogout={() => {
           setOpenSidebar(false);
-          setCurrentUserId(null);
-          navigate("/");
+          logout();
+          navigate("/login");
         }}
       />
 

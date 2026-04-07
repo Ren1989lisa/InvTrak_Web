@@ -19,7 +19,7 @@ export default function MisBienes() {
   const [openSidebar, setOpenSidebar] = useState(false);
   const [qrError, setQrError] = useState("");
   const navigate = useNavigate();
-  const { currentUser, setCurrentUserId, menuItems } = useUsers();
+  const { currentUser, logout, menuItems } = useUsers();
   const pendientesResguardo = usePendientesResguardo(currentUser);
 
   const activos = useMemo(() => getStoredActivos(), []);
@@ -95,8 +95,8 @@ export default function MisBienes() {
         }}
         onLogout={() => {
           setOpenSidebar(false);
-          setCurrentUserId(null);
-          navigate("/");
+          logout();
+          navigate("/login");
         }}
       />
 

@@ -24,7 +24,7 @@ function normalize(value) {
 
 export default function AsignacionReporte() {
   const navigate = useNavigate();
-  const { users, currentUser, setCurrentUserId, menuItems } = useUsers();
+  const { users, currentUser, logout, menuItems } = useUsers();
 
   const [openSidebar, setOpenSidebar] = useState(false);
   const [assetSearch, setAssetSearch] = useState("");
@@ -192,8 +192,8 @@ export default function AsignacionReporte() {
         }}
         onLogout={() => {
           setOpenSidebar(false);
-          setCurrentUserId(null);
-          navigate("/");
+          logout();
+          navigate("/login");
         }}
       />
 

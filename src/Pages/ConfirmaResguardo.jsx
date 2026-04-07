@@ -43,7 +43,7 @@ export default function ConfirmaResguardo() {
   const [previewUrl, setPreviewUrl] = useState(null);
   const fileInputRef = useRef(null);
 
-  const { currentUser, setCurrentUserId, menuItems } = useUsers();
+  const { currentUser, logout, menuItems } = useUsers();
 
   const activos = useMemo(() => getStoredActivos(), []);
   const idNum = Number(id);
@@ -162,8 +162,8 @@ export default function ConfirmaResguardo() {
         }}
         onLogout={() => {
           setOpenSidebar(false);
-          setCurrentUserId(null);
-          navigate("/");
+          logout();
+          navigate("/login");
         }}
       />
 

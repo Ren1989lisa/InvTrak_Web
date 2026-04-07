@@ -24,7 +24,7 @@ const ReportarBien = lazy(() => import("../Pages/ReportarBien"));
 const InformacionReporte = lazy(() => import("../Pages/InformacionReporte"));
 const ReporteTecnico = lazy(() => import("../Pages/ReporteTecnico"));
 
-const { LOGIN, FORGOT_PASSWORD } = ROUTES;
+const { ROOT, LOGIN, FORGOT_PASSWORD } = ROUTES;
 const {
   BIENES_REGISTRADOS,
   MIS_BIENES,
@@ -62,6 +62,7 @@ export default function AppRoutes() {
   return (
     <Suspense fallback={<LoadingFallback />}>
       <Routes>
+        <Route path={ROOT} element={<Navigate to={LOGIN} replace />} />
         <Route path={LOGIN} element={<Login />} />
         <Route path={FORGOT_PASSWORD} element={<ForgotPassword />} />
 

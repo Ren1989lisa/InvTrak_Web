@@ -1,21 +1,21 @@
 import { useState } from "react";
 import { Alert, Button, Card, Col, Container, Form, Row } from "react-bootstrap";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import "./../Style/login.css";
 import Logo from "../Components/Logo";
 import FormInput from "../Components/FormInput";
 import { useUsers } from "../context/UsersContext";
-import { getDefaultRouteByRole } from "../config/routes";
-import { isUsuarioActivo } from "../utils/entityFields";
 import { loginSchema } from "../utils/schemas";
+import { ApiError } from "../api/apiClient";
 
 function Login() {
   const navigate = useNavigate();
-  const { users, setCurrentUserId } = useUsers();
+  const location = useLocation();
+  const { login, defaultRoute } = useUsers();
   const [error, setError] = useState("");
-  const usuarios = Array.isArray(users) ? users : [];
+  const [submitting, setSubmitting] = useState(false);
 
   const {
     control,
@@ -26,33 +26,22 @@ function Login() {
     defaultValues: { correo: "", password: "" },
   });
 
-  const handleSubmit = submitForm((data) => {
+  const handleSubmit = submitForm(async (data) => {
     setError("");
-    const correoNorm = data.correo.trim().toLowerCase();
-    const passNorm = data.password.trim();
-
-    const user = usuarios.find(
-      (u) => (u?.correo ?? "").toString().toLowerCase() === correoNorm
-    );
-
-    if (!user) {
-      setError("Correo o contraseña incorrectos.");
-      return;
+    setSubmitting(true);
+    try {
+      await login(data.correo.trim(), data.password);
+      const fromRoute = location.state?.from?.pathname;
+      navigate(fromRoute || defaultRoute, { replace: true });
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        setError("Credenciales incorrectas");
+      } else {
+        setError("Error de conexión");
+      }
+    } finally {
+      setSubmitting(false);
     }
-
-    if (!isUsuarioActivo(user)) {
-      setError("Tu usuario está inactivo. Contacta al administrador.");
-      return;
-    }
-
-    if ((user?.password ?? "").toString() !== passNorm) {
-      setError("Correo o contraseña incorrectos.");
-      return;
-    }
-
-    setCurrentUserId(Number(user.id_usuario));
-    const ruta = getDefaultRouteByRole(user?.rol);
-    navigate(ruta);
   });
 
   return (
@@ -122,9 +111,9 @@ function Login() {
                 variant="primary"
                 className="login-btn w-100"
                 type="submit"
-                
+                disabled={submitting}
               >
-                Login
+                {submitting ? "Ingresando..." : "Login"}
               </Button>
             </Form>
 

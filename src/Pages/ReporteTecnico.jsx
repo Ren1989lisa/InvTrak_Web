@@ -35,7 +35,7 @@ export default function ReporteTecnico() {
   const [archivos, setArchivos] = useState([]);
   const fileInputRef = useRef(null);
 
-  const { currentUser, setCurrentUserId, menuItems } = useUsers();
+  const { currentUser, logout, menuItems } = useUsers();
 
   const reportes = useMemo(() => getStoredReportes(), []);
   const activos = useMemo(() => getStoredActivos(), []);
@@ -192,8 +192,8 @@ export default function ReporteTecnico() {
         }}
         onLogout={() => {
           setOpenSidebar(false);
-          setCurrentUserId(null);
-          navigate("/");
+          logout();
+          navigate("/login");
         }}
       />
 

@@ -68,7 +68,7 @@ function eventTitle(tipo) {
 export default function Dashboard() {
   const navigate = useNavigate();
   const [openSidebar, setOpenSidebar] = useState(false);
-  const { currentUser, setCurrentUserId, menuItems } = useUsers();
+  const { currentUser, logout, menuItems } = useUsers();
 
   const activos = useMemo(() => getStoredActivos(), []);
   const reportes = useMemo(() => getStoredReportes(), []);
@@ -290,8 +290,8 @@ export default function Dashboard() {
         }}
         onLogout={() => {
           setOpenSidebar(false);
-          setCurrentUserId(null);
-          navigate("/");
+          logout();
+          navigate("/login");
         }}
       />
 

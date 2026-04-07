@@ -8,7 +8,7 @@ import { useUsers } from "../context/UsersContext";
 const ReportDetails = () => {
     const navigate = useNavigate();
     const [openSidebar, setOpenSidebar] = useState(false);
-    const { currentUser, setCurrentUserId, menuItems } = useUsers();
+    const { currentUser, logout, menuItems } = useUsers();
 
   return (
     <div>
@@ -28,8 +28,8 @@ const ReportDetails = () => {
               }}
               onLogout={() => {
                 setOpenSidebar(false);
-                setCurrentUserId(null);
-                navigate("/");
+                logout();
+                navigate("/login");
               }}
             />
             

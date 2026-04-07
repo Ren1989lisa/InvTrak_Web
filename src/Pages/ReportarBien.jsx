@@ -43,7 +43,7 @@ export default function ReportarBien() {
   const [successMessage, setSuccessMessage] = useState("");
   const fileInputRef = useRef(null);
 
-  const { currentUser, setCurrentUserId, menuItems, defaultRoute } = useUsers();
+  const { currentUser, logout, menuItems, defaultRoute } = useUsers();
 
   const {
     control,
@@ -178,8 +178,8 @@ export default function ReportarBien() {
         }}
         onLogout={() => {
           setOpenSidebar(false);
-          setCurrentUserId(null);
-          navigate("/");
+          logout();
+          navigate("/login");
         }}
       />
 

@@ -1,12 +1,13 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useUsers } from "../context/UsersContext";
+import { ROUTES } from "../config/routes";
 
 export default function ProtectedRoute({ children, requiredRole = null }) {
   const location = useLocation();
-  const { currentUserId, currentUser, canAccess, defaultRoute } = useUsers();
+  const { isAuthenticated, currentUser, canAccess, defaultRoute } = useUsers();
 
-  if (currentUserId === null || currentUserId === undefined) {
-    return <Navigate to="/" state={{ from: location }} replace />;
+  if (!isAuthenticated) {
+    return <Navigate to={ROUTES.LOGIN} state={{ from: location }} replace />;
   }
 
   const path = location.pathname;

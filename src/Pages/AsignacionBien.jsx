@@ -33,7 +33,7 @@ function todayDateString() {
 
 export default function AsignacionBien() {
   const navigate = useNavigate();
-  const { users, currentUser, setCurrentUserId, menuItems } = useUsers();
+  const { users, currentUser, logout, menuItems } = useUsers();
 
   const [openSidebar, setOpenSidebar] = useState(false);
   const [assetSearch, setAssetSearch] = useState("");
@@ -197,8 +197,8 @@ export default function AsignacionBien() {
         }}
         onLogout={() => {
           setOpenSidebar(false);
-          setCurrentUserId(null);
-          navigate("/");
+          logout();
+          navigate("/login");
         }}
       />
 

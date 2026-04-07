@@ -1,10 +1,11 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import usuariosSeed from "../Data/usuarios.json";
+import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import { getDefaultRouteByRole } from "../config/routes";
-import { normalizeUsuario, normalizeUsuariosList } from "../utils/entityFields";
-
-const STORAGE_KEY = "invtrack_users";
-const STORAGE_CURRENT_USER_KEY = "invtrack_current_user_id";
+import {
+  getCurrentUser as getStoredCurrentUser,
+  login as authLogin,
+  logout as authLogout,
+  getToken,
+} from "../services/authService";
 
 const UsersContext = createContext(null);
 
@@ -68,87 +69,79 @@ function canAccessRoute(rol, path) {
   return false;
 }
 
-function loadUsers() {
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      return normalizeUsuariosList(Array.isArray(usuariosSeed) ? usuariosSeed : []);
-    }
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? normalizeUsuariosList(parsed) : [];
-  } catch {
-    return normalizeUsuariosList(Array.isArray(usuariosSeed) ? usuariosSeed : []);
-  }
-}
-
-function loadCurrentUserId() {
-  try {
-    const raw = window.localStorage.getItem(STORAGE_CURRENT_USER_KEY);
-    if (raw === null) return null;
-    const parsed = Number(raw);
-    return Number.isFinite(parsed) ? parsed : null;
-  } catch {
-    return null;
-  }
-}
-
 export function UsersProvider({ children }) {
-  const [users, setUsers] = useState(loadUsers);
-  const [currentUserId, setCurrentUserId] = useState(loadCurrentUserId);
+  const [user, setUser] = useState(() => getStoredCurrentUser());
+  const [isAuthenticated, setIsAuthenticated] = useState(() => Boolean(getToken() && getStoredCurrentUser()));
 
-  useEffect(() => {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(users));
-  }, [users]);
-
-  useEffect(() => {
-    if (currentUserId === null || currentUserId === undefined) {
-      window.localStorage.removeItem(STORAGE_CURRENT_USER_KEY);
-      return;
-    }
-    window.localStorage.setItem(STORAGE_CURRENT_USER_KEY, String(currentUserId));
-  }, [currentUserId]);
-
-  const addUser = (user) => {
-    setUsers((prev) => [...prev, normalizeUsuario(user)]);
-  };
-
-  const currentUser =
-    users.find((u) => Number(u?.id_usuario) === Number(currentUserId)) ?? null;
-
-  const userRole = currentUser?.rol ?? null;
+  const currentUser = user;
+  const userRole = user?.rol ?? null;
 
   const menuItems = useMemo(
-    () => getMenuByRol(currentUser?.rol),
-    [currentUser?.rol]
+    () => getMenuByRol(user?.rol),
+    [user?.rol]
   );
 
   const canAccess = useMemo(
-    () => (path) => canAccessRoute(currentUser?.rol, path),
-    [currentUser?.rol]
+    () => (path) => canAccessRoute(user?.rol, path),
+    [user?.rol]
   );
 
   const defaultRoute = useMemo(
-    () => getDefaultRouteByRole(currentUser?.rol),
-    [currentUser?.rol]
+    () => getDefaultRouteByRole(user?.rol),
+    [user?.rol]
   );
 
-  const isAdmin = (currentUser?.rol ?? "").toString().toLowerCase() === "admin";
+  const isAdmin = (user?.rol ?? "").toString().toLowerCase() === "admin";
+
+  const login = useCallback(async (correo, password) => {
+    const nextUser = await authLogin(correo, password);
+    setUser(nextUser);
+    setIsAuthenticated(true);
+    return nextUser;
+  }, []);
+
+  const logout = useCallback(() => {
+    authLogout();
+    setUser(null);
+    setIsAuthenticated(false);
+  }, []);
+
+  const updateCurrentUser = useCallback((partialUser) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const updated = { ...prev, ...partialUser };
+      window.localStorage.setItem("invtrack_auth_user", JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
 
   const value = useMemo(
     () => ({
-      users,
-      addUser,
-      setUsers,
+      user,
+      login,
+      logout,
+      isAuthenticated,
       currentUser,
-      currentUserId,
-      setCurrentUserId,
+      users: user ? [user] : [],
       userRole,
       menuItems,
       canAccess,
       defaultRoute,
       isAdmin,
+      updateCurrentUser,
     }),
-    [users, currentUser, currentUserId, userRole, menuItems, canAccess, defaultRoute, isAdmin]
+    [
+      user,
+      isAuthenticated,
+      userRole,
+      menuItems,
+      canAccess,
+      defaultRoute,
+      isAdmin,
+      login,
+      logout,
+      updateCurrentUser,
+    ]
   );
 
   return <UsersContext.Provider value={value}>{children}</UsersContext.Provider>;

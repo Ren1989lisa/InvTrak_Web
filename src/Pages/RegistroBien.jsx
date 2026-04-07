@@ -36,7 +36,7 @@ function todayDateString() {
 
 export default function RegistroBien() {
   const navigate = useNavigate();
-  const { currentUser, setCurrentUserId, menuItems } = useUsers();
+  const { currentUser, logout, menuItems } = useUsers();
   const [openSidebar, setOpenSidebar] = useState(false);
   const [showProductModal, setShowProductModal] = useState(false);
   const [showLocationModal, setShowLocationModal] = useState(false);
@@ -155,8 +155,8 @@ export default function RegistroBien() {
         }}
         onLogout={() => {
           setOpenSidebar(false);
-          setCurrentUserId(null);
-          navigate("/");
+          logout();
+          navigate("/login");
         }}
       />
 

@@ -38,7 +38,7 @@ export default function Historial() {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
-  const { currentUser, setCurrentUserId, menuItems } = useUsers();
+  const { currentUser, logout, menuItems } = useUsers();
 
   const [openSidebar, setOpenSidebar] = useState(false);
   const [search, setSearch] = useState("");
@@ -123,8 +123,8 @@ export default function Historial() {
         }}
         onLogout={() => {
           setOpenSidebar(false);
-          setCurrentUserId(null);
-          navigate("/");
+          logout();
+          navigate("/login");
         }}
       />
 

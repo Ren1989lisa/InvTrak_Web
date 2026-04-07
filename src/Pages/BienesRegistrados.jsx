@@ -46,7 +46,7 @@ export default function BienesRegistrados() {
   const [activos] = useState(() => getStoredActivos());
   const [exportFeedback, setExportFeedback] = useState(null);
   const navigate = useNavigate();
-  const { currentUser, setCurrentUserId, menuItems } = useUsers();
+  const { currentUser, logout, menuItems } = useUsers();
   const query = search.trim().toLowerCase();
 
   const ubicaciones = useMemo(() => {
@@ -146,8 +146,8 @@ export default function BienesRegistrados() {
         }}
         onLogout={() => {
           setOpenSidebar(false);
-          setCurrentUserId(null);
-          navigate("/");
+          logout();
+          navigate("/login");
         }}
       />
 

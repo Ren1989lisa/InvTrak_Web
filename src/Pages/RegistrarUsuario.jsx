@@ -10,7 +10,6 @@ import FormSelect from "../Components/FormSelect";
 import PrimaryButton from "../Components/PrimaryButton";
 import { useUsers } from "../context/UsersContext";
 import { usuarioSchema } from "../utils/schemas";
-import { ROL_ID_BY_NOMBRE, ESTATUS_USUARIO } from "../config/databaseEnums";
 import "../Style/registrar-usuario.css";
 
 const INITIAL_VALUES = {
@@ -31,7 +30,7 @@ const ROL_OPTIONS = [
 
 export default function RegistrarUsuario() {
   const navigate = useNavigate();
-  const { users, addUser } = useUsers();
+  const { users } = useUsers();
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -40,7 +39,6 @@ export default function RegistrarUsuario() {
   const {
     control,
     handleSubmit,
-    reset,
   } = useForm({
     resolver: zodResolver(usuarioSchema),
     defaultValues: INITIAL_VALUES,
@@ -74,32 +72,7 @@ export default function RegistrarUsuario() {
       }
     }
 
-    const maxId = usersList.reduce((max, user) => {
-      const id = Number(user?.id_usuario ?? 0);
-      return Number.isFinite(id) ? Math.max(max, id) : max;
-    }, 0);
-
-    const nuevoUsuario = {
-      id_usuario: maxId + 1,
-      nombre: data.nombre,
-      correo: data.correo,
-      fecha_nacimiento: data.fecha_nacimiento,
-      curp: data.curp,
-      numero_empleado: data.numero_empleado,
-      rol: data.rol,
-      id_rol: ROL_ID_BY_NOMBRE[data.rol],
-      area: data.area,
-      password: data.numero_empleado,
-      estatus: ESTATUS_USUARIO.ACTIVO,
-      fecha_creacion: new Date().toISOString().slice(0, 10),
-    };
-
-    addUser(nuevoUsuario);
-    setSuccess("Usuario registrado correctamente.");
-    reset(INITIAL_VALUES);
-    window.setTimeout(() => {
-      navigate("/usuarios");
-    }, 900);
+    setError("El alta de usuarios requiere endpoint backend y no está disponible en este flujo.");
   });
 
   return (

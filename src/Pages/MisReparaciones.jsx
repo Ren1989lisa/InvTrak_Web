@@ -71,7 +71,7 @@ export default function MisReparaciones() {
   const [search, setSearch] = useState("");
   const [openSidebar, setOpenSidebar] = useState(false);
   const navigate = useNavigate();
-  const { currentUser, setCurrentUserId, menuItems } = useUsers();
+  const { currentUser, logout, menuItems } = useUsers();
 
   const reportes = useMemo(() => getStoredReportes(), []);
   const activos = useMemo(() => getStoredActivos(), []);
@@ -134,8 +134,8 @@ export default function MisReparaciones() {
         }}
         onLogout={() => {
           setOpenSidebar(false);
-          setCurrentUserId(null);
-          navigate("/");
+          logout();
+          navigate("/login");
         }}
       />
 

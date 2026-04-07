@@ -17,7 +17,7 @@ import "../Style/sidebar.css";
 export default function PerfilUsuario() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { users, currentUser, setCurrentUserId, menuItems, defaultRoute, isAdmin } = useUsers();
+  const { users, currentUser, logout, menuItems, defaultRoute, isAdmin } = useUsers();
   const [openSidebar, setOpenSidebar] = useState(false);
   const [qrError, setQrError] = useState("");
   const pendientesResguardo = usePendientesResguardo(currentUser);
@@ -78,8 +78,8 @@ export default function PerfilUsuario() {
         }}
         onLogout={() => {
           setOpenSidebar(false);
-          setCurrentUserId(null);
-          navigate("/");
+          logout();
+          navigate("/login");
         }}
       />
 

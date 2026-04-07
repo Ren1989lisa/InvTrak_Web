@@ -14,7 +14,7 @@ export default function AssetDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [openSidebar, setOpenSidebar] = useState(false);
-  const { currentUser, setCurrentUserId, menuItems } = useUsers();
+  const { currentUser, logout, menuItems } = useUsers();
   const activos = useMemo(() => getStoredActivos(), []);
   const idNum = Number(id);
 
@@ -45,8 +45,8 @@ export default function AssetDetail() {
         }}
         onLogout={() => {
           setOpenSidebar(false);
-          setCurrentUserId(null);
-          navigate("/");
+          logout();
+          navigate("/login");
         }}
       />
 
