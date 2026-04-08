@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { Col, Container, Row, Button } from "react-bootstrap";
+import { useEffect, useMemo, useState } from "react";
+import { Col, Container, Row, Button, Alert } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 
 import NavbarMenu from "../Components/NavbarMenu";
@@ -10,6 +10,7 @@ import FilterDropdown from "../Components/FilterDropdown";
 import UsersTable from "../Components/UsersTable";
 import PaginationComponent from "../Components/PaginationComponent";
 import { useUsers } from "../context/UsersContext";
+import { getUsuarios } from "../services/userService";
 
 import "../Style/bienes-registrados.css";
 import "../Style/sidebar.css";
@@ -20,10 +21,40 @@ export default function Usuarios() {
   const [openSidebar, setOpenSidebar] = useState(false);
   const [search, setSearch] = useState("");
   const [filterRol, setFilterRol] = useState("todos");
-  const { users, currentUser, logout, menuItems } = useUsers();
+  const [usuarios, setUsuarios] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+  const { currentUser, logout, menuItems } = useUsers();
 
-  const usuarios = Array.isArray(users) ? users : [];
   const query = search.trim().toLowerCase();
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadUsuarios() {
+      setIsLoading(true);
+      setErrorMsg("");
+      try {
+        const list = await getUsuarios();
+        if (!active) return;
+        setUsuarios(Array.isArray(list) ? list : []);
+      } catch (error) {
+        if (!active) return;
+        if (error?.status === 401) {
+          navigate("/login", { replace: true });
+          return;
+        }
+        setErrorMsg("No se pudo cargar la lista de usuarios.");
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    }
+
+    loadUsuarios();
+    return () => {
+      active = false;
+    };
+  }, [navigate]);
 
   const usuariosFiltrados = useMemo(() => {
     return usuarios.filter((u) => {
@@ -97,12 +128,28 @@ export default function Usuarios() {
           </Col>
         </Row>
 
+        {errorMsg ? (
+          <Alert variant="danger" className="mt-3 mb-0">
+            {errorMsg}
+          </Alert>
+        ) : null}
+        {isLoading ? (
+          <Alert variant="info" className="mt-3 mb-0">
+            Cargando usuarios...
+          </Alert>
+        ) : null}
+
         <div className="mt-3">
           <UsersTable
             usuarios={usuariosFiltrados}
             onUserSelect={(usuario) => navigate(`/perfil/${usuario.id_usuario}`)}
             onUserEdit={(usuario) => navigate(`/perfil/${usuario.id_usuario}/editar`)}
           />
+          {!isLoading && usuariosFiltrados.length === 0 ? (
+            <Alert variant="secondary" className="mt-3 mb-0">
+              No hay usuarios para mostrar.
+            </Alert>
+          ) : null}
           <PaginationComponent />
         </div>
       </Container>

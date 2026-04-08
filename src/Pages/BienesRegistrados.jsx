@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Alert, Container, Row, Col } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import * as XLSX from "xlsx";
@@ -10,7 +10,8 @@ import PaginationComponent from "../Components/PaginationComponent";
 import FiltersModal from "../Components/FiltersModal";
 import SidebarMenu from "../Components/SidebarMenu";
 import { useUsers } from "../context/UsersContext";
-import { getStoredActivos } from "../activosStorage";
+import { getStoredActivos, saveActivos } from "../activosStorage";
+import { getActivos } from "../services/activoService";
 import "../Style/bienes-registrados.css";
 import "../Style/sidebar.css";
 import "../Style/asignacion-bien.css";
@@ -43,11 +44,38 @@ export default function BienesRegistrados() {
   const [openSidebar, setOpenSidebar] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [appliedFilters, setAppliedFilters] = useState(null);
-  const [activos] = useState(() => getStoredActivos());
+  const [activos, setActivos] = useState(() => getStoredActivos());
+  const [isLoadingActivos, setIsLoadingActivos] = useState(false);
+  const [loadError, setLoadError] = useState("");
   const [exportFeedback, setExportFeedback] = useState(null);
   const navigate = useNavigate();
   const { currentUser, logout, menuItems } = useUsers();
   const query = search.trim().toLowerCase();
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadActivos() {
+      setIsLoadingActivos(true);
+      setLoadError("");
+      try {
+        const fromService = await getActivos();
+        if (!active) return;
+        setActivos(fromService);
+        saveActivos(fromService);
+      } catch {
+        if (!active) return;
+        setLoadError("No se pudo cargar el listado desde el servicio. Se muestran datos locales.");
+      } finally {
+        if (active) setIsLoadingActivos(false);
+      }
+    }
+
+    loadActivos();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const ubicaciones = useMemo(() => {
     const values = new Set();
@@ -93,8 +121,7 @@ export default function BienesRegistrados() {
   const handleExportExcel = () => {
     setExportFeedback(null);
     try {
-      const actuales = getStoredActivos();
-      if (!actuales.length) {
+      if (!activos.length) {
         setExportFeedback({
           variant: "warning",
           message: "No hay bienes registrados para exportar.",
@@ -102,7 +129,7 @@ export default function BienesRegistrados() {
         return;
       }
 
-      const rows = buildExportRows(actuales);
+      const rows = buildExportRows(activos);
       const worksheet = XLSX.utils.json_to_sheet(rows);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Bienes");
@@ -166,6 +193,16 @@ export default function BienesRegistrados() {
             {exportFeedback.message}
           </Alert>
         ) : null}
+        {loadError ? (
+          <Alert variant="warning" className="mt-3 mb-0">
+            {loadError}
+          </Alert>
+        ) : null}
+        {isLoadingActivos ? (
+          <Alert variant="info" className="mt-3 mb-0">
+            Cargando bienes registrados...
+          </Alert>
+        ) : null}
 
         <FiltersModal
           show={showFilters}
@@ -182,6 +219,11 @@ export default function BienesRegistrados() {
             </Col>
           ))}
         </Row>
+        {!isLoadingActivos && activosFiltrados.length === 0 ? (
+          <Alert variant="secondary" className="mt-3 mb-0">
+            No hay bienes registrados para mostrar.
+          </Alert>
+        ) : null}
 
         <PaginationComponent />
       </Container>

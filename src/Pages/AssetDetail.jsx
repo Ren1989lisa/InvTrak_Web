@@ -1,11 +1,12 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Container, Row, Col, Button } from "react-bootstrap";
+import { Container, Row, Col, Button, Alert } from "react-bootstrap";
 import NavbarMenu from "../Components/NavbarMenu";
 import SidebarMenu from "../Components/SidebarMenu";
 import AssetDetailCard from "../Components/AssetDetailCard";
 import { useUsers } from "../context/UsersContext";
-import { getStoredActivos } from "../activosStorage";
+import { getStoredActivos, saveActivos } from "../activosStorage";
+import { getActivos } from "../services/activoService";
 import "../Style/bienes-registrados.css";
 import "../Style/asset-detail.css";
 import "../Style/sidebar.css";
@@ -15,12 +16,40 @@ export default function AssetDetail() {
   const navigate = useNavigate();
   const [openSidebar, setOpenSidebar] = useState(false);
   const { currentUser, logout, menuItems } = useUsers();
-  const activos = useMemo(() => getStoredActivos(), []);
-  const idNum = Number(id);
+  const [activos, setActivos] = useState(() => getStoredActivos());
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadError, setLoadError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    async function loadFromService() {
+      setIsLoading(true);
+      setLoadError("");
+      try {
+        const list = await getActivos();
+        if (!active) return;
+        setActivos(list);
+        saveActivos(list);
+      } catch {
+        if (!active) return;
+        setLoadError("No se pudo cargar el detalle desde el servicio. Se muestran datos locales.");
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    }
+    loadFromService();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const activo = useMemo(
-    () => activos.find((a) => a.id_activo === idNum),
-    [activos, idNum]
+    () =>
+      (Array.isArray(activos) ? activos : []).find(
+        (a) =>
+          String(a?.id_activo ?? a?.id ?? a?.idActivo ?? "") === String(id ?? "")
+      ) ?? null,
+    [activos, id]
   );
 
   return (
@@ -59,6 +88,17 @@ export default function AssetDetail() {
         >
           ← Regresar
         </Button>
+
+        {loadError ? (
+          <Alert variant="warning" className="mt-2 mb-0">
+            {loadError}
+          </Alert>
+        ) : null}
+        {isLoading ? (
+          <Alert variant="info" className="mt-2 mb-0">
+            Cargando detalle del activo...
+          </Alert>
+        ) : null}
 
         {activo ? (
           <Row className="justify-content-center mt-3">
