@@ -10,7 +10,6 @@ export default function AddLocationModal({ show, onClose, onSave, locations = []
   const [campus, setCampus] = useState("");
   const [edificio, setEdificio] = useState("");
   const [aula, setAula] = useState("");
-  const [descripcion, setDescripcion] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -18,7 +17,6 @@ export default function AddLocationModal({ show, onClose, onSave, locations = []
     setCampus("");
     setEdificio("");
     setAula("");
-    setDescripcion("");
     setError("");
   }, [show]);
 
@@ -50,7 +48,6 @@ export default function AddLocationModal({ show, onClose, onSave, locations = []
       campus: campus.trim(),
       edificio: edificio.trim(),
       aula: aula.trim(),
-      descripcion: descripcion.trim(),
     };
 
     if (!payload.campus || !payload.edificio || !payload.aula) {
@@ -103,25 +100,13 @@ export default function AddLocationModal({ show, onClose, onSave, locations = []
             </datalist>
           </Form.Group>
 
-          <Form.Group className="mb-3">
+          <Form.Group className="mb-1">
             <Form.Label>Aula/Laboratorio *</Form.Label>
             <Form.Control
               value={aula}
               onChange={(e) => setAula(e.target.value)}
               placeholder="Ingrese el aula o laboratorio"
               className="inv-catalog-input"
-            />
-          </Form.Group>
-
-          <Form.Group className="mb-1">
-            <Form.Label>Descripción</Form.Label>
-            <Form.Control
-              as="textarea"
-              rows={4}
-              value={descripcion}
-              onChange={(e) => setDescripcion(e.target.value)}
-              placeholder="Ingrese los detalles y características"
-              className="inv-catalog-input inv-catalog-textarea"
             />
           </Form.Group>
         </Modal.Body>

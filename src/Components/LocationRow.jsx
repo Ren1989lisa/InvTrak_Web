@@ -46,7 +46,6 @@ export default function LocationRow({ row, onEdit, onDelete }) {
       <td>{row.campus}</td>
       <td>{row.edificio}</td>
       <td>{row.aula}</td>
-      <td>{row.descripcion}</td>
       <td>
         <div className="inv-product-row__actions">
           <button

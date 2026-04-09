@@ -11,7 +11,6 @@ export default function LocationTable({ rows, onEdit, onDelete }) {
               <th>Campus</th>
               <th>Edificio</th>
               <th>Aula/laboratorio</th>
-              <th>Descripción</th>
               <th>Acciones</th>
             </tr>
           </thead>
@@ -22,7 +21,7 @@ export default function LocationTable({ rows, onEdit, onDelete }) {
               ))
             ) : (
               <tr>
-                <td colSpan={5} className="text-center py-4 text-muted">
+                <td colSpan={4} className="text-center py-4 text-muted">
                   No hay ubicaciones que coincidan con la búsqueda.
                 </td>
               </tr>

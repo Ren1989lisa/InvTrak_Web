@@ -39,8 +39,6 @@ export default function Catalogos() {
     selectedProduct,
     setSelectedProduct,
     productos,
-    marcas,
-    modelos,
     handleSaveProduct,
     handleOpenEdit,
     handleUpdateProduct,
@@ -66,6 +64,8 @@ export default function Catalogos() {
     handleDeleteLocationFromTable,
     successMessage,
     errorMessage,
+    isLoadingProductos,
+    isLoadingUbicaciones,
   } = catalogState;
 
   return (
@@ -108,6 +108,7 @@ export default function Catalogos() {
             onAddClick={() => setShowAddLocationModal(true)}
             onEdit={handleOpenEditLocation}
             onDelete={handleDeleteLocationFromTable}
+            isLoading={isLoadingUbicaciones}
           />
         ) : (
           <ProductTabContent
@@ -121,6 +122,7 @@ export default function Catalogos() {
             onAddClick={() => setShowAddModal(true)}
             onEdit={handleOpenEdit}
             onDelete={handleDeleteProductFromTable}
+            isLoading={isLoadingProductos}
           />
         )}
       </Container>
@@ -130,8 +132,6 @@ export default function Catalogos() {
         onClose={() => setShowAddModal(false)}
         onSave={handleSaveProduct}
         productos={productos}
-        modelos={modelos}
-        marcas={marcas}
       />
 
       <EditProductModal

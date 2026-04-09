@@ -9,8 +9,9 @@ import PrimaryButton from "../Components/PrimaryButton";
 import FilterDropdown from "../Components/FilterDropdown";
 import UsersTable from "../Components/UsersTable";
 import PaginationComponent from "../Components/PaginationComponent";
+import DeleteConfirmModal from "../Components/DeleteConfirmModal";
 import { useUsers } from "../context/UsersContext";
-import { getUsuarios } from "../services/userService";
+import { getUsuarios, deleteUsuario } from "../services/userService";
 
 import "../Style/bienes-registrados.css";
 import "../Style/sidebar.css";
@@ -24,6 +25,10 @@ export default function Usuarios() {
   const [usuarios, setUsuarios] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { currentUser, logout, menuItems } = useUsers();
 
   const query = search.trim().toLowerCase();
@@ -67,6 +72,50 @@ export default function Usuarios() {
       return matchesSearch && matchesFilter;
     });
   }, [usuarios, query, filterRol]);
+
+  const handleDeleteClick = (usuario) => {
+    if (Number(usuario?.id_usuario) === Number(currentUser?.id_usuario)) {
+      setErrorMsg("No puedes eliminarte a ti mismo.");
+      setSuccessMsg("");
+      return;
+    }
+    setUserToDelete(usuario);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!userToDelete) return;
+
+    setIsDeleting(true);
+    setErrorMsg("");
+    setSuccessMsg("");
+
+    try {
+      await deleteUsuario(userToDelete.id_usuario);
+      setSuccessMsg(`Usuario ${userToDelete.nombre ?? userToDelete.nombre_completo} eliminado correctamente.`);
+      setShowDeleteModal(false);
+      setUserToDelete(null);
+      
+      const list = await getUsuarios();
+      setUsuarios(Array.isArray(list) ? list : []);
+    } catch (error) {
+      if (error?.status === 401) {
+        navigate("/login", { replace: true });
+        return;
+      }
+      setErrorMsg(error?.message || "No fue posible eliminar el usuario.");
+      setShowDeleteModal(false);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    if (!isDeleting) {
+      setShowDeleteModal(false);
+      setUserToDelete(null);
+    }
+  };
 
   return (
     <div className="inv-page">
@@ -129,8 +178,13 @@ export default function Usuarios() {
         </Row>
 
         {errorMsg ? (
-          <Alert variant="danger" className="mt-3 mb-0">
+          <Alert variant="danger" className="mt-3 mb-0" dismissible onClose={() => setErrorMsg("")}>
             {errorMsg}
+          </Alert>
+        ) : null}
+        {successMsg ? (
+          <Alert variant="success" className="mt-3 mb-0" dismissible onClose={() => setSuccessMsg("")}>
+            {successMsg}
           </Alert>
         ) : null}
         {isLoading ? (
@@ -144,6 +198,7 @@ export default function Usuarios() {
             usuarios={usuariosFiltrados}
             onUserSelect={(usuario) => navigate(`/perfil/${usuario.id_usuario}`)}
             onUserEdit={(usuario) => navigate(`/perfil/${usuario.id_usuario}/editar`)}
+            onUserDelete={handleDeleteClick}
           />
           {!isLoading && usuariosFiltrados.length === 0 ? (
             <Alert variant="secondary" className="mt-3 mb-0">
@@ -152,6 +207,14 @@ export default function Usuarios() {
           ) : null}
           <PaginationComponent />
         </div>
+
+        <DeleteConfirmModal
+          show={showDeleteModal}
+          onHide={handleCancelDelete}
+          onConfirm={handleConfirmDelete}
+          userName={userToDelete?.nombre ?? userToDelete?.nombre_completo ?? ""}
+          isDeleting={isDeleting}
+        />
       </Container>
     </div>
   );

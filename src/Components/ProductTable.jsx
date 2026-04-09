@@ -11,7 +11,6 @@ export default function ProductTable({ rows, onEdit, onDelete }) {
               <th>Nombre</th>
               <th>Marca</th>
               <th>Modelo</th>
-              <th>Descripción</th>
               <th>Estatus</th>
               <th>Acciones</th>
             </tr>
@@ -23,7 +22,7 @@ export default function ProductTable({ rows, onEdit, onDelete }) {
               ))
             ) : (
               <tr>
-                <td colSpan={6} className="text-center py-4 text-muted">
+                <td colSpan={5} className="text-center py-4 text-muted">
                   No hay productos que coincidan con la búsqueda.
                 </td>
               </tr>

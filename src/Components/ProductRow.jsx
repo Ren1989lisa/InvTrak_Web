@@ -48,7 +48,6 @@ export default function ProductRow({ row, onEdit, onDelete }) {
       <td>{row.nombre}</td>
       <td>{row.marca}</td>
       <td>{row.modelo}</td>
-      <td>{row.descripcion}</td>
       <td>
         <StatusBadge status={row.estatus} />
       </td>

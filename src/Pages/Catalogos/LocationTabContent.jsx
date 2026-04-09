@@ -15,18 +15,25 @@ export default function LocationTabContent({
   onAddClick,
   onEdit,
   onDelete,
+  isLoading = false,
 }) {
   return (
     <>
       {successMessage ? (
-        <Alert variant="success" className="mt-3 mb-2">
+        <Alert variant="success" className="mt-3 mb-2" dismissible>
           {successMessage}
         </Alert>
       ) : null}
 
       {errorMessage ? (
-        <Alert variant="danger" className="mt-3 mb-2">
+        <Alert variant="danger" className="mt-3 mb-2" dismissible>
           {errorMessage}
+        </Alert>
+      ) : null}
+
+      {isLoading ? (
+        <Alert variant="info" className="mt-3 mb-2">
+          Cargando ubicaciones...
         </Alert>
       ) : null}
 

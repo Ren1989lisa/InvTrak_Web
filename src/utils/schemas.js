@@ -19,7 +19,14 @@ export const usuarioSchema = z.object({
   area: z.string().min(1, "El área es obligatorio"),
 });
 
-export const editarPerfilSchema = usuarioSchema.extend({
+export const editarPerfilSchema = z.object({
+  nombre: z.string().optional(),
+  correo: z.string().optional(),
+  fecha_nacimiento: z.string().optional(),
+  curp: z.string().optional(),
+  rol: z.string().optional(),
+  numero_empleado: z.string().optional(),
+  area: z.string().optional(),
   password: z.string().optional(),
 });
 

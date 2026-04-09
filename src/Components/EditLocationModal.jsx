@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { Form, Modal } from "react-bootstrap";
 import PrimaryButton from "./PrimaryButton";
 
@@ -24,20 +23,12 @@ function LockIcon() {
 }
 
 export default function EditLocationModal({ show, location, onClose, onSave, onDelete }) {
-  const [descripcion, setDescripcion] = useState("");
-
-  useEffect(() => {
-    if (!show || !location) return;
-    setDescripcion(location.descripcion ?? "");
-  }, [show, location]);
-
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!location) return;
 
     onSave?.({
       id_ubicacion: location.id_ubicacion,
-      descripcion: descripcion.trim(),
     });
   };
 
@@ -68,22 +59,11 @@ export default function EditLocationModal({ show, location, onClose, onSave, onD
             />
           </Form.Group>
 
-          <Form.Group className="mb-3">
+          <Form.Group className="mb-1">
             <Form.Label className="inv-edit-label">
               Aula/Laboratorio <LockIcon />
             </Form.Label>
             <Form.Control value={location?.aula ?? ""} disabled readOnly className="inv-catalog-input" />
-          </Form.Group>
-
-          <Form.Group className="mb-1">
-            <Form.Label className="inv-edit-label">Descripción</Form.Label>
-            <Form.Control
-              as="textarea"
-              rows={4}
-              value={descripcion}
-              onChange={(e) => setDescripcion(e.target.value)}
-              className="inv-catalog-input inv-catalog-textarea"
-            />
           </Form.Group>
         </Modal.Body>
 

@@ -32,22 +32,79 @@ export function normalizeActivo(a) {
   const idActivo = a.id_activo ?? a.idActivo ?? a.id ?? null;
   const etiqueta = a.etiqueta_bien ?? a.etiquetaBien ?? a.codigo_interno ?? "";
   const numeroSerie = a.numero_serie ?? a.numeroSerie ?? a.serie ?? "";
-  const tipoActivo = a.tipo_activo ?? a.tipoActivo ?? a.producto?.tipo_activo ?? a.producto?.tipoActivo ?? "";
-  const marca = a.marca ?? a.producto?.marca ?? "";
-  const modelo = a.modelo ?? a.producto?.modelo ?? "";
+  
+  // Extraer ubicación desde estructura anidada
+  let campus = "";
+  let edificio = "";
+  let aula = "";
+  let ubicacionCompleta = "";
+  
+  if (a.aula && typeof a.aula === "object") {
+    // Estructura anidada del backend: aula.edificio.campus
+    aula = a.aula.nombre ?? "";
+    if (a.aula.edificio && typeof a.aula.edificio === "object") {
+      edificio = a.aula.edificio.nombre ?? "";
+      if (a.aula.edificio.campus && typeof a.aula.edificio.campus === "object") {
+        campus = a.aula.edificio.campus.nombre ?? "";
+      }
+    }
+    // Concatenar ubicación completa: "UTEZ Edificio A Lab 1"
+    ubicacionCompleta = [campus, edificio, aula].filter(Boolean).join(" ");
+  } else {
+    // Fallback para estructura plana o anterior
+    const rawUbicacion = a.ubicacion ?? {};
+    campus = normalizeTextValue(rawUbicacion.campus ?? a.campus);
+    edificio = normalizeTextValue(rawUbicacion.edificio ?? a.edificio);
+    aula = normalizeTextValue(rawUbicacion.aula ?? a.aula);
+    ubicacionCompleta = [campus, edificio, aula].filter(Boolean).join(" ");
+  }
+
+  const ubicacion = {
+    campus,
+    edificio,
+    aula,
+    completa: ubicacionCompleta,
+  };
+
+  // Extraer producto desde estructura anidada
+  let nombreProducto = "";
+  let marcaProducto = "";
+  let modeloProducto = "";
+  let tipoActivo = "";
+  let productoCompleto = "";
+
+  if (a.producto && typeof a.producto === "object") {
+    // Estructura anidada del backend: producto.modelo.marca
+    nombreProducto = a.producto.nombre ?? "";
+    tipoActivo = a.producto.tipo_activo ?? a.producto.tipoActivo ?? "";
+    
+    if (a.producto.modelo && typeof a.producto.modelo === "object") {
+      modeloProducto = a.producto.modelo.nombre ?? "";
+      if (a.producto.modelo.marca && typeof a.producto.modelo.marca === "object") {
+        marcaProducto = a.producto.modelo.marca.nombre ?? "";
+      }
+    }
+    // Concatenar producto completo: "Laptop HP Pavilion HP"
+    productoCompleto = [nombreProducto, modeloProducto, marcaProducto].filter(Boolean).join(" ");
+  } else {
+    // Fallback para estructura anterior
+    tipoActivo = a.tipo_activo ?? a.tipoActivo ?? "";
+    marcaProducto = a.marca ?? "";
+    modeloProducto = a.modelo ?? "";
+    nombreProducto = "";
+    productoCompleto = [nombreProducto, modeloProducto, marcaProducto].filter(Boolean).join(" ");
+  }
+
+  const producto = {
+    nombre: nombreProducto,
+    tipo_activo: tipoActivo,
+    marca: marcaProducto,
+    modelo: modeloProducto,
+    completo: productoCompleto,
+  };
+
   const costo = a.costo ?? a.valor ?? 0;
   const fechaAlta = a.fecha_alta ?? a.fechaAlta ?? "";
-  const rawUbicacion = a.ubicacion ?? {};
-  const ubicacion = {
-    campus: normalizeTextValue(rawUbicacion.campus ?? a.campus),
-    edificio: normalizeTextValue(rawUbicacion.edificio ?? a.edificio),
-    aula: normalizeTextValue(rawUbicacion.aula ?? a.aula),
-  };
-  const producto = a.producto ?? {
-    tipo_activo: tipoActivo,
-    marca,
-    modelo,
-  };
 
   const next = {
     ...a,
@@ -55,8 +112,8 @@ export function normalizeActivo(a) {
     etiqueta_bien: String(etiqueta).trim(),
     numero_serie: numeroSerie,
     tipo_activo: tipoActivo,
-    marca,
-    modelo,
+    marca: marcaProducto,
+    modelo: modeloProducto,
     costo,
     fecha_alta: fechaAlta,
     ubicacion,

@@ -24,17 +24,13 @@ function buildExportRows(activos) {
       id_activo: activo?.id_activo ?? "",
       etiqueta_bien: activo?.etiqueta_bien ?? "",
       numero_serie: activo?.numero_serie ?? "",
-      tipo_activo: producto?.tipo_activo ?? activo?.tipo_activo ?? "",
-      marca: producto?.marca ?? activo?.marca ?? "",
-      modelo: producto?.modelo ?? activo?.modelo ?? "",
+      producto: producto?.completo ?? "",
       descripcion: activo?.descripcion ?? "",
       propietario: activo?.propietario ?? "",
       estatus: activo?.estatus ?? "",
       costo: activo?.costo ?? "",
       fecha_alta: activo?.fecha_alta ?? "",
-      campus: ubicacion?.campus ?? "",
-      edificio: ubicacion?.edificio ?? "",
-      aula: ubicacion?.aula ?? "",
+      ubicacion: ubicacion?.completa ?? "",
     };
   });
 }
@@ -80,8 +76,10 @@ export default function BienesRegistrados() {
   const ubicaciones = useMemo(() => {
     const values = new Set();
     activos.forEach((a) => {
-      const u = a?.ubicacion;
-      const text = [u?.campus, u?.edificio, u?.aula].filter(Boolean).join(" ");
+      const text = a?.ubicacion?.completa ?? 
+        [a?.ubicacion?.campus, a?.ubicacion?.edificio, a?.ubicacion?.aula]
+          .filter(Boolean)
+          .join(" ");
       if (text) values.add(text);
     });
     return Array.from(values);
@@ -90,17 +88,18 @@ export default function BienesRegistrados() {
   const activosFiltrados = useMemo(() => {
     return activos.filter((a) => {
       const codigo = (a?.etiqueta_bien ?? "").toString().toLowerCase();
-      const tipo = (a?.producto?.tipo_activo ?? a?.tipo_activo ?? "")
+      const productoCompleto = (a?.producto?.completo ?? "").toString().toLowerCase();
+      const tipoActivo = (a?.producto?.tipo_activo ?? a?.tipo_activo ?? "")
         .toString()
         .toLowerCase();
-      const ubicacion = a?.ubicacion ?? {};
-      const ubicacionTexto = [ubicacion?.campus, ubicacion?.edificio, ubicacion?.aula]
-        .filter(Boolean)
-        .join(" ");
+      const ubicacionTexto = a?.ubicacion?.completa ?? 
+        [a?.ubicacion?.campus, a?.ubicacion?.edificio, a?.ubicacion?.aula]
+          .filter(Boolean)
+          .join(" ");
       const fechaAlta = a?.fecha_alta ? new Date(a.fecha_alta) : null;
       const costo = Number(a?.costo ?? 0);
 
-      if (query && !codigo.includes(query) && !tipo.includes(query)) return false;
+      if (query && !codigo.includes(query) && !tipoActivo.includes(query) && !productoCompleto.includes(query)) return false;
 
       if (appliedFilters) {
         const { ubicacion: fUbicacion, fechaDesde, fechaHasta, precioMin, precioMax } =

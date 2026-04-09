@@ -5,11 +5,12 @@ export default function PrimaryButton({
   label,
   onClick,
   className = "",
+  type = "button",
   ...props
 }) {
   return (
     <Button
-      type="button"
+      type={type}
       variant={variant}
       onClick={onClick}
       className={className}

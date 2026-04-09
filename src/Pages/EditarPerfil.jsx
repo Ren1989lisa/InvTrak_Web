@@ -12,8 +12,7 @@ import FormSelect from "../Components/FormSelect";
 import PrimaryButton from "../Components/PrimaryButton";
 import { useUsers } from "../context/UsersContext";
 import { editarPerfilSchema } from "../utils/schemas";
-import { normalizeUsuario } from "../utils/entityFields";
-import { ROL_ID_BY_NOMBRE } from "../config/databaseEnums";
+import { getUsuarios, updateUsuarioPassword } from "../services/userService";
 
 import "../Style/bienes-registrados.css";
 import "../Style/sidebar.css";
@@ -29,17 +28,13 @@ const ROL_OPTIONS = [
 export default function EditarPerfil() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { users, updateCurrentUser, currentUser, logout, menuItems } = useUsers();
+  const { updateCurrentUser, currentUser, logout, menuItems } = useUsers();
   const [openSidebar, setOpenSidebar] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-
-  const usuarios = useMemo(() => (Array.isArray(users) ? users : []), [users]);
-  const idNum = Number(id);
-  const usuarioSeleccionado = Number.isFinite(idNum)
-    ? usuarios.find((u) => Number(u?.id_usuario) === idNum)
-    : null;
-  const usuario = usuarioSeleccionado ?? usuarios[0];
+  const [usuario, setUsuario] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const perfilRoute = usuario ? `/perfil/${usuario.id_usuario}` : "/perfil";
 
   const {
@@ -58,73 +53,97 @@ export default function EditarPerfil() {
       area: "",
       password: "",
     },
+    shouldUnregister: false,
   });
 
   useEffect(() => {
-    if (!usuario) return;
-    reset({
-      nombre: usuario.nombre ?? usuario.nombre_completo ?? "",
-      correo: usuario.correo ?? "",
-      fecha_nacimiento: usuario.fecha_nacimiento ?? "",
-      curp: usuario.curp ?? "",
-      rol: usuario.rol ?? "",
-      numero_empleado: usuario.numero_empleado ?? "",
-      area: usuario.area ?? usuario.departamento ?? "",
-      password: usuario.password ?? "",
-    });
-  }, [usuario, reset]);
+    let active = true;
+    async function loadUsuario() {
+      setIsLoading(true);
+      setError("");
+      try {
+        const idNum = Number(id);
+        const list = await getUsuarios();
+        if (!active) return;
 
-  const onSubmit = handleSubmit((data) => {
-    setError("");
-    setSuccess("");
+        const selected = Number.isFinite(idNum)
+          ? (Array.isArray(list) ? list : []).find(
+              (u) => Number(u?.id_usuario ?? u?.idUsuario ?? u?.id) === idNum
+            ) ?? null
+          : null;
 
-    const empleadoDuplicado = usuarios.some(
-      (u) =>
-        Number(u?.id_usuario) !== Number(usuario?.id_usuario) &&
-        (u?.numero_empleado ?? "").toString() === data.numero_empleado
-    );
-    if (empleadoDuplicado) {
-      setError("El número de empleado ya existe.");
-      return;
-    }
+        const baseUser = selected ?? currentUser ?? null;
+        setUsuario(baseUser);
 
-    const correoDuplicado = usuarios.some(
-      (u) =>
-        Number(u?.id_usuario) !== Number(usuario?.id_usuario) &&
-        (u?.correo ?? "").toString().toLowerCase() === data.correo.toLowerCase()
-    );
-    if (correoDuplicado) {
-      setError("El correo ya está registrado.");
-      return;
-    }
-
-    if (data.rol === "admin") {
-      const otherAdmin = usuarios.some(
-        (u) =>
-          Number(u?.id_usuario) !== Number(usuario?.id_usuario) &&
-          (u?.rol ?? "") === "admin"
-      );
-      if (otherAdmin) {
-        setError("Solo puede existir un usuario con rol admin.");
-        return;
+        if (baseUser) {
+          reset({
+            nombre: baseUser.nombre ?? baseUser.nombre_completo ?? "",
+            correo: baseUser.correo ?? "",
+            fecha_nacimiento: baseUser.fecha_nacimiento ?? "",
+            curp: baseUser.curp ?? "",
+            rol: baseUser.rol ?? "",
+            numero_empleado: baseUser.numero_empleado ?? "",
+            area: baseUser.area ?? baseUser.departamento ?? "",
+            password: "",
+          });
+        }
+      } catch (err) {
+        if (!active) return;
+        if (err?.status === 401) {
+          navigate("/login", { replace: true });
+          return;
+        }
+        setError("No se pudo cargar el usuario a editar.");
+      } finally {
+        if (active) setIsLoading(false);
       }
     }
 
-    if (Number(currentUser?.id_usuario) === Number(usuario?.id_usuario)) {
-      updateCurrentUser(
-        normalizeUsuario({
-          ...currentUser,
-          ...data,
-          nombre: data.nombre,
-          area: data.area,
-          rol: data.rol,
-          id_rol: ROL_ID_BY_NOMBRE[data.rol],
-          password: data.password ?? currentUser?.password,
-        })
-      );
+    loadUsuario();
+    return () => {
+      active = false;
+    };
+  }, [id, currentUser, navigate, reset]);
+
+  const onSubmit = handleSubmit(async (data) => {
+    setError("");
+    setSuccess("");
+    const nextPassword = (data?.password ?? "").toString().trim();
+
+    if (!nextPassword) {
+      setError("La contraseña es obligatoria.");
+      return;
     }
 
-    setSuccess("Perfil actualizado correctamente");
+    const targetId = usuario?.id_usuario ?? usuario?.idUsuario ?? usuario?.id;
+    if (targetId == null) {
+      setError("No se encontró el usuario a actualizar.");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const updated = await updateUsuarioPassword(targetId, nextPassword);
+      if (Number(currentUser?.id_usuario) === Number(targetId)) {
+        updateCurrentUser(updated);
+      }
+      setSuccess("Contraseña actualizada correctamente.");
+      reset(
+        (prev) => ({
+          ...prev,
+          password: "",
+        }),
+        { keepValues: true }
+      );
+    } catch (err) {
+      if (err?.status === 401) {
+        navigate("/login", { replace: true });
+        return;
+      }
+      setError(err?.message || "No fue posible actualizar el usuario.");
+    } finally {
+      setIsSaving(false);
+    }
   });
 
   return (
@@ -172,6 +191,7 @@ export default function EditarPerfil() {
               <Card.Body className="inv-profile-card__body">
                 {error ? <Alert variant="danger">{error}</Alert> : null}
                 {success ? <Alert variant="success">{success}</Alert> : null}
+                {isLoading ? <Alert variant="info">Cargando usuario...</Alert> : null}
 
                 <Form onSubmit={onSubmit}>
                   <Row>
@@ -315,8 +335,9 @@ export default function EditarPerfil() {
                     <PrimaryButton
                       type="submit"
                       variant="primary"
-                      label="Guardar"
+                      label={isSaving ? "Guardando..." : "Guardar"}
                       className="inv-edit-profile__saveBtn"
+                      disabled={isSaving || isLoading}
                     />
                     <PrimaryButton
                       type="button"

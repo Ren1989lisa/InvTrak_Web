@@ -16,8 +16,15 @@ function formatCurrency(value) {
 
 export default function AssetCard({ activo }) {
   const navigate = useNavigate();
-  const ubicacion = activo?.ubicacion ?? {};
-  const producto = activo?.producto ?? {};
+  const ubicacionStr = activo?.ubicacion?.completa ?? 
+    [activo?.ubicacion?.campus, activo?.ubicacion?.edificio, activo?.ubicacion?.aula]
+      .filter(Boolean)
+      .join(" ");
+  
+  const productoStr = activo?.producto?.completo ?? 
+    activo?.producto?.tipo_activo ?? 
+    activo?.tipo_activo ?? 
+    "";
 
   const handleClick = () => {
     navigate(`/activo/${activo?.id_activo}`);
@@ -46,9 +53,9 @@ export default function AssetCard({ activo }) {
 
       <Card.Body className="inv-asset-card__body">
         <div className="inv-field">
-          <span className="inv-field__label">Tipo de activo:</span>
+          <span className="inv-field__label">Producto:</span>
           <span className="inv-field__value">
-            {producto?.tipo_activo ?? activo?.tipo_activo}
+            {productoStr}
           </span>
         </div>
 
@@ -65,7 +72,7 @@ export default function AssetCard({ activo }) {
         <div className="inv-field inv-field--stack">
           <span className="inv-field__label">Ubicación:</span>
           <span className="inv-field__value">
-            {ubicacion?.campus} {ubicacion?.edificio} {ubicacion?.aula}
+            {ubicacionStr}
           </span>
         </div>
 

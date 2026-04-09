@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Alert, Container, Form } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { useForm, Controller } from "react-hook-form";
@@ -8,8 +8,8 @@ import FormContainer from "../Components/FormContainer";
 import FormInput from "../Components/FormInput";
 import FormSelect from "../Components/FormSelect";
 import PrimaryButton from "../Components/PrimaryButton";
-import { useUsers } from "../context/UsersContext";
 import { usuarioSchema } from "../utils/schemas";
+import { createUsuario, getUsuarios } from "../services/userService";
 import "../Style/registrar-usuario.css";
 
 const INITIAL_VALUES = {
@@ -30,23 +30,44 @@ const ROL_OPTIONS = [
 
 export default function RegistrarUsuario() {
   const navigate = useNavigate();
-  const { users } = useUsers();
+  const [users, setUsers] = useState([]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const usersList = useMemo(() => (Array.isArray(users) ? users : []), [users]);
+
+  useEffect(() => {
+    let active = true;
+    async function loadUsers() {
+      try {
+        const list = await getUsuarios();
+        if (!active) return;
+        setUsers(Array.isArray(list) ? list : []);
+      } catch {
+        if (!active) return;
+        setUsers([]);
+      }
+    }
+    loadUsers();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const {
     control,
     handleSubmit,
+    reset,
   } = useForm({
     resolver: zodResolver(usuarioSchema),
     defaultValues: INITIAL_VALUES,
   });
 
-  const onSubmit = handleSubmit((data) => {
+  const onSubmit = handleSubmit(async (data) => {
     setError("");
     setSuccess("");
+    setIsSubmitting(true);
 
     const empleadoDuplicado = usersList.some(
       (u) => (u?.numero_empleado ?? "").toString() === data.numero_empleado
@@ -68,11 +89,32 @@ export default function RegistrarUsuario() {
       const alreadyAdmin = usersList.some((u) => (u?.rol ?? "") === "admin");
       if (alreadyAdmin) {
         setError("Solo puede existir un usuario con rol admin.");
+        setIsSubmitting(false);
         return;
       }
     }
 
-    setError("El alta de usuarios requiere endpoint backend y no está disponible en este flujo.");
+    try {
+      await createUsuario({
+        ...data,
+        password: data.numero_empleado,
+      });
+      setSuccess("Usuario registrado correctamente.");
+      reset(INITIAL_VALUES);
+      const refreshed = await getUsuarios();
+      setUsers(Array.isArray(refreshed) ? refreshed : []);
+      window.setTimeout(() => {
+        navigate("/usuarios");
+      }, 800);
+    } catch (err) {
+      if (err?.status === 401) {
+        navigate("/login", { replace: true });
+        return;
+      }
+      setError(err?.message || "No fue posible registrar el usuario.");
+    } finally {
+      setIsSubmitting(false);
+    }
   });
 
   return (
@@ -201,8 +243,9 @@ export default function RegistrarUsuario() {
               <PrimaryButton
                 type="submit"
                 variant="primary"
-                label="Registrar"
+                label={isSubmitting ? "Registrando..." : "Registrar"}
                 className="inv-register__submit"
+                disabled={isSubmitting}
               />
             </div>
           </Form>

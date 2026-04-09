@@ -94,11 +94,15 @@ export default function AssetDetailCard({ activo }) {
 
   if (!activo) return null;
 
-  const ubicacion = activo.ubicacion ?? {};
-  const producto = activo.producto ?? {};
-  const ubicacionStr = [ubicacion.campus, ubicacion.edificio, ubicacion.aula]
-    .filter(Boolean)
-    .join(" ");
+  const ubicacionStr = activo.ubicacion?.completa ?? 
+    [activo.ubicacion?.campus, activo.ubicacion?.edificio, activo.ubicacion?.aula]
+      .filter(Boolean)
+      .join(" ");
+  
+  const productoStr = activo.producto?.completo ?? 
+    activo.producto?.tipo_activo ?? 
+    activo.tipo_activo ?? 
+    "";
 
   return (
     <>
@@ -116,8 +120,8 @@ export default function AssetDetailCard({ activo }) {
               <Col xs={12} md={6} className="inv-asset-detail-card__col">
                 <AssetInfoField label="Número de serie:" value={activo.numero_serie} />
                 <AssetInfoField
-                  label="Tipo de activo:"
-                  value={producto.tipo_activo ?? activo.tipo_activo}
+                  label="Producto:"
+                  value={productoStr || undefined}
                 />
                 <AssetInfoField label="Ubicación:" value={ubicacionStr || undefined} />
                 <AssetInfoField label="Descripción:" value={activo.descripcion} stack />

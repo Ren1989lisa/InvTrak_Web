@@ -1,19 +1,21 @@
-import { useMemo, useState } from "react";
-import { getStoredActivos } from "../activosStorage";
+import { useEffect, useMemo, useState } from "react";
+import { normalize } from "../utils/catalogUtils";
 import {
-  normalize,
-  getNextId,
-  buildCatalogDataFromActivos,
-  buildLocationDataFromActivos,
-} from "../utils/catalogUtils";
+  getProductos,
+  createProducto,
+  updateProducto,
+  deleteProducto,
+  getUbicaciones,
+  createUbicacion,
+  updateUbicacion,
+  deleteUbicacion,
+} from "../services/catalogoService";
 
 export function useCatalogState() {
-  const [catalogData] = useState(() => buildCatalogDataFromActivos(getStoredActivos()));
-  const [initialLocations] = useState(() => buildLocationDataFromActivos(getStoredActivos()));
-  const [productos, setProductos] = useState(catalogData.productos);
-  const [marcas, setMarcas] = useState(catalogData.marcas);
-  const [modelos, setModelos] = useState(catalogData.modelos);
-  const [locations, setLocations] = useState(initialLocations);
+  const [productos, setProductos] = useState([]);
+  const [locations, setLocations] = useState([]);
+  const [isLoadingProductos, setIsLoadingProductos] = useState(false);
+  const [isLoadingUbicaciones, setIsLoadingUbicaciones] = useState(false);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("todo");
   const [locationSearch, setLocationSearch] = useState("");
@@ -32,25 +34,61 @@ export function useCatalogState() {
     setErrorMessage("");
   };
 
-  const catalogRows = useMemo(() => {
-    return productos
-      .map((producto) => {
-        const modelo = modelos.find(
-          (m) => Number(m?.id_modelo) === Number(producto?.id_modelo)
-        );
-        const marca = marcas.find((b) => Number(b?.id_marca) === Number(modelo?.id_marca));
+  // Cargar productos del backend
+  useEffect(() => {
+    let active = true;
+    async function loadProductos() {
+      setIsLoadingProductos(true);
+      try {
+        const list = await getProductos();
+        if (!active) return;
+        setProductos(list);
+      } catch (error) {
+        if (!active) return;
+        console.error("Error cargando productos:", error);
+      } finally {
+        if (active) setIsLoadingProductos(false);
+      }
+    }
+    loadProductos();
+    return () => {
+      active = false;
+    };
+  }, []);
 
-        return {
-          id_producto: producto.id_producto,
-          nombre: producto.nombre ?? "",
-          marca: marca?.nombre ?? "",
-          modelo: modelo?.nombre ?? "",
-          descripcion: producto.descripcion ?? "",
-          estatus: producto.estatus ?? "Activo",
-        };
-      })
-      .sort((a, b) => Number(a.id_producto) - Number(b.id_producto));
-  }, [productos, modelos, marcas]);
+  // Cargar ubicaciones del backend
+  useEffect(() => {
+    let active = true;
+    async function loadUbicaciones() {
+      setIsLoadingUbicaciones(true);
+      try {
+        const list = await getUbicaciones();
+        if (!active) return;
+        setLocations(list);
+      } catch (error) {
+        if (!active) return;
+        console.error("Error cargando ubicaciones:", error);
+      } finally {
+        if (active) setIsLoadingUbicaciones(false);
+      }
+    }
+    loadUbicaciones();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // Construir filas de productos para la tabla
+  const catalogRows = useMemo(() => {
+    return productos.map((p) => ({
+      id_producto: p.id_producto,
+      nombre: p.nombre ?? "",
+      marca: p.marca ?? "",
+      modelo: p.modelo ?? "",
+      descripcion: p.descripcion ?? "",
+      estatus: p.estatus ?? "ACTIVO",
+    }));
+  }, [productos]);
 
   const filteredRows = useMemo(() => {
     const query = normalize(search);
@@ -80,71 +118,28 @@ export function useCatalogState() {
           !query ||
           normalize(row.campus).includes(query) ||
           normalize(row.edificio).includes(query) ||
-          normalize(row.aula).includes(query) ||
-          normalize(row.descripcion).includes(query);
+          normalize(row.aula).includes(query);
         return matchesCampus && matchesSearch;
       })
       .sort((a, b) => Number(a.id_ubicacion) - Number(b.id_ubicacion));
   }, [locations, locationSearch, campusFilter]);
 
-  const handleSaveProduct = ({ nombre, marca, modelo, descripcion, estatus }) => {
+  const handleSaveProduct = async ({ nombre, marca, modelo, descripcion }) => {
+    console.log("🔵 [PRODUCTO] Iniciando creación:", { nombre, marca, modelo, descripcion });
     clearMessages();
-
-    const normalizedBrand = normalize(marca);
-    const normalizedModel = normalize(modelo);
-    const normalizedName = normalize(nombre);
-
-    let brandId;
-    const existingBrand = marcas.find((item) => normalize(item?.nombre) === normalizedBrand);
-    if (existingBrand) {
-      brandId = Number(existingBrand.id_marca);
-    } else {
-      const newBrand = {
-        id_marca: getNextId(marcas, "id_marca"),
-        nombre: marca.trim(),
-      };
-      brandId = newBrand.id_marca;
-      setMarcas((prev) => [...prev, newBrand]);
+    try {
+      console.log("🔵 [PRODUCTO] Llamando createProducto...");
+      const resultado = await createProducto({ nombre, marca, modelo, descripcion });
+      console.log("✅ [PRODUCTO] Creado exitosamente:", resultado);
+      const refreshed = await getProductos();
+      console.log("✅ [PRODUCTO] Lista actualizada, total:", refreshed.length);
+      setProductos(refreshed);
+      setShowAddModal(false);
+      setSuccessMessage("Producto agregado correctamente");
+    } catch (error) {
+      console.error("❌ [PRODUCTO] Error:", error);
+      setErrorMessage(error?.message || "No fue posible agregar el producto.");
     }
-
-    let modelId;
-    const existingModel = modelos.find(
-      (item) =>
-        normalize(item?.nombre) === normalizedModel &&
-        Number(item?.id_marca) === Number(brandId)
-    );
-    if (existingModel) {
-      modelId = Number(existingModel.id_modelo);
-    } else {
-      const newModel = {
-        id_modelo: getNextId(modelos, "id_modelo"),
-        nombre: modelo.trim(),
-        id_marca: Number(brandId),
-      };
-      modelId = newModel.id_modelo;
-      setModelos((prev) => [...prev, newModel]);
-    }
-
-    const duplicatedProduct = productos.some(
-      (item) =>
-        normalize(item?.nombre) === normalizedName && Number(item?.id_modelo) === Number(modelId)
-    );
-    if (duplicatedProduct) {
-      setErrorMessage("Ese producto ya existe para el modelo seleccionado.");
-      return;
-    }
-
-    const newProduct = {
-      id_producto: getNextId(productos, "id_producto"),
-      nombre: nombre.trim(),
-      id_modelo: Number(modelId),
-      descripcion: descripcion.trim(),
-      estatus: estatus || "Activo",
-    };
-
-    setProductos((prev) => [...prev, newProduct]);
-    setShowAddModal(false);
-    setSuccessMessage("Producto agregado correctamente");
   };
 
   const handleOpenEdit = (row) => {
@@ -153,35 +148,32 @@ export function useCatalogState() {
     setShowEditModal(true);
   };
 
-  const handleUpdateProduct = ({ id_producto, descripcion, estatus }) => {
-    const nextDescription = (descripcion ?? "").trim();
-    if (!nextDescription) {
-      setErrorMessage("La descripción no puede estar vacía.");
-      return;
-    }
-
-    setProductos((prev) =>
-      prev.map((item) =>
-        Number(item?.id_producto) === Number(id_producto)
-          ? { ...item, descripcion: nextDescription, estatus: estatus || "Activo" }
-          : item
-      )
-    );
-
-    setShowEditModal(false);
-    setSelectedProduct(null);
-    setSuccessMessage("Producto actualizado correctamente");
+  const handleUpdateProduct = async ({ id_producto, descripcion, estatus }) => {
     clearMessages();
+    try {
+      await updateProducto(id_producto, { descripcion, estatus });
+      const refreshed = await getProductos();
+      setProductos(refreshed);
+      setShowEditModal(false);
+      setSelectedProduct(null);
+      setSuccessMessage("Producto actualizado correctamente");
+    } catch (error) {
+      setErrorMessage(error?.message || "No fue posible actualizar el producto.");
+    }
   };
 
-  const handleDeleteProduct = (idProducto) => {
-    setProductos((prev) =>
-      prev.filter((item) => Number(item?.id_producto) !== Number(idProducto))
-    );
-    setShowEditModal(false);
-    setSelectedProduct(null);
-    setSuccessMessage("Producto eliminado correctamente");
+  const handleDeleteProduct = async (idProducto) => {
     clearMessages();
+    try {
+      await deleteProducto(idProducto);
+      const refreshed = await getProductos();
+      setProductos(refreshed);
+      setShowEditModal(false);
+      setSelectedProduct(null);
+      setSuccessMessage("Producto eliminado correctamente");
+    } catch (error) {
+      setErrorMessage(error?.message || "No fue posible eliminar el producto.");
+    }
   };
 
   const handleDeleteProductFromTable = (row) => {
@@ -190,32 +182,17 @@ export function useCatalogState() {
     handleDeleteProduct(row?.id_producto);
   };
 
-  const handleSaveLocation = ({ campus, edificio, aula, descripcion }) => {
+  const handleSaveLocation = async ({ campus, edificio, aula, descripcion }) => {
     clearMessages();
-
-    const duplicate = locations.some(
-      (item) =>
-        normalize(item?.campus) === normalize(campus) &&
-        normalize(item?.edificio) === normalize(edificio) &&
-        normalize(item?.aula) === normalize(aula)
-    );
-
-    if (duplicate) {
-      setErrorMessage("Esa ubicación ya existe.");
-      return;
+    try {
+      await createUbicacion({ campus, edificio, aula, descripcion });
+      const refreshed = await getUbicaciones();
+      setLocations(refreshed);
+      setShowAddLocationModal(false);
+      setSuccessMessage("Ubicación agregada correctamente");
+    } catch (error) {
+      setErrorMessage(error?.message || "No fue posible agregar la ubicación.");
     }
-
-    const newLocation = {
-      id_ubicacion: getNextId(locations, "id_ubicacion"),
-      campus: campus.trim(),
-      edificio: edificio.trim(),
-      aula: aula.trim(),
-      descripcion: (descripcion ?? "").trim(),
-    };
-
-    setLocations((prev) => [...prev, newLocation]);
-    setShowAddLocationModal(false);
-    setSuccessMessage("Ubicación agregada correctamente");
   };
 
   const handleOpenEditLocation = (row) => {
@@ -224,29 +201,32 @@ export function useCatalogState() {
     setShowEditLocationModal(true);
   };
 
-  const handleUpdateLocation = ({ id_ubicacion, descripcion }) => {
-    setLocations((prev) =>
-      prev.map((item) =>
-        Number(item?.id_ubicacion) === Number(id_ubicacion)
-          ? { ...item, descripcion: (descripcion ?? "").trim() }
-          : item
-      )
-    );
-
-    setShowEditLocationModal(false);
-    setSelectedLocation(null);
-    setSuccessMessage("Ubicación actualizada correctamente");
+  const handleUpdateLocation = async ({ id_ubicacion, descripcion }) => {
     clearMessages();
+    try {
+      await updateUbicacion(id_ubicacion, { descripcion });
+      const refreshed = await getUbicaciones();
+      setLocations(refreshed);
+      setShowEditLocationModal(false);
+      setSelectedLocation(null);
+      setSuccessMessage("Ubicación actualizada correctamente");
+    } catch (error) {
+      setErrorMessage(error?.message || "No fue posible actualizar la ubicación.");
+    }
   };
 
-  const handleDeleteLocation = (idUbicacion) => {
-    setLocations((prev) =>
-      prev.filter((item) => Number(item?.id_ubicacion) !== Number(idUbicacion))
-    );
-    setShowEditLocationModal(false);
-    setSelectedLocation(null);
-    setSuccessMessage("Ubicación eliminada correctamente");
+  const handleDeleteLocation = async (idUbicacion) => {
     clearMessages();
+    try {
+      await deleteUbicacion(idUbicacion);
+      const refreshed = await getUbicaciones();
+      setLocations(refreshed);
+      setShowEditLocationModal(false);
+      setSelectedLocation(null);
+      setSuccessMessage("Ubicación eliminada correctamente");
+    } catch (error) {
+      setErrorMessage(error?.message || "No fue posible eliminar la ubicación.");
+    }
   };
 
   const handleDeleteLocationFromTable = (row) => {
@@ -270,8 +250,8 @@ export function useCatalogState() {
     selectedProduct,
     setSelectedProduct,
     productos,
-    marcas,
-    modelos,
+    marcas: [], // Ya no usamos marcas/modelos por separado
+    modelos: [], // Ya no usamos marcas/modelos por separado
     handleSaveProduct,
     handleOpenEdit,
     handleUpdateProduct,
@@ -297,5 +277,7 @@ export function useCatalogState() {
     handleDeleteLocationFromTable,
     successMessage,
     errorMessage,
+    isLoadingProductos,
+    isLoadingUbicaciones,
   };
 }

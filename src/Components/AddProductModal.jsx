@@ -11,13 +11,10 @@ export default function AddProductModal({
   onClose,
   onSave,
   productos = [],
-  modelos = [],
-  marcas = [],
 }) {
   const [nombre, setNombre] = useState("");
   const [marca, setMarca] = useState("");
   const [modelo, setModelo] = useState("");
-  const [descripcion, setDescripcion] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -25,64 +22,52 @@ export default function AddProductModal({
     setNombre("");
     setMarca("");
     setModelo("");
-    setDescripcion("");
     setError("");
   }, [show]);
 
-  const mergedRows = useMemo(() => {
-    return productos
-      .map((p) => {
-        const model = modelos.find((m) => Number(m?.id_modelo) === Number(p?.id_modelo));
-        const brand = marcas.find((b) => Number(b?.id_marca) === Number(model?.id_marca));
-        return {
-          nombre: p?.nombre ?? "",
-          marca: brand?.nombre ?? "",
-          modelo: model?.nombre ?? "",
-        };
-      })
-      .filter((row) => row.nombre);
-  }, [productos, modelos, marcas]);
-
   const productNameOptions = useMemo(() => {
-    return [...new Set(mergedRows.map((row) => row.nombre).filter(Boolean))];
-  }, [mergedRows]);
+    return [...new Set(productos.map((p) => p.nombre).filter(Boolean))];
+  }, [productos]);
 
   const brandOptions = useMemo(() => {
     const selectedName = normalize(nombre);
     if (!selectedName) {
-      return marcas.map((b) => b.nombre).filter(Boolean);
+      return [...new Set(productos.map((p) => p.marca).filter(Boolean))];
     }
 
-    const linkedBrands = mergedRows
-      .filter((row) => normalize(row.nombre) === selectedName)
-      .map((row) => row.marca)
+    const linkedBrands = productos
+      .filter((p) => normalize(p.nombre) === selectedName)
+      .map((p) => p.marca)
       .filter(Boolean);
 
     if (linkedBrands.length) return [...new Set(linkedBrands)];
-    return marcas.map((b) => b.nombre).filter(Boolean);
-  }, [nombre, marcas, mergedRows]);
-
-  const selectedBrand = useMemo(
-    () => marcas.find((b) => normalize(b?.nombre) === normalize(marca)),
-    [marcas, marca]
-  );
+    return [...new Set(productos.map((p) => p.marca).filter(Boolean))];
+  }, [nombre, productos]);
 
   const modelOptions = useMemo(() => {
+    const selectedName = normalize(nombre);
+    const selectedBrand = normalize(marca);
+
     if (selectedBrand) {
-      return modelos
-        .filter((m) => Number(m?.id_marca) === Number(selectedBrand.id_marca))
-        .map((m) => m.nombre)
-        .filter(Boolean);
+      return [...new Set(
+        productos
+          .filter((p) => normalize(p.marca) === selectedBrand)
+          .map((p) => p.modelo)
+          .filter(Boolean)
+      )];
     }
 
-    const selectedName = normalize(nombre);
-    if (!selectedName) return modelos.map((m) => m.nombre).filter(Boolean);
+    if (selectedName) {
+      return [...new Set(
+        productos
+          .filter((p) => normalize(p.nombre) === selectedName)
+          .map((p) => p.modelo)
+          .filter(Boolean)
+      )];
+    }
 
-    return mergedRows
-      .filter((row) => normalize(row.nombre) === selectedName)
-      .map((row) => row.modelo)
-      .filter(Boolean);
-  }, [selectedBrand, modelos, nombre, mergedRows]);
+    return [...new Set(productos.map((p) => p.modelo).filter(Boolean))];
+  }, [nombre, marca, productos]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -92,11 +77,10 @@ export default function AddProductModal({
       nombre: nombre.trim(),
       marca: marca.trim(),
       modelo: modelo.trim(),
-      descripcion: descripcion.trim(),
       estatus: "Activo",
     };
 
-    if (!payload.nombre || !payload.marca || !payload.modelo || !payload.descripcion) {
+    if (!payload.nombre || !payload.marca || !payload.modelo) {
       setError("Todos los campos son obligatorios.");
       return;
     }
@@ -146,7 +130,7 @@ export default function AddProductModal({
             </datalist>
           </Form.Group>
 
-          <Form.Group className="mb-3">
+          <Form.Group className="mb-1">
             <Form.Label>Modelo *</Form.Label>
             <Form.Control
               value={modelo}
@@ -160,18 +144,6 @@ export default function AddProductModal({
                 <option value={option} key={option} />
               ))}
             </datalist>
-          </Form.Group>
-
-          <Form.Group className="mb-1">
-            <Form.Label>Descripción del producto</Form.Label>
-            <Form.Control
-              as="textarea"
-              rows={4}
-              value={descripcion}
-              onChange={(e) => setDescripcion(e.target.value)}
-              placeholder="Ingrese los detalles y características del producto"
-              className="inv-catalog-input inv-catalog-textarea"
-            />
           </Form.Group>
         </Modal.Body>
 
