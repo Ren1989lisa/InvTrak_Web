@@ -15,6 +15,7 @@ export default function AddProductModal({
   const [nombre, setNombre] = useState("");
   const [marca, setMarca] = useState("");
   const [modelo, setModelo] = useState("");
+  const [descripcion, setDescripcion] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -22,6 +23,7 @@ export default function AddProductModal({
     setNombre("");
     setMarca("");
     setModelo("");
+    setDescripcion("");
     setError("");
   }, [show]);
 
@@ -77,10 +79,11 @@ export default function AddProductModal({
       nombre: nombre.trim(),
       marca: marca.trim(),
       modelo: modelo.trim(),
+      descripcion: descripcion.trim(),
       estatus: "Activo",
     };
 
-    if (!payload.nombre || !payload.marca || !payload.modelo) {
+    if (!payload.nombre || !payload.marca || !payload.modelo || !payload.descripcion) {
       setError("Todos los campos son obligatorios.");
       return;
     }
@@ -130,7 +133,7 @@ export default function AddProductModal({
             </datalist>
           </Form.Group>
 
-          <Form.Group className="mb-1">
+          <Form.Group className="mb-3">
             <Form.Label>Modelo *</Form.Label>
             <Form.Control
               value={modelo}
@@ -144,6 +147,18 @@ export default function AddProductModal({
                 <option value={option} key={option} />
               ))}
             </datalist>
+          </Form.Group>
+
+          <Form.Group className="mb-1">
+            <Form.Label>Descripción *</Form.Label>
+            <Form.Control
+              as="textarea"
+              rows={3}
+              value={descripcion}
+              onChange={(e) => setDescripcion(e.target.value)}
+              placeholder="Ingrese la descripción del producto"
+              className="inv-catalog-input inv-catalog-textarea"
+            />
           </Form.Group>
         </Modal.Body>
 

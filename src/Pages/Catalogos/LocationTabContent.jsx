@@ -13,7 +13,6 @@ export default function LocationTabContent({
   campusOptions,
   filteredLocations,
   onAddClick,
-  onEdit,
   onDelete,
   isLoading = false,
 }) {
@@ -76,7 +75,6 @@ export default function LocationTabContent({
       <div className="mt-3">
         <LocationTable
           rows={filteredLocations}
-          onEdit={onEdit}
           onDelete={onDelete}
         />
         <PaginationComponent />

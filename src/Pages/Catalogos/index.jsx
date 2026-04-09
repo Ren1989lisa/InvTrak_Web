@@ -106,7 +106,6 @@ export default function Catalogos() {
             campusOptions={campusOptions}
             filteredLocations={filteredLocations}
             onAddClick={() => setShowAddLocationModal(true)}
-            onEdit={handleOpenEditLocation}
             onDelete={handleDeleteLocationFromTable}
             isLoading={isLoadingUbicaciones}
           />

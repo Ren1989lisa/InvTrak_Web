@@ -24,10 +24,12 @@ function LockIcon() {
 }
 
 export default function EditProductModal({ show, product, onClose, onSave, onDelete }) {
+  const [descripcion, setDescripcion] = useState("");
   const [estatus, setEstatus] = useState("Activo");
 
   useEffect(() => {
     if (!show || !product) return;
+    setDescripcion(product.descripcion ?? "");
     setEstatus(product.estatus ?? "Activo");
   }, [show, product]);
 
@@ -35,8 +37,14 @@ export default function EditProductModal({ show, product, onClose, onSave, onDel
     e.preventDefault();
     if (!product) return;
 
+    const trimmedDesc = descripcion.trim();
+    if (!trimmedDesc) {
+      return;
+    }
+
     onSave?.({
       id_producto: product.id_producto,
+      descripcion: trimmedDesc,
       estatus,
     });
   };
@@ -82,6 +90,18 @@ export default function EditProductModal({ show, product, onClose, onSave, onDel
               disabled
               className="inv-catalog-input"
               readOnly
+            />
+          </Form.Group>
+
+          <Form.Group className="mb-3">
+            <Form.Label className="inv-edit-label">Descripción *</Form.Label>
+            <Form.Control
+              as="textarea"
+              rows={3}
+              value={descripcion}
+              onChange={(e) => setDescripcion(e.target.value)}
+              placeholder="Ingrese la descripción"
+              className="inv-catalog-input inv-catalog-textarea"
             />
           </Form.Group>
 

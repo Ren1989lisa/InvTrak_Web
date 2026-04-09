@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Alert, Col, Container, Form, Row } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 
@@ -11,10 +11,9 @@ import SelectedAssetCard from "../Components/SelectedAssetCard";
 import UserSearchBar from "../Components/UserSearchBar";
 import FiltersModal from "../Components/FiltersModal";
 import { useUsers } from "../context/UsersContext";
-import { getStoredActivos, saveActivos } from "../activosStorage";
-import { ESTATUS_ACTIVO } from "../config/estatusActivo";
-import { ESTADO_RESGUARDO } from "../config/databaseEnums";
-import { addResguardo, getStoredResguardos } from "../resguardosStorage";
+import { getActivosDisponibles } from "../services/activosService";
+import { getUsuarios } from "../services/userService";
+import { createResguardo } from "../services/resguardoService";
 
 import "../Style/bienes-registrados.css";
 import "../Style/sidebar.css";
@@ -24,16 +23,9 @@ function normalize(value) {
   return (value ?? "").toString().trim().toLowerCase();
 }
 
-function todayDateString() {
-  const d = new Date();
-  const month = `${d.getMonth() + 1}`.padStart(2, "0");
-  const day = `${d.getDate()}`.padStart(2, "0");
-  return `${d.getFullYear()}-${month}-${day}`;
-}
-
 export default function AsignacionBien() {
   const navigate = useNavigate();
-  const { users, currentUser, logout, menuItems } = useUsers();
+  const { currentUser, logout, menuItems } = useUsers();
 
   const [openSidebar, setOpenSidebar] = useState(false);
   const [assetSearch, setAssetSearch] = useState("");
@@ -46,16 +38,77 @@ export default function AsignacionBien() {
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
-  const [activos, setActivos] = useState(() => getStoredActivos());
+  const [activos, setActivos] = useState([]);
+  const [usuarios, setUsuarios] = useState([]);
+  const [isLoadingActivos, setIsLoadingActivos] = useState(false);
+  const [isLoadingUsuarios, setIsLoadingUsuarios] = useState(false);
+  const [isAssigning, setIsAssigning] = useState(false);
 
-  const activosDisponibles = useMemo(() => {
-    return activos.filter((a) => normalize(a?.estatus) === normalize(ESTATUS_ACTIVO.DISPONIBLE));
-  }, [activos]);
+  // Cargar activos disponibles del backend
+  useEffect(() => {
+    let active = true;
+
+    async function loadActivos() {
+      setIsLoadingActivos(true);
+      try {
+        const list = await getActivosDisponibles();
+        if (!active) return;
+        setActivos(Array.isArray(list) ? list : []);
+      } catch (error) {
+        if (!active) return;
+        console.error("Error al cargar activos:", error);
+        if (error?.status === 401) {
+          navigate("/login", { replace: true });
+        }
+      } finally {
+        if (active) setIsLoadingActivos(false);
+      }
+    }
+
+    loadActivos();
+    return () => {
+      active = false;
+    };
+  }, [navigate]);
+
+  // Cargar usuarios del backend (solo rol USUARIO)
+  useEffect(() => {
+    let active = true;
+
+    async function loadUsuarios() {
+      setIsLoadingUsuarios(true);
+      try {
+        const list = await getUsuarios();
+        if (!active) return;
+        
+        // Filtrar solo usuarios con rol "USUARIO" (no técnicos ni administradores)
+        const usuariosFiltrados = (Array.isArray(list) ? list : []).filter((u) => {
+          const rol = normalize(u?.rol);
+          return rol === "usuario";
+        });
+        
+        setUsuarios(usuariosFiltrados);
+      } catch (error) {
+        if (!active) return;
+        console.error("Error al cargar usuarios:", error);
+        if (error?.status === 401) {
+          navigate("/login", { replace: true });
+        }
+      } finally {
+        if (active) setIsLoadingUsuarios(false);
+      }
+    }
+
+    loadUsuarios();
+    return () => {
+      active = false;
+    };
+  }, [navigate]);
 
   const filteredAssets = useMemo(() => {
     const query = normalize(assetSearch);
 
-    return activosDisponibles.filter((asset) => {
+    return activos.filter((asset) => {
       const tipo = normalize(asset?.producto?.tipo_activo ?? asset?.tipo_activo);
       const etiqueta = normalize(asset?.etiqueta_bien);
       const descripcion = normalize(asset?.descripcion);
@@ -91,31 +144,28 @@ export default function AsignacionBien() {
 
       return true;
     });
-  }, [activosDisponibles, assetSearch, assetTypeFilter, appliedAssetFilters]);
+  }, [activos, assetSearch, assetTypeFilter, appliedAssetFilters]);
 
   const filterUbicaciones = useMemo(() => {
     const values = new Set();
-    activosDisponibles.forEach((a) => {
+    activos.forEach((a) => {
       const u = a?.ubicacion;
       const text = [u?.campus, u?.edificio, u?.aula].filter(Boolean).join(" ");
       if (text) values.add(text);
     });
     return Array.from(values);
-  }, [activosDisponibles]);
+  }, [activos]);
 
   const filteredUsers = useMemo(() => {
     const query = normalize(userSearch);
-    const list = Array.isArray(users) ? users : [];
 
-    return list.filter((user) => {
-      const role = normalize(user?.rol);
+    return usuarios.filter((user) => {
       const name = normalize(user?.nombre ?? user?.nombre_completo);
       const employeeNumber = normalize(user?.numero_empleado);
       const matchesQuery = !query || name.includes(query) || employeeNumber.includes(query);
-      const matchesRole = userRoleFilter === "todo" || role === normalize(userRoleFilter);
-      return matchesQuery && matchesRole;
+      return matchesQuery;
     });
-  }, [users, userSearch, userRoleFilter]);
+  }, [usuarios, userSearch]);
 
   const selectedAsset = useMemo(
     () => activos.find((asset) => Number(asset?.id_activo) === Number(selectedAssetId)) ?? null,
@@ -123,11 +173,11 @@ export default function AsignacionBien() {
   );
 
   const selectedUser = useMemo(
-    () => (Array.isArray(users) ? users : []).find((u) => Number(u?.id_usuario) === Number(selectedUserId)) ?? null,
-    [users, selectedUserId]
+    () => usuarios.find((u) => Number(u?.id_usuario) === Number(selectedUserId)) ?? null,
+    [usuarios, selectedUserId]
   );
 
-  const handleAssign = () => {
+  const handleAssign = async () => {
     setSuccessMessage("");
     setErrorMessage("");
 
@@ -141,34 +191,32 @@ export default function AsignacionBien() {
       return;
     }
 
-    const resguardos = getStoredResguardos();
-    const nextResguardoId =
-      Math.max(...resguardos.map((r) => Number(r?.id_resguardo) || 0), 0) + 1;
+    setIsAssigning(true);
 
-    addResguardo({
-      id_resguardo: nextResguardoId,
-      id_activo: Number(selectedAsset.id_activo),
-      id_usuario: Number(selectedUser.id_usuario),
-      fecha_asignacion: todayDateString(),
-    });
+    try {
+      await createResguardo({
+        activoId: Number(selectedAsset.id_activo),
+        usuarioId: Number(selectedUser.id_usuario),
+        observaciones: `Asignado desde el sistema web`,
+      });
 
-    const nextActivos = activos.map((asset) =>
-      Number(asset?.id_activo) === Number(selectedAsset.id_activo)
-        ? {
-            ...asset,
-            estatus: ESTATUS_ACTIVO.RESGUARDADO,
-            propietario: selectedUser.nombre ?? selectedUser.nombre_completo,
-            id_usuario_asignado: Number(selectedUser.id_usuario),
-            estado_asignacion: ESTADO_RESGUARDO.PENDIENTE_CONFIRMACION,
-          }
-        : asset
-    );
+      // Recargar activos disponibles
+      const updatedActivos = await getActivosDisponibles();
+      setActivos(Array.isArray(updatedActivos) ? updatedActivos : []);
 
-    saveActivos(nextActivos);
-    setActivos(nextActivos);
-    setSelectedAssetId(null);
-    setSelectedUserId(null);
-    setSuccessMessage("Bien asignado correctamente");
+      setSelectedAssetId(null);
+      setSelectedUserId(null);
+      setSuccessMessage("Bien asignado correctamente. El usuario debe confirmar el resguardo.");
+    } catch (error) {
+      console.error("Error al asignar bien:", error);
+      if (error?.status === 401) {
+        navigate("/login", { replace: true });
+        return;
+      }
+      setErrorMessage(error?.message || "No fue posible asignar el bien.");
+    } finally {
+      setIsAssigning(false);
+    }
   };
 
   const handleCancel = () => {
@@ -203,6 +251,12 @@ export default function AsignacionBien() {
       />
 
       <Container fluid className="inv-content px-3 px-md-3 py-3 inv-assign-layout">
+        {isLoadingActivos || isLoadingUsuarios ? (
+          <Alert variant="info">
+            Cargando datos del sistema...
+          </Alert>
+        ) : null}
+
         <Row className="g-3">
           <Col lg={4}>
             <section className="inv-assign-panel">
@@ -297,12 +351,14 @@ export default function AsignacionBien() {
                   label="Cancelar"
                   className="inv-assign-btn inv-assign-btn--cancel"
                   onClick={handleCancel}
+                  disabled={isAssigning}
                 />
                 <PrimaryButton
                   variant="primary"
-                  label="Asignar Bien"
+                  label={isAssigning ? "Asignando..." : "Asignar Bien"}
                   className="inv-assign-btn inv-assign-btn--save"
                   onClick={handleAssign}
+                  disabled={isAssigning || !selectedAsset || !selectedUser}
                 />
               </div>
             </section>

@@ -61,11 +61,23 @@ function normalizeProducto(raw) {
   const modelo = raw.modelo ?? {};
   const marca = modelo.marca ?? {};
 
+  // Normalizar estatus: ACTIVO/INACTIVO del backend → Activo/Inactivo del frontend
+  let estatusNormalizado = "Activo"; // Por defecto siempre Activo
+  
+  if (raw.estatus != null && raw.estatus !== "") {
+    const estatusUpper = String(raw.estatus).toUpperCase().trim();
+    
+    // Solo marcar como Inactivo si explícitamente dice INACTIVO
+    if (estatusUpper === "INACTIVO" || estatusUpper === "INACTIVE") {
+      estatusNormalizado = "Inactivo";
+    }
+  }
+
   return {
     id_producto: raw.id_producto ?? raw.idProducto ?? null,
     nombre: raw.nombre ?? "",
     descripcion: raw.descripcion ?? "",
-    estatus: raw.estatus ?? "ACTIVO",
+    estatus: estatusNormalizado,
     id_modelo: modelo.id_modelo ?? modelo.idModelo ?? null,
     modelo: modelo.nombre ?? "",
     id_marca: marca.id_marca ?? marca.idMarca ?? null,
@@ -80,14 +92,20 @@ export async function getProductos() {
 }
 
 export async function createProducto(input) {
-  console.log("📡 [SERVICE] createProducto - Input:", input);
+  const descripcionValue = (input?.descripcion ?? "").trim();
+  if (!descripcionValue) {
+    const error = new Error("La descripción es obligatoria.");
+    error.status = 400;
+    throw error;
+  }
+
   const payload = {
     nombre: input?.nombre ?? "",
     marcaNombre: input?.marca ?? "",
     modeloNombre: input?.modelo ?? "",
-    descripcion: input?.descripcion ?? "",
+    descripcion: descripcionValue,
+    estatus: "ACTIVO",
   };
-  console.log("📡 [SERVICE] createProducto - Payload:", payload);
 
   const data = await authRequest(
     "POST",
@@ -96,7 +114,6 @@ export async function createProducto(input) {
     "No fue posible crear el producto."
   );
 
-  console.log("📡 [SERVICE] createProducto - Response:", data);
   return normalizeProducto(data?.data ?? data);
 }
 
@@ -107,13 +124,17 @@ export async function updateProducto(idProducto, input) {
     throw error;
   }
 
-  const payload = {};
-  if (input?.descripcion != null) {
-    payload.descripcion = input.descripcion;
+  const descripcionValue = (input?.descripcion ?? "").trim();
+  if (!descripcionValue) {
+    const error = new Error("La descripción es obligatoria.");
+    error.status = 400;
+    throw error;
   }
-  if (input?.estatus != null) {
-    payload.estatus = input.estatus === "Activo" ? "ACTIVO" : "INACTIVO";
-  }
+
+  const payload = {
+    descripcion: descripcionValue,
+    estatus: input?.estatus === "Activo" ? "ACTIVO" : "INACTIVO",
+  };
 
   const data = await authRequest(
     "PUT",
@@ -172,7 +193,7 @@ export async function createUbicacion(input) {
     campusNombre: input?.campus ?? "",
     edificioNombre: input?.edificio ?? "",
     aulaNombre: input?.aula ?? "",
-    descripcion: input?.descripcion ?? "",
+    descripcion: (input?.descripcion ?? "").trim() || null,
   };
 
   const data = await authRequest(

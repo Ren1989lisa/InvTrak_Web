@@ -1,5 +1,4 @@
 import { API_BASE_URL } from "../api/apiClient";
-import { normalizeActivosList } from "../utils/entityFields";
 
 function getStoredToken() {
   return (
@@ -7,15 +6,6 @@ function getStoredToken() {
     window.localStorage.getItem("token") ||
     null
   );
-}
-
-function extractActivos(payload) {
-  if (Array.isArray(payload)) return payload;
-  if (Array.isArray(payload?.data)) return payload.data;
-  if (Array.isArray(payload?.content)) return payload.content;
-  if (Array.isArray(payload?.activos)) return payload.activos;
-  if (Array.isArray(payload?.items)) return payload.items;
-  return [];
 }
 
 async function authRequest(method, endpoint, body, defaultMessage) {
@@ -70,22 +60,54 @@ async function authRequest(method, endpoint, body, defaultMessage) {
   }
 }
 
-export async function getActivosFromService() {
+/**
+ * Crea una asignación de resguardo (asigna un bien a un usuario)
+ * @param {Object} input - Datos de la asignación
+ * @param {number} input.activoId - ID del activo a asignar
+ * @param {number} input.usuarioId - ID del usuario receptor
+ * @param {string} [input.observaciones] - Observaciones opcionales
+ * @returns {Promise<Object>} El resguardo creado con su ID
+ */
+export async function createResguardo(input) {
+  if (!input?.activoId) {
+    const error = new Error("El ID del activo es obligatorio.");
+    error.status = 400;
+    throw error;
+  }
+
+  if (!input?.usuarioId) {
+    const error = new Error("El ID del usuario es obligatorio.");
+    error.status = 400;
+    throw error;
+  }
+
+  const payload = {
+    activoId: Number(input.activoId),
+    usuarioId: Number(input.usuarioId),
+    observaciones: input.observaciones ?? "",
+  };
+
+  const data = await authRequest(
+    "POST",
+    "/resguardo",
+    payload,
+    "No fue posible crear la asignación."
+  );
+
+  return data;
+}
+
+/**
+ * Obtiene todos los resguardos
+ * @returns {Promise<Array>} Lista de resguardos
+ */
+export async function getResguardos() {
   const data = await authRequest(
     "GET",
-    "/activo",
+    "/resguardo",
     null,
-    "No fue posible obtener los bienes registrados."
+    "No fue posible obtener los resguardos."
   );
-  return normalizeActivosList(extractActivos(data));
-}
 
-export async function getActivosDisponibles() {
-  const activos = await getActivosFromService();
-  // Filtrar solo activos disponibles para asignación
-  return activos.filter((a) => {
-    const estatus = String(a?.estatus ?? "").toUpperCase();
-    return estatus === "DISPONIBLE" || estatus === "PENDIENTE_ASIGNACION" || estatus === "PENDIENTE DE ASIGNACION";
-  });
+  return Array.isArray(data) ? data : (data?.data ?? data?.resguardos ?? []);
 }
-

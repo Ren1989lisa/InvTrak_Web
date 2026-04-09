@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { Container } from "react-bootstrap";
+import { useEffect, useMemo, useState } from "react";
+import { Alert, Container } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import {
   AiOutlineBoxPlot,
@@ -23,10 +23,10 @@ import {
 import NavbarMenu from "../Components/NavbarMenu";
 import SidebarMenu from "../Components/SidebarMenu";
 import { useUsers } from "../context/UsersContext";
-import { getStoredActivos } from "../activosStorage";
-import { getStoredReportes } from "../reportesStorage";
+import { getActivosFromService } from "../services/activosService";
+import { getReportes } from "../services/reporteService";
+import { getHistorial } from "../services/historialService";
 import { normalize } from "../utils/catalogUtils";
-import historialData from "../Data/historial_activo.json";
 import "../Style/bienes-registrados.css";
 import "../Style/sidebar.css";
 import "../Style/dashboard.css";
@@ -70,8 +70,54 @@ export default function Dashboard() {
   const [openSidebar, setOpenSidebar] = useState(false);
   const { currentUser, logout, menuItems } = useUsers();
 
-  const activos = useMemo(() => getStoredActivos(), []);
-  const reportes = useMemo(() => getStoredReportes(), []);
+  const [activos, setActivos] = useState([]);
+  const [reportes, setReportes] = useState([]);
+  const [historial, setHistorial] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  // Cargar datos del backend
+  useEffect(() => {
+    let active = true;
+
+    async function loadDashboardData() {
+      setIsLoading(true);
+      setError("");
+
+      try {
+        // Cargar activos, reportes e historial en paralelo
+        const [activosData, reportesData, historialData] = await Promise.all([
+          getActivosFromService(),
+          getReportes().catch(() => []), // Si falla, devolver array vacío
+          getHistorial().catch(() => []), // Si falla (ej: no admin), devolver array vacío
+        ]);
+
+        if (!active) return;
+
+        setActivos(Array.isArray(activosData) ? activosData : []);
+        setReportes(Array.isArray(reportesData) ? reportesData : []);
+        setHistorial(Array.isArray(historialData) ? historialData : []);
+      } catch (err) {
+        if (!active) return;
+        console.error("Error al cargar datos del dashboard:", err);
+        
+        if (err?.status === 401) {
+          navigate("/login", { replace: true });
+          return;
+        }
+        
+        setError("No fue posible cargar algunos datos del dashboard.");
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    }
+
+    loadDashboardData();
+
+    return () => {
+      active = false;
+    };
+  }, [navigate]);
 
   const metrics = useMemo(() => {
     const total = activos.length;
@@ -197,76 +243,78 @@ export default function Dashboard() {
 
   const feedEvents = useMemo(() => {
     const events = [];
-    const allHistorial = Array.isArray(historialData) ? historialData : [];
     const activosMap = new Map(activos.map((a) => [Number(a?.id_activo), a]));
     const reportesMap = new Map(reportes.map((r) => [r?.folio, r]));
 
-    allHistorial.forEach((h) => {
-      const activo = activosMap.get(Number(h?.id_activo));
+    // Procesar historial del backend
+    historial.forEach((h) => {
+      const activo = activosMap.get(Number(h?.id_activo)) || h?.activo;
       const codigo = activo?.etiqueta_bien ?? `#${h?.id_activo}`;
       const tipoActivo = activo?.producto?.tipo_activo ?? activo?.tipo_activo ?? "bien";
-      const reporte = reportesMap.get(h?.folio_reporte ?? h?.reporte_relacionado);
 
       let tecnico = "";
       let reparo = "";
+      let labelReparo = "Detalle";
+      let tipoEvento = h?.tipo_evento ?? "cambio_estatus";
 
-      if (h?.tipo_evento === "mantenimiento") {
-        tecnico = h?.tecnico ?? "Técnico";
-        reparo = h?.diagnostico ?? h?.observacion ?? `Mantenimiento en ${tipoActivo} ${codigo}`;
-      } else if (h?.tipo_evento === "asignacion") {
-        tecnico = h?.tecnico_asignado ?? "Técnico asignado";
-        reparo = reporte?.descripcion ?? h?.observacion ?? `Reporte ${h?.reporte_relacionado ?? ""}`;
-      } else if (h?.tipo_evento === "reporte") {
-        tecnico = h?.usuario ?? "Usuario";
-        reparo = h?.diagnostico ?? reporte?.descripcion ?? `Reporte del bien ${codigo}`;
-      } else if (h?.tipo_evento === "cambio_estatus") {
-        tecnico = h?.usuario ?? "Sistema";
-        reparo = h?.observacion ?? `Cambio a ${h?.estatus_nuevo ?? ""}`;
+      // Determinar tipo de evento y contenido según los datos del historial
+      if (tipoEvento === "cambio_estatus" || h?.estatus_nuevo) {
+        tecnico = h?.usuario?.nombre ?? "Sistema";
+        reparo = h?.motivo || `Cambio de ${h?.estatus_anterior ?? "estado anterior"} a ${h?.estatus_nuevo ?? "nuevo estado"}`;
+        labelReparo = "Detalle";
+      } else if (tipoEvento === "mantenimiento") {
+        tecnico = h?.usuario?.nombre ?? "Técnico";
+        reparo = h?.motivo ?? `Mantenimiento en ${tipoActivo} ${codigo}`;
+        labelReparo = "Reparó";
+      } else if (tipoEvento === "reporte") {
+        tecnico = h?.usuario?.nombre ?? "Usuario";
+        reparo = h?.motivo ?? `Reporte del bien ${codigo}`;
+        labelReparo = "Reportó";
+      } else if (tipoEvento === "asignacion") {
+        tecnico = h?.usuario?.nombre ?? "Técnico asignado";
+        reparo = h?.motivo ?? `Asignación de ${tipoActivo} ${codigo}`;
+        labelReparo = "Asignó";
       } else {
-        tecnico = h?.usuario ?? h?.tecnico ?? "Sistema";
-        reparo = codigo;
+        tecnico = h?.usuario?.nombre ?? "Sistema";
+        reparo = h?.motivo || codigo;
       }
-
-      const labelReparo = ["mantenimiento", "asignacion"].includes(h?.tipo_evento)
-        ? "Reparó"
-        : h?.tipo_evento === "reporte"
-          ? "Reportó"
-          : "Detalle";
 
       events.push({
         id: h?.id_historial,
-        tipo: h?.tipo_evento,
-        title: eventTitle(h?.tipo_evento),
+        tipo: tipoEvento,
+        title: eventTitle(tipoEvento),
         tecnico,
         reparo,
         labelReparo,
         codigo,
-        tiempo: formatTimeAgo(h?.fecha),
-        fecha: h?.fecha,
+        tiempo: formatTimeAgo(h?.fecha ?? h?.fecha_cambio),
+        fecha: h?.fecha ?? h?.fecha_cambio,
       });
     });
 
+    // Agregar eventos de alta de activos recientes
     activos
       .filter((a) => a?.fecha_alta)
       .sort((a, b) => new Date(b.fecha_alta) - new Date(a.fecha_alta))
       .slice(0, 2)
       .forEach((a) => {
-      events.push({
-        id: `alta-${a?.id_activo}`,
-        tipo: "alta",
-        title: "Nuevo bien agregado",
-        tecnico: "Administrador",
-        reparo: `${a?.producto?.tipo_activo ?? "Bien"} ${a?.etiqueta_bien ?? ""}`,
-        labelReparo: "Registró",
-        codigo: a?.etiqueta_bien,
-        tiempo: formatTimeAgo(a?.fecha_alta),
-        fecha: a?.fecha_alta,
-      });
+        events.push({
+          id: `alta-${a?.id_activo}`,
+          tipo: "alta",
+          title: "Nuevo bien agregado",
+          tecnico: "Administrador",
+          reparo: `${a?.producto?.tipo_activo ?? "Bien"} ${a?.etiqueta_bien ?? ""}`,
+          labelReparo: "Registró",
+          codigo: a?.etiqueta_bien,
+          tiempo: formatTimeAgo(a?.fecha_alta),
+          fecha: a?.fecha_alta,
+        });
       });
 
+    // Ordenar por fecha (más recientes primero)
     events.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
     return events.slice(0, 9);
-  }, [activos, historialData, reportes]);
+  }, [activos, historial, reportes]);
 
   return (
     <div className="inv-page inv-dashboard">
@@ -296,6 +344,17 @@ export default function Dashboard() {
       />
 
       <Container fluid className="inv-content px-3 px-md-4 py-3">
+        {isLoading ? (
+          <Alert variant="info" className="mb-3">
+            Cargando datos del dashboard...
+          </Alert>
+        ) : null}
+
+        {error ? (
+          <Alert variant="warning" className="mb-3" dismissible onClose={() => setError("")}>
+            {error}
+          </Alert>
+        ) : null}
 
         <div className="inv-dashboard__metrics">
           <div className="inv-metric-card">
