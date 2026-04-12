@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Alert, Button, Card, Col, Container, Form, Row } from "react-bootstrap";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -27,6 +27,7 @@ const ROL_OPTIONS = [
 
 export default function EditarPerfil() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { id } = useParams();
   const { updateCurrentUser, currentUser, logout, menuItems } = useUsers();
   const [openSidebar, setOpenSidebar] = useState(false);
@@ -36,6 +37,15 @@ export default function EditarPerfil() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const perfilRoute = usuario ? `/perfil/${usuario.id_usuario}` : "/perfil";
+
+  const returnAfterEdit = () => {
+    const from = location.state?.from;
+    if (from === "/usuarios") {
+      navigate("/usuarios", { replace: true });
+      return;
+    }
+    navigate(perfilRoute, { replace: true });
+  };
 
   const {
     control,
@@ -178,7 +188,7 @@ export default function EditarPerfil() {
           type="button"
           variant="link"
           className="inv-back-btn"
-          onClick={() => navigate(perfilRoute)}
+          onClick={returnAfterEdit}
         >
           ← Regresar
         </Button>
@@ -344,7 +354,7 @@ export default function EditarPerfil() {
                       variant="light"
                       label="Cancelar"
                       className="inv-edit-profile__cancelBtn"
-                      onClick={() => navigate(perfilRoute)}
+                      onClick={returnAfterEdit}
                     />
                   </div>
                 </Form>

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { Container, Button, Alert } from "react-bootstrap";
 
 import NavbarMenu from "../Components/NavbarMenu";
@@ -28,6 +28,7 @@ function mapRol(value) {
 
 export default function PerfilUsuario() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { id } = useParams();
   const { currentUser, logout, menuItems, isAdmin } = useUsers();
   const [openSidebar, setOpenSidebar] = useState(false);
@@ -211,7 +212,13 @@ export default function PerfilUsuario() {
                   className="inv-profile-editBtn"
                   onClick={() =>
                     navigate(
-                      usuario?.id_usuario ? `/perfil/${usuario.id_usuario}/editar` : "/perfil/editar"
+                      usuario?.id_usuario ? `/perfil/${usuario.id_usuario}/editar` : "/perfil/editar",
+                      {
+                        state:
+                          location.state?.from != null
+                            ? { from: location.state.from }
+                            : undefined,
+                      }
                     )
                   }
                 />

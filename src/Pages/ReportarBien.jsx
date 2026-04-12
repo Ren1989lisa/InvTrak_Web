@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { BsClipboard2Fill } from "react-icons/bs";
-import { BiBarcodeReader } from "react-icons/bi";
 import { FiUploadCloud } from "react-icons/fi";
 import { BsImage } from "react-icons/bs";
 
@@ -51,7 +50,7 @@ export default function ReportarBien() {
     reset,
   } = useForm({
     resolver: zodResolver(reportarBienSchema),
-    defaultValues: { etiqueta: "", estatus: "", descripcion: "" },
+    defaultValues: { id_activo: "", estatus: "", descripcion: "" },
   });
 
   const activos = useMemo(() => getStoredActivos(), []);
@@ -74,6 +73,22 @@ export default function ReportarBien() {
       return !pendiente(a?.estado_asignacion);
     });
   }, [activos, resguardos, currentUser?.id_usuario]);
+
+  const bienesOptions = useMemo(
+    () =>
+      misBienes.map((a) => {
+        const etiqueta =
+          (a?.etiqueta_bien ?? "").toString().trim() || `Activo #${a?.id_activo ?? ""}`;
+        const tipo = (a?.producto?.tipo_activo ?? a?.tipo_activo ?? "")
+          .toString()
+          .trim();
+        return {
+          value: String(a.id_activo),
+          label: tipo ? `${etiqueta} — ${tipo}` : etiqueta,
+        };
+      }),
+    [misBienes]
+  );
 
   const handleFileChange = (e) => {
     const files = Array.from(e.target?.files ?? []);
@@ -109,13 +124,10 @@ export default function ReportarBien() {
     setErrorMessage("");
     setSuccessMessage("");
 
-    const codigo = data.etiqueta.trim();
-
-    const activo = misBienes.find(
-      (a) => (a?.etiqueta_bien ?? "").toString().trim().toUpperCase() === codigo.toUpperCase()
-    );
+    const idSel = Number(data.id_activo);
+    const activo = misBienes.find((a) => Number(a?.id_activo) === idSel);
     if (!activo) {
-      setErrorMessage("La etiqueta no corresponde a ninguno de tus bienes registrados.");
+      setErrorMessage("Selecciona un bien de la lista.");
       return;
     }
 
@@ -150,7 +162,7 @@ export default function ReportarBien() {
     saveActivos(updated);
 
     setSuccessMessage("Reporte creado correctamente");
-    reset({ etiqueta: "", estatus: "", descripcion: "" });
+    reset({ id_activo: "", estatus: "", descripcion: "" });
     setArchivos([]);
     setTimeout(() => setSuccessMessage(""), 3500);
   });
@@ -218,29 +230,25 @@ export default function ReportarBien() {
                   <Row className="g-3">
                     <Col xs={12} md={6}>
                       <Controller
-                        name="etiqueta"
+                        name="id_activo"
                         control={control}
                         render={({ field, fieldState }) => (
-                          <>
-                            <FormInput
-                              label="Etiqueta del bien"
-                              name={field.name}
-                              type="text"
-                              placeholder="Ingresa la etiqueta del bien"
-                              value={field.value}
-                              onChange={field.onChange}
-                              onBlur={field.onBlur}
-                              list="etiquetas-sugeridas"
-                              className="inv-reportar-input"
-                              leftIcon={<BiBarcodeReader className="inv-reportar-input-icon" />}
-                              error={fieldState.error?.message}
-                            />
-                            <datalist id="etiquetas-sugeridas">
-                              {misBienes.map((a) => (
-                                <option key={a.id_activo} value={a.etiqueta_bien} />
-                              ))}
-                            </datalist>
-                          </>
+                          <FormSelect
+                            label="Bien a reportar"
+                            name={field.name}
+                            value={field.value}
+                            onChange={field.onChange}
+                            onBlur={field.onBlur}
+                            options={bienesOptions}
+                            placeholder={
+                              misBienes.length === 0
+                                ? "No tienes bienes asignados"
+                                : "Selecciona el bien"
+                            }
+                            disabled={misBienes.length === 0}
+                            className="inv-reportar-select"
+                            error={fieldState.error?.message}
+                          />
                         )}
                       />
                     </Col>

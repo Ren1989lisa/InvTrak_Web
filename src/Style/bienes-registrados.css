@@ -163,6 +163,51 @@
   font-size: 0.95rem;
 }
 
+.inv-asset-card__headerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.inv-asset-card__headerMain {
+  min-width: 0;
+  flex: 1;
+}
+
+.inv-asset-card__deleteBtn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  cursor: pointer;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    transform 0.12s ease;
+}
+
+.inv-asset-card__deleteBtn:hover {
+  background: rgba(220, 53, 69, 0.38);
+  border-color: rgba(255, 255, 255, 0.75);
+}
+
+.inv-asset-card__deleteBtn:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+.inv-asset-card__deleteBtn:active {
+  transform: scale(0.96);
+}
+
 .inv-asset-card__headerLabel {
   opacity: 0.95;
   font-weight: 600;
@@ -294,4 +339,32 @@
 
 @media (max-width: 576px) {
   .filters-panel { width: 100%; }
+}
+
+/* Modal eliminar bien — coherente con la paleta InvTrak */
+.inv-delete-activo-modal .modal-content {
+  border: none;
+  border-radius: 14px;
+  box-shadow: 0 18px 48px rgba(15, 36, 51, 0.18);
+  overflow: hidden;
+}
+
+.inv-delete-activo-modal__header {
+  padding-bottom: 0.25rem !important;
+}
+
+.inv-delete-activo-modal__icon {
+  display: inline-flex;
+  color: #c0392b;
+  opacity: 0.95;
+}
+
+.inv-delete-activo-modal__cancel {
+  border: 1px solid #e2e8f0;
+  color: #475569;
+}
+
+.inv-delete-activo-modal__cancel:hover {
+  background: #f8fafc;
+  color: #0f172a;
 }

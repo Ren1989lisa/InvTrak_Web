@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Col, Container, Row, Button, Alert } from "react-bootstrap";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 import NavbarMenu from "../Components/NavbarMenu";
 import SidebarMenu from "../Components/SidebarMenu";
@@ -19,6 +19,7 @@ import "../Style/usuarios.css";
 
 export default function Usuarios() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [openSidebar, setOpenSidebar] = useState(false);
   const [search, setSearch] = useState("");
   const [filterRol, setFilterRol] = useState("todos");
@@ -32,6 +33,15 @@ export default function Usuarios() {
   const { currentUser, logout, menuItems } = useUsers();
 
   const query = search.trim().toLowerCase();
+
+  useEffect(() => {
+    const msg = location.state?.registrationSuccess;
+    if (msg) {
+      setSuccessMsg(msg);
+      setErrorMsg("");
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state, location.pathname, navigate]);
 
   useEffect(() => {
     let active = true;
@@ -196,8 +206,12 @@ export default function Usuarios() {
         <div className="mt-3">
           <UsersTable
             usuarios={usuariosFiltrados}
-            onUserSelect={(usuario) => navigate(`/perfil/${usuario.id_usuario}`)}
-            onUserEdit={(usuario) => navigate(`/perfil/${usuario.id_usuario}/editar`)}
+            onUserSelect={(usuario) =>
+              navigate(`/perfil/${usuario.id_usuario}`, { state: { from: "/usuarios" } })
+            }
+            onUserEdit={(usuario) =>
+              navigate(`/perfil/${usuario.id_usuario}/editar`, { state: { from: "/usuarios" } })
+            }
             onUserDelete={handleDeleteClick}
           />
           {!isLoading && usuariosFiltrados.length === 0 ? (

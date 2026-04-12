@@ -31,7 +31,7 @@ export const editarPerfilSchema = z.object({
 });
 
 export const reportarBienSchema = z.object({
-  etiqueta: z.string().min(1, "La etiqueta del bien es obligatoria"),
+  id_activo: z.string().min(1, "Selecciona el bien a reportar"),
   estatus: z.string().optional(),
   descripcion: z.string().optional(),
 });

@@ -1,10 +1,11 @@
-import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { getDefaultRouteByRole } from "../config/routes";
 import {
   getCurrentUser as getStoredCurrentUser,
   login as authLogin,
   logout as authLogout,
   getToken,
+  refreshCurrentUserProfile,
 } from "../services/authService";
 
 const UsersContext = createContext(null);
@@ -22,33 +23,29 @@ const MENU_ADMIN = [
 
 const MENU_USUARIO = [
   { icon: "grid", label: "Bienes registrados", route: "/bienes-registrados" },
-  { icon: "grid", label: "Mis bienes", route: "/mis-bienes" },
   { icon: "report", label: "Reportar bien", route: "/reportar-bien" },
-  { icon: "users", label: "Mi perfil", route: "/perfil" },
 ];
 
 const MENU_TECNICO = [
   { icon: "grid", label: "Bienes registrados", route: "/bienes-registrados" },
-  { icon: "report", label: "Mis reparaciones", route: "/mis-reparaciones" },
-  { icon: "users", label: "Mi perfil", route: "/perfil" },
 ];
 
 function getMenuByRol(rol) {
-  const r = (rol ?? "").toString().toLowerCase();
-  if (r === "admin") return MENU_ADMIN;
+  const r = (rol ?? "").toString().toLowerCase().trim();
+  if (r === "admin" || r === "administrador") return MENU_ADMIN;
   if (r === "usuario") return MENU_USUARIO;
-  if (r === "tecnico") return MENU_TECNICO;
+  if (r === "tecnico" || r === "técnico") return MENU_TECNICO;
   return MENU_USUARIO;
 }
 
-const RUTAS_USUARIO = ["/bienes-registrados", "/mis-bienes", "/perfil", "/reportar-bien"];
+const RUTAS_USUARIO = ["/bienes-registrados", "/mis-bienes", "/reportar-bien"];
 const RUTAS_TECNICO = ["/bienes-registrados", "/mis-reparaciones", "/perfil"];
 
 function canAccessRoute(rol, path) {
-  const r = (rol ?? "").toString().toLowerCase();
+  const r = (rol ?? "").toString().toLowerCase().trim();
   const p = (path ?? "").toString().replace(/\/$/, "");
 
-  if (r === "admin") return true;
+  if (r === "admin" || r === "administrador") return true;
 
   if (r === "usuario") {
     if (RUTAS_USUARIO.some((ruta) => p === ruta)) return true;
@@ -58,7 +55,7 @@ function canAccessRoute(rol, path) {
     return false;
   }
 
-  if (r === "tecnico") {
+  if (r === "tecnico" || r === "técnico") {
     if (RUTAS_TECNICO.some((ruta) => p === ruta)) return true;
     if (p.endsWith("/editar")) return false;
     if (p.startsWith("/perfil/") || p.startsWith("/activo/") || p.startsWith("/reporte/"))
@@ -72,6 +69,25 @@ function canAccessRoute(rol, path) {
 export function UsersProvider({ children }) {
   const [user, setUser] = useState(() => getStoredCurrentUser());
   const [isAuthenticated, setIsAuthenticated] = useState(() => Boolean(getToken() && getStoredCurrentUser()));
+
+  useEffect(() => {
+    if (!getToken() || !getStoredCurrentUser()) return;
+
+    let active = true;
+    (async () => {
+      try {
+        const updated = await refreshCurrentUserProfile();
+        if (!active || !updated) return;
+        setUser(updated);
+      } catch {
+        // Sin cambios si el perfil no está disponible
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const currentUser = user;
   const userRole = user?.rol ?? null;
@@ -91,7 +107,8 @@ export function UsersProvider({ children }) {
     [user?.rol]
   );
 
-  const isAdmin = (user?.rol ?? "").toString().toLowerCase() === "admin";
+  const rNorm = (user?.rol ?? "").toString().toLowerCase().trim();
+  const isAdmin = rNorm === "admin" || rNorm === "administrador";
 
   const login = useCallback(async (correo, password) => {
     const nextUser = await authLogin(correo, password);

@@ -50,8 +50,8 @@ function mapFrontendRolToBackend(value) {
 function mapFrontendRolToId(value) {
   const role = (value ?? "").toString().trim().toLowerCase();
   if (role === "admin") return 1;
-  if (role === "usuario") return 2;
-  if (role === "tecnico") return 3;
+  if (role === "usuario") return 3;
+  if (role === "tecnico") return 2;
   return null;
 }
 

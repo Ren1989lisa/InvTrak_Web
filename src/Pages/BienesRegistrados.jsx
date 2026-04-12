@@ -6,12 +6,13 @@ import * as XLSX from "xlsx";
 import NavbarMenu from "../Components/NavbarMenu";
 import SearchBar from "../Components/SearchBar";
 import AssetCard from "../Components/AssetCard";
+import DeleteActivoModal from "../Components/DeleteActivoModal";
 import PaginationComponent from "../Components/PaginationComponent";
 import FiltersModal from "../Components/FiltersModal";
 import SidebarMenu from "../Components/SidebarMenu";
 import { useUsers } from "../context/UsersContext";
 import { getStoredActivos, saveActivos } from "../activosStorage";
-import { getActivos } from "../services/activoService";
+import { getActivos, deleteActivo } from "../services/activoService";
 import "../Style/bienes-registrados.css";
 import "../Style/sidebar.css";
 import "../Style/asignacion-bien.css";
@@ -44,8 +45,12 @@ export default function BienesRegistrados() {
   const [isLoadingActivos, setIsLoadingActivos] = useState(false);
   const [loadError, setLoadError] = useState("");
   const [exportFeedback, setExportFeedback] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [activoToDelete, setActivoToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteFeedback, setDeleteFeedback] = useState(null);
   const navigate = useNavigate();
-  const { currentUser, logout, menuItems } = useUsers();
+  const { currentUser, logout, menuItems, isAdmin } = useUsers();
   const query = search.trim().toLowerCase();
 
   useEffect(() => {
@@ -150,6 +155,57 @@ export default function BienesRegistrados() {
     }
   };
 
+  const handleOpenDelete = (activo) => {
+    setDeleteFeedback(null);
+    setActivoToDelete(activo);
+    setShowDeleteModal(true);
+  };
+
+  const handleCancelDelete = () => {
+    if (!isDeleting) {
+      setShowDeleteModal(false);
+      setActivoToDelete(null);
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!activoToDelete) return;
+    setIsDeleting(true);
+    setDeleteFeedback(null);
+    try {
+      await deleteActivo(activoToDelete.id_activo);
+      setActivos((prev) => {
+        const next = prev.filter(
+          (a) => Number(a?.id_activo) !== Number(activoToDelete.id_activo)
+        );
+        saveActivos(next);
+        return next;
+      });
+      const etiqueta = activoToDelete?.etiqueta_bien ?? "";
+      setDeleteFeedback({
+        variant: "success",
+        message: etiqueta
+          ? `El bien ${etiqueta} se eliminó del inventario.`
+          : "El bien se eliminó del inventario.",
+      });
+      setShowDeleteModal(false);
+      setActivoToDelete(null);
+    } catch (error) {
+      if (error?.status === 401) {
+        navigate("/login", { replace: true });
+        return;
+      }
+      setDeleteFeedback({
+        variant: "danger",
+        message: error?.message || "No fue posible eliminar el bien. Intenta de nuevo.",
+      });
+      setShowDeleteModal(false);
+      setActivoToDelete(null);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div className="inv-page">
       <NavbarMenu
@@ -192,6 +248,11 @@ export default function BienesRegistrados() {
             {exportFeedback.message}
           </Alert>
         ) : null}
+        {deleteFeedback ? (
+          <Alert variant={deleteFeedback.variant} className="mt-3 mb-0" dismissible onClose={() => setDeleteFeedback(null)}>
+            {deleteFeedback.message}
+          </Alert>
+        ) : null}
         {loadError ? (
           <Alert variant="warning" className="mt-3 mb-0">
             {loadError}
@@ -211,10 +272,22 @@ export default function BienesRegistrados() {
           ubicaciones={ubicaciones}
         />
 
+        <DeleteActivoModal
+          show={showDeleteModal}
+          onHide={handleCancelDelete}
+          onConfirm={handleConfirmDelete}
+          activo={activoToDelete}
+          isDeleting={isDeleting}
+        />
+
         <Row className="g-4 mt-2">
           {activosFiltrados.map((activo) => (
             <Col md={4} key={activo.id_activo}>
-              <AssetCard activo={activo} />
+              <AssetCard
+                activo={activo}
+                showDeleteButton={isAdmin}
+                onDeleteClick={() => handleOpenDelete(activo)}
+              />
             </Col>
           ))}
         </Row>

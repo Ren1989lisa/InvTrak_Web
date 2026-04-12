@@ -14,3 +14,13 @@ export async function getActivos() {
   const response = await apiRequest("/activo", "GET");
   return normalizeActivosList(extractActivos(response));
 }
+
+export async function deleteActivo(idActivo) {
+  if (idActivo == null || idActivo === "") {
+    const error = new Error("ID de activo inválido.");
+    error.status = 400;
+    throw error;
+  }
+  await apiRequest(`/activo/${idActivo}`, "DELETE");
+  return { success: true };
+}

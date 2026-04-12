@@ -9,11 +9,12 @@ import FormInput from "../Components/FormInput";
 import { useUsers } from "../context/UsersContext";
 import { loginSchema } from "../utils/schemas";
 import { ApiError } from "../api/apiClient";
+import { getDefaultRouteByRole } from "../config/routes";
 
 function Login() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, defaultRoute } = useUsers();
+  const { login } = useUsers();
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -30,9 +31,10 @@ function Login() {
     setError("");
     setSubmitting(true);
     try {
-      await login(data.correo.trim(), data.password);
+      const loggedIn = await login(data.correo.trim(), data.password);
       const fromRoute = location.state?.from?.pathname;
-      navigate(fromRoute || defaultRoute, { replace: true });
+      const fallback = getDefaultRouteByRole(loggedIn?.rol);
+      navigate(fromRoute || fallback, { replace: true });
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
         setError("Credenciales incorrectas");

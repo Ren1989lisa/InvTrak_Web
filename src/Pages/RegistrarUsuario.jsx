@@ -32,7 +32,6 @@ export default function RegistrarUsuario() {
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const usersList = useMemo(() => (Array.isArray(users) ? users : []), [users]);
@@ -66,7 +65,6 @@ export default function RegistrarUsuario() {
 
   const onSubmit = handleSubmit(async (data) => {
     setError("");
-    setSuccess("");
     setIsSubmitting(true);
 
     const empleadoDuplicado = usersList.some(
@@ -74,6 +72,7 @@ export default function RegistrarUsuario() {
     );
     if (empleadoDuplicado) {
       setError("El número de empleado ya existe.");
+      setIsSubmitting(false);
       return;
     }
 
@@ -82,6 +81,7 @@ export default function RegistrarUsuario() {
     );
     if (correoDuplicado) {
       setError("El correo ya está registrado.");
+      setIsSubmitting(false);
       return;
     }
 
@@ -99,13 +99,11 @@ export default function RegistrarUsuario() {
         ...data,
         password: data.numero_empleado,
       });
-      setSuccess("Usuario registrado correctamente.");
       reset(INITIAL_VALUES);
-      const refreshed = await getUsuarios();
-      setUsers(Array.isArray(refreshed) ? refreshed : []);
-      window.setTimeout(() => {
-        navigate("/usuarios");
-      }, 800);
+      navigate("/usuarios", {
+        replace: true,
+        state: { registrationSuccess: "Usuario registrado correctamente." },
+      });
     } catch (err) {
       if (err?.status === 401) {
         navigate("/login", { replace: true });
@@ -122,7 +120,6 @@ export default function RegistrarUsuario() {
       <Container className="inv-register-container py-4">
         <FormContainer title="Registro de Usuarios">
           {error ? <Alert variant="danger">{error}</Alert> : null}
-          {success ? <Alert variant="success">{success}</Alert> : null}
 
           <Form onSubmit={onSubmit} className="inv-register__form">
             <Controller

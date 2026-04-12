@@ -12,14 +12,18 @@ export default function ProtectedRoute({ children, requiredRole = null }) {
 
   const path = location.pathname;
 
-  const rol = (currentUser?.rol ?? "").toString().toLowerCase();
-  if (requiredRole === "admin" && rol !== "admin") {
+  const rol = (currentUser?.rol ?? "").toString().toLowerCase().trim();
+  const isAdmin = rol === "admin" || rol === "administrador";
+  const isTecnico = rol === "tecnico" || rol === "técnico";
+  const isUsuario = rol === "usuario";
+
+  if (requiredRole === "admin" && !isAdmin) {
     return <Navigate to={defaultRoute} replace />;
   }
-  if (requiredRole === "usuario" && rol !== "usuario") {
+  if (requiredRole === "usuario" && !isUsuario) {
     return <Navigate to={defaultRoute} replace />;
   }
-  if (requiredRole === "tecnico" && rol !== "tecnico") {
+  if (requiredRole === "tecnico" && !isTecnico) {
     return <Navigate to={defaultRoute} replace />;
   }
 
