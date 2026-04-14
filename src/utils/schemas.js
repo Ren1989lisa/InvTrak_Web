@@ -16,7 +16,7 @@ export const usuarioSchema = z.object({
   curp: z.string().length(18, "La CURP debe tener exactamente 18 caracteres"),
   rol: z.string().min(1, "El rol es obligatorio"),
   numero_empleado: z.string().min(1, "El número de empleado es obligatorio"),
-  area: z.string().min(1, "El área es obligatorio"),
+  area: z.string().min(1, "El área es obligatoria"),
 });
 
 export const editarPerfilSchema = z.object({
@@ -37,12 +37,27 @@ export const reportarBienSchema = z.object({
 });
 
 export const registroBienSchema = z.object({
-  numero_serie: z.string().min(1, "El número de serie es obligatorio"),
-  fecha_alta: z.string().min(1, "La fecha de alta es obligatoria"),
-  descripcion: z.string().min(1, "La descripción es obligatoria"),
-  estatus: z.string().min(1, "El estatus es obligatorio"),
-  costo: z.string().min(1, "El costo es obligatorio").refine(
-    (val) => !Number.isNaN(parseFloat(val)) && parseFloat(val) >= 0,
-    "El costo debe ser un número válido mayor o igual a 0"
+  numero_serie: z.string().trim().min(1, "El número de serie es obligatorio"),
+  fecha_alta: z
+    .string()
+    .trim()
+    .min(1, "La fecha de alta es obligatoria")
+    .refine((value) => {
+      const selectedDate = new Date(`${value}T00:00:00`);
+      if (Number.isNaN(selectedDate.getTime())) return false;
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return selectedDate <= today;
+    }, "La fecha no puede ser futura"),
+  descripcion: z.string().trim().min(1, "La descripción es obligatoria"),
+  estatus: z.string().optional(),
+  costo: z.string().trim().min(1, "El costo es obligatorio").refine(
+    (value) => {
+      const normalized = String(value).replace(",", ".").trim();
+      const parsed = Number(normalized);
+      return Number.isFinite(parsed) && parsed > 0;
+    },
+    "El costo debe ser un número válido mayor a 0"
   ),
 });
