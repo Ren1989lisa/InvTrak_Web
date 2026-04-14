@@ -16,14 +16,14 @@ function formatCurrency(value) {
 
 export default function AssetCard({ activo }) {
   const navigate = useNavigate();
-  const ubicacionStr = activo?.ubicacion?.completa ?? 
+  const ubicacionStr = activo?.ubicacion?.completa ??
     [activo?.ubicacion?.campus, activo?.ubicacion?.edificio, activo?.ubicacion?.aula]
       .filter(Boolean)
       .join(" ");
-  
-  const productoStr = activo?.producto?.completo ?? 
-    activo?.producto?.tipo_activo ?? 
-    activo?.tipo_activo ?? 
+
+  const productoStr = activo?.producto?.completo ??
+    activo?.producto?.tipo_activo ??
+    activo?.tipo_activo ??
     "";
 
   const handleClick = () => {

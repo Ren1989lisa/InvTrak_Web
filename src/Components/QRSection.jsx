@@ -1,13 +1,15 @@
-import { QRCodeCanvas } from "qrcode.react";
+import ActivoQR from "./ActivoQR";
+
+function resolveActivoId(activo) {
+  return activo?.id_activo ?? activo?.id ?? activo?.idActivo ?? "";
+}
 
 export default function QRSection({ activo }) {
   if (!activo) return null;
 
-  const value = JSON.stringify(activo);
-
   return (
     <div className="inv-qr-section">
-      <QRCodeCanvas value={value} size={200} level="M" className="inv-qr-section__code" />
+      <ActivoQR activoId={resolveActivoId(activo)} showFrame={false} />
     </div>
   );
 }

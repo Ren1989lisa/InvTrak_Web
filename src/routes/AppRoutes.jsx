@@ -5,6 +5,7 @@ import { ROUTES, PROTECTED_ROUTES } from "../config/routes";
 
 const Login = lazy(() => import("../Pages/Login"));
 const ForgotPassword = lazy(() => import("../Pages/ForgotPassword"));
+const ActivoQRDemo = lazy(() => import("../Pages/ActivoQRDemo"));
 const Dashboard = lazy(() => import("../Pages/DashBoard"));
 const BienesRegistrados = lazy(() => import("../Pages/BienesRegistrados"));
 const MisBienes = lazy(() => import("../Pages/MisBienes"));
@@ -24,7 +25,7 @@ const ReportarBien = lazy(() => import("../Pages/ReportarBien"));
 const InformacionReporte = lazy(() => import("../Pages/InformacionReporte"));
 const ReporteTecnico = lazy(() => import("../Pages/ReporteTecnico"));
 
-const { ROOT, LOGIN, FORGOT_PASSWORD } = ROUTES;
+const { ROOT, LOGIN, FORGOT_PASSWORD, QR_DEMO } = ROUTES;
 const {
   BIENES_REGISTRADOS,
   MIS_BIENES,
@@ -65,6 +66,7 @@ export default function AppRoutes() {
         <Route path={ROOT} element={<Navigate to={LOGIN} replace />} />
         <Route path={LOGIN} element={<Login />} />
         <Route path={FORGOT_PASSWORD} element={<ForgotPassword />} />
+        <Route path={QR_DEMO} element={<ActivoQRDemo />} />
 
         <Route
           path={BIENES_REGISTRADOS}

@@ -76,7 +76,7 @@ export default function BienesRegistrados() {
   const ubicaciones = useMemo(() => {
     const values = new Set();
     activos.forEach((a) => {
-      const text = a?.ubicacion?.completa ?? 
+      const text = a?.ubicacion?.completa ??
         [a?.ubicacion?.campus, a?.ubicacion?.edificio, a?.ubicacion?.aula]
           .filter(Boolean)
           .join(" ");
@@ -92,7 +92,7 @@ export default function BienesRegistrados() {
       const tipoActivo = (a?.producto?.tipo_activo ?? a?.tipo_activo ?? "")
         .toString()
         .toLowerCase();
-      const ubicacionTexto = a?.ubicacion?.completa ?? 
+      const ubicacionTexto = a?.ubicacion?.completa ??
         [a?.ubicacion?.campus, a?.ubicacion?.edificio, a?.ubicacion?.aula]
           .filter(Boolean)
           .join(" ");
@@ -104,7 +104,6 @@ export default function BienesRegistrados() {
       if (appliedFilters) {
         const { ubicacion: fUbicacion, fechaDesde, fechaHasta, precioMin, precioMax } =
           appliedFilters;
-          
 
         if (fUbicacion && ubicacionTexto !== fUbicacion) return false;
         if (fechaDesde && fechaAlta && fechaAlta < new Date(fechaDesde)) return false;

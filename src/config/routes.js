@@ -2,6 +2,7 @@ export const ROUTES = {
   ROOT: "/",
   LOGIN: "/login",
   FORGOT_PASSWORD: "/forgot-password",
+  QR_DEMO: "/qr-demo",
 };
 
 export const PROTECTED_ROUTES = {

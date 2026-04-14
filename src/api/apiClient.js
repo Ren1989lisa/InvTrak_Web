@@ -1,4 +1,24 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8085/api";
+const DEFAULT_API_ORIGIN = "http://localhost:8085";
+
+function normalizeApiBaseUrl(baseUrl) {
+  const raw = (baseUrl ?? "").toString().trim().replace(/\/+$/, "");
+
+  if (!raw) {
+    return `${DEFAULT_API_ORIGIN}/api`;
+  }
+
+  if (/\/api$/i.test(raw)) {
+    return raw;
+  }
+
+  return `${raw}/api`;
+}
+
+const API_BASE_URL = normalizeApiBaseUrl(
+  import.meta.env.VITE_API_URL ||
+    import.meta.env.VITE_API_BASE_URL ||
+    DEFAULT_API_ORIGIN
+);
 
 export class ApiError extends Error {
   constructor(message, status = 0, data = null) {
@@ -71,4 +91,4 @@ export async function apiRequest(
   return data;
 }
 
-export { API_BASE_URL };
+export { API_BASE_URL, normalizeApiBaseUrl };
