@@ -23,6 +23,11 @@ function normalize(value) {
   return (value ?? "").toString().trim().toLowerCase();
 }
 
+function normalizeId(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 export default function AsignacionBien() {
   const navigate = useNavigate();
   const { currentUser, logout, menuItems } = useUsers();
@@ -33,7 +38,6 @@ export default function AsignacionBien() {
   const [showAssetFilters, setShowAssetFilters] = useState(false);
   const [appliedAssetFilters, setAppliedAssetFilters] = useState(null);
   const [userSearch, setUserSearch] = useState("");
-  const [userRoleFilter, setUserRoleFilter] = useState("todo");
   const [selectedAssetId, setSelectedAssetId] = useState(null);
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
@@ -43,23 +47,35 @@ export default function AsignacionBien() {
   const [isLoadingActivos, setIsLoadingActivos] = useState(false);
   const [isLoadingUsuarios, setIsLoadingUsuarios] = useState(false);
   const [isAssigning, setIsAssigning] = useState(false);
+  const [assignedActivoIds, setAssignedActivoIds] = useState([]);
 
-  // Cargar activos disponibles del backend
+  async function fetchAssignableActivos(extraExcludedIds = []) {
+    const list = await getActivosDisponibles();
+    const normalized = Array.isArray(list) ? list : [];
+    const excludedIds = new Set([
+      ...(Array.isArray(assignedActivoIds) ? assignedActivoIds : []),
+      ...(Array.isArray(extraExcludedIds) ? extraExcludedIds : []),
+    ]);
+
+    return normalized.filter((asset) => {
+      const idActivo = normalizeId(asset?.id_activo ?? asset?.idActivo ?? asset?.id);
+      return idActivo == null || !excludedIds.has(idActivo);
+    });
+  }
+
   useEffect(() => {
     let active = true;
 
     async function loadActivos() {
       setIsLoadingActivos(true);
       try {
-        const list = await getActivosDisponibles();
+        const list = await fetchAssignableActivos();
         if (!active) return;
         setActivos(Array.isArray(list) ? list : []);
       } catch (error) {
         if (!active) return;
         console.error("Error al cargar activos:", error);
-        if (error?.status === 401) {
-          navigate("/login", { replace: true });
-        }
+        setErrorMessage("No fue posible cargar los activos disponibles.");
       } finally {
         if (active) setIsLoadingActivos(false);
       }
@@ -71,7 +87,6 @@ export default function AsignacionBien() {
     };
   }, [navigate]);
 
-  // Cargar usuarios del backend (solo rol USUARIO)
   useEffect(() => {
     let active = true;
 
@@ -80,20 +95,17 @@ export default function AsignacionBien() {
       try {
         const list = await getUsuarios();
         if (!active) return;
-        
-        // Filtrar solo usuarios con rol "USUARIO" (no técnicos ni administradores)
+
         const usuariosFiltrados = (Array.isArray(list) ? list : []).filter((u) => {
           const rol = normalize(u?.rol);
           return rol === "usuario";
         });
-        
+
         setUsuarios(usuariosFiltrados);
       } catch (error) {
         if (!active) return;
         console.error("Error al cargar usuarios:", error);
-        if (error?.status === 401) {
-          navigate("/login", { replace: true });
-        }
+        setErrorMessage("No fue posible cargar los usuarios para asignación.");
       } finally {
         if (active) setIsLoadingUsuarios(false);
       }
@@ -125,19 +137,11 @@ export default function AsignacionBien() {
       if (!matchesQuery || !matchesType) return false;
 
       if (appliedAssetFilters) {
-        const {
-          ubicacion: fUbicacion,
-          fechaDesde,
-          fechaHasta,
-          precioMin,
-          precioMax,
-        } = appliedAssetFilters;
+        const { ubicacion: fUbicacion, fechaDesde, fechaHasta, precioMin, precioMax } = appliedAssetFilters;
 
         if (fUbicacion && ubicacionTexto !== normalize(fUbicacion)) return false;
-
         if (fechaDesde && fechaAlta && fechaAlta < new Date(fechaDesde)) return false;
         if (fechaHasta && fechaAlta && fechaAlta > new Date(fechaHasta)) return false;
-
         if (precioMin != null && Number.isFinite(precioMin) && costo < precioMin) return false;
         if (precioMax != null && Number.isFinite(precioMax) && costo > precioMax) return false;
       }
@@ -162,8 +166,7 @@ export default function AsignacionBien() {
     return usuarios.filter((user) => {
       const name = normalize(user?.nombre ?? user?.nombre_completo);
       const employeeNumber = normalize(user?.numero_empleado);
-      const matchesQuery = !query || name.includes(query) || employeeNumber.includes(query);
-      return matchesQuery;
+      return !query || name.includes(query) || employeeNumber.includes(query);
     });
   }, [usuarios, userSearch]);
 
@@ -192,16 +195,19 @@ export default function AsignacionBien() {
     }
 
     setIsAssigning(true);
-
     try {
+      const assignedActivoId = Number(selectedAsset.id_activo);
       await createResguardo({
-        activoId: Number(selectedAsset.id_activo),
+        activoId: assignedActivoId,
         usuarioId: Number(selectedUser.id_usuario),
-        observaciones: `Asignado desde el sistema web`,
+        observaciones: "Asignado desde el sistema web",
       });
 
-      // Recargar activos disponibles
-      const updatedActivos = await getActivosDisponibles();
+      setAssignedActivoIds((prev) =>
+        prev.includes(assignedActivoId) ? prev : [...prev, assignedActivoId]
+      );
+
+      const updatedActivos = await fetchAssignableActivos([assignedActivoId]);
       setActivos(Array.isArray(updatedActivos) ? updatedActivos : []);
 
       setSelectedAssetId(null);
@@ -228,7 +234,7 @@ export default function AsignacionBien() {
 
   return (
     <div className="inv-page">
-      <NavbarMenu title="Asignación del bien" onMenuClick={() => setOpenSidebar((v) => !v)} />
+      <NavbarMenu title="Asignacion del bien" onMenuClick={() => setOpenSidebar((v) => !v)} />
 
       <SidebarMenu
         open={openSidebar}
@@ -252,9 +258,7 @@ export default function AsignacionBien() {
 
       <Container fluid className="inv-content px-3 px-md-3 py-3 inv-assign-layout">
         {isLoadingActivos || isLoadingUsuarios ? (
-          <Alert variant="info">
-            Cargando datos del sistema...
-          </Alert>
+          <Alert variant="info">Cargando datos del sistema...</Alert>
         ) : null}
 
         <Row className="g-3">
@@ -268,7 +272,7 @@ export default function AsignacionBien() {
               <Form.Control
                 value={assetSearch}
                 onChange={(e) => setAssetSearch(e.target.value)}
-                placeholder="Buscar por etiqueta, tipo o descripción"
+                placeholder="Buscar por etiqueta, tipo o descripcion"
                 className="inv-assign-input mb-2"
               />
 
@@ -310,8 +314,10 @@ export default function AsignacionBien() {
 
           <Col lg={8}>
             <section className="inv-assign-panel">
-              <h4 className="inv-assign-title mb-1">Detalles de Asignación</h4>
-              <p className="inv-assign-subtitle">Complete los datos para asignar el activo seleccionado</p>
+              <h4 className="inv-assign-title mb-1">Detalles de Asignacion</h4>
+              <p className="inv-assign-subtitle">
+                Complete los datos para asignar el activo seleccionado
+              </p>
 
               {successMessage ? <Alert variant="success">{successMessage}</Alert> : null}
               {errorMessage ? <Alert variant="danger">{errorMessage}</Alert> : null}
@@ -327,7 +333,11 @@ export default function AsignacionBien() {
 
               <div className="mb-2">
                 <label className="inv-assign-label">Buscar usuario</label>
-                <UserSearchBar value={userSearch} onChange={setUserSearch} placeholder="Buscar por nombre o número de empleado" />
+                <UserSearchBar
+                  value={userSearch}
+                  onChange={setUserSearch}
+                  placeholder="Buscar por nombre o numero de empleado"
+                />
               </div>
 
               <label className="inv-assign-label mb-2">Usuarios encontrados</label>

@@ -75,12 +75,48 @@ function extractList(payload) {
     data.items,
     data.results,
     data.resguardos,
+    data.confirmados,
+    data.pendientes,
+    data.registros,
+    data.rows,
   ];
 
+  const mergedLists = [];
   for (const candidate of candidates) {
     if (Array.isArray(candidate)) {
-      return candidate;
+      mergedLists.push(...candidate);
     }
+  }
+
+  if (mergedLists.length > 0) {
+    return mergedLists;
+  }
+
+  const singleResguardoCandidate =
+    data.resguardo && typeof data.resguardo === "object" && !Array.isArray(data.resguardo)
+      ? data.resguardo
+      : data.item && typeof data.item === "object" && !Array.isArray(data.item)
+        ? data.item
+        : data;
+
+  if (
+    singleResguardoCandidate &&
+    typeof singleResguardoCandidate === "object" &&
+    (
+      singleResguardoCandidate.id_resguardo != null ||
+      singleResguardoCandidate.idResguardo != null ||
+      singleResguardoCandidate.resguardoId != null ||
+      singleResguardoCandidate.id != null ||
+      singleResguardoCandidate.activoId != null ||
+      singleResguardoCandidate.id_activo != null ||
+      singleResguardoCandidate.idActivo != null ||
+      singleResguardoCandidate.confirmado != null ||
+      singleResguardoCandidate.estado_resguardo != null ||
+      singleResguardoCandidate.estadoResguardo != null ||
+      singleResguardoCandidate.activo != null
+    )
+  ) {
+    return [singleResguardoCandidate];
   }
 
   return [];
@@ -95,8 +131,58 @@ function firstNonEmpty(...values) {
   return "";
 }
 
+function hasOwn(source, key) {
+  return Object.prototype.hasOwnProperty.call(source, key);
+}
+
+function normalizeNullableDate(value) {
+  const text = normalizeText(value);
+  if (!text) return null;
+
+  const normalized = text.toLowerCase();
+  if (
+    ["null", "undefined", "n/a", "na", "sin devolucion", "sin devolución", "-", "--"].includes(normalized)
+  ) {
+    return null;
+  }
+
+  if (
+    normalized.startsWith("0000-00-00") ||
+    normalized.startsWith("0001-01-01") ||
+    normalized.startsWith("1900-01-01") ||
+    normalized.startsWith("1970-01-01")
+  ) {
+    return null;
+  }
+
+  return text;
+}
+
+function hasMeaningfulValue(value) {
+  if (value === null || value === undefined) return false;
+  if (typeof value === "boolean") return value === true;
+  if (typeof value === "number") return Number.isFinite(value);
+  if (typeof value === "string") {
+    const text = value.trim().toLowerCase();
+    return text !== "" && text !== "null" && text !== "undefined" && text !== "n/a";
+  }
+  return true;
+}
+
+function isChecklistEnumLikeValue(value) {
+  const text = normalizeText(value).toUpperCase();
+  return text === "SI" || text === "NO";
+}
+
 export function normalizeResguardo(raw = {}) {
   const source = raw && typeof raw === "object" ? raw : {};
+  const checklistSource =
+    source.checklist ??
+    source.checklistResguardo ??
+    source.checklist_resguardo ??
+    source.detalleChecklist ??
+    source.detalle_checklist ??
+    {};
   const activoSource = source.activo ?? source.bien ?? source.asset ?? source.activoDetalle ?? {};
   const usuarioSource = source.usuario ?? source.user ?? source.usuarioAsignado ?? {};
 
@@ -134,19 +220,76 @@ export function normalizeResguardo(raw = {}) {
     )
   );
 
-  const confirmado = normalizeBoolean(
+  const explicitConfirmValue =
     source.confirmado ??
-      source.confirmada ??
-      source.confirmed ??
-      source.estadoConfirmacion ??
-      source.estado_confirmacion
+    source.confirmada ??
+    source.confirmed ??
+    source.estadoConfirmacion ??
+    source.estado_confirmacion;
+  const hasExplicitConfirm =
+    hasOwn(source, "confirmado") ||
+    hasOwn(source, "confirmada") ||
+    hasOwn(source, "confirmed") ||
+    hasOwn(source, "estadoConfirmacion") ||
+    hasOwn(source, "estado_confirmacion");
+
+  const fechaDevolucion = normalizeNullableDate(
+    source.fechaDevolucion ?? source.fecha_devolucion
   );
-  const fechaDevolucion = source.fechaDevolucion ?? source.fecha_devolucion ?? null;
-  const fechaConfirmacion = source.fechaConfirmacion ?? source.fecha_confirmacion ?? null;
+  const fechaConfirmacion = normalizeNullableDate(
+    source.fechaConfirmacion ?? source.fecha_confirmacion
+  );
   const fechaAsignacion = source.fechaAsignacion ?? source.fecha_asignacion ?? source.createdAt ?? null;
   const observaciones = normalizeText(
     source.observaciones ?? source.observacion ?? source.comentarios ?? ""
   );
+
+  const estadoResguardo = normalizeText(
+    source.estadoResguardo ??
+      source.estado_resguardo ??
+      source.estatusResguardo ??
+      source.estatus_resguardo ??
+      source.estado ??
+      source.estatus
+  ).toLowerCase();
+
+  const hasChecklistData = [
+    source.enciende,
+    source.pantallaFunciona,
+    source.tieneCargador,
+    source.danios,
+    checklistSource?.enciende,
+    checklistSource?.pantallaFunciona,
+    checklistSource?.tieneCargador,
+    checklistSource?.danios,
+    checklistSource?.pantalla_funciona,
+    checklistSource?.tiene_cargador,
+  ].some(isChecklistEnumLikeValue);
+
+  const hasChecklistRecord =
+    [
+      source.idChecklistResguardo,
+      source.id_checklist_resguardo,
+      source.idChecklist,
+      source.id_checklist,
+      source.checklistId,
+      checklistSource?.id,
+      checklistSource?.idChecklistResguardo,
+      checklistSource?.id_checklist_resguardo,
+      checklistSource?.idChecklist,
+      checklistSource?.id_checklist,
+    ].some(hasMeaningfulValue);
+
+  const inferredConfirmed =
+    Boolean(fechaConfirmacion) ||
+    estadoResguardo.includes("confirmad") ||
+    estadoResguardo.includes("resguardad") ||
+    hasChecklistRecord ||
+    hasChecklistData;
+
+  const confirmedByValue =
+    explicitConfirmValue == null ? false : normalizeBoolean(explicitConfirmValue);
+  const confirmado = (hasExplicitConfirm ? confirmedByValue : false) || inferredConfirmed;
 
   return {
     ...source,
@@ -194,8 +337,8 @@ export function resguardoToActivo(resguardo) {
   };
 }
 
-export async function getResguardos() {
-  const payload = await apiRequest("/resguardo", "GET");
+export async function getResguardos(requestOptions = {}) {
+  const payload = await apiRequest("/resguardo", "GET", null, {}, requestOptions);
   return extractList(payload).map(normalizeResguardo);
 }
 

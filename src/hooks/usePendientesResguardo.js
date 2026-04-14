@@ -14,7 +14,12 @@ const INITIAL_STATE = {
 };
 
 function normalizeUserRole(currentUser) {
-  return (currentUser?.rol ?? "").toString().trim().toLowerCase();
+  const role = (currentUser?.rol ?? "").toString().trim().toLowerCase();
+  if (!role) return "";
+  if (role.includes("usuario")) return "usuario";
+  if (role.includes("admin")) return "admin";
+  if (role.includes("tecnico") || role.includes("técnico")) return "tecnico";
+  return role;
 }
 
 function buildProductLabel(resguardo) {
@@ -47,6 +52,21 @@ function buildPendingItem(resguardo) {
     productoNombre: buildProductLabel(normalized),
     ubicacionNombre: buildLocationLabel(normalized),
   };
+}
+
+function dedupePendingItems(items) {
+  const map = new Map();
+
+  for (const item of items) {
+    const resguardoId = item?.resguardoId ?? item?.id_resguardo ?? null;
+    const activoId = item?.activoId ?? item?.id_activo ?? item?.activo?.id_activo ?? null;
+    const key = resguardoId != null ? `res-${resguardoId}` : `act-${activoId}`;
+    if (!map.has(key)) {
+      map.set(key, item);
+    }
+  }
+
+  return Array.from(map.values());
 }
 
 export function usePendientesResguardo(currentUser) {
@@ -104,7 +124,9 @@ export function usePendientesResguardo(currentUser) {
 
   const pendientesResguardo = useMemo(() => {
     if (!isUsuario) return [];
-    return state.resguardos.filter(isResguardoPendiente).map(buildPendingItem);
+    return dedupePendingItems(
+      state.resguardos.filter(isResguardoPendiente).map(buildPendingItem)
+    );
   }, [state.resguardos, isUsuario]);
 
   const bienesConfirmados = useMemo(() => {

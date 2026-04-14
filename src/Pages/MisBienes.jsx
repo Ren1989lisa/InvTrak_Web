@@ -9,6 +9,7 @@ import SidebarMenu from "../Components/SidebarMenu";
 import PrimaryButton from "../Components/PrimaryButton";
 import { useUsers } from "../context/UsersContext";
 import { usePendientesResguardo } from "../hooks/usePendientesResguardo";
+import { openQRFilePicker } from "../utils/decodeQRFromFile";
 import "../Style/bienes-registrados.css";
 import "../Style/sidebar.css";
 
@@ -30,7 +31,11 @@ export default function MisBienes() {
   } = usePendientesResguardo(currentUser);
 
   const query = search.trim().toLowerCase();
-  const isUsuario = (currentUser?.rol ?? "").toString().toLowerCase() === "usuario";
+  const isUsuario = (currentUser?.rol ?? "")
+    .toString()
+    .trim()
+    .toLowerCase()
+    .includes("usuario");
 
   const activosFiltrados = useMemo(() => {
     return bienesConfirmados.filter((activo) => {
@@ -61,7 +66,19 @@ export default function MisBienes() {
       onSubirQR: () => {
         const targetId = item?.activoId ?? item?.id_activo ?? item?.activo?.id_activo;
         if (targetId == null) return;
-        navigate(`/confirmar-resguardo/${targetId}`);
+        openQRFilePicker({
+          activoIdEsperado: targetId,
+          onSuccess: (activoId) => {
+            navigate(`/confirmar-resguardo/${targetId}`, {
+              state: { validatedActivoId: activoId },
+            });
+          },
+          onError: (message) => {
+            navigate(`/confirmar-resguardo/${targetId}`, {
+              state: { qrError: message },
+            });
+          },
+        });
       },
     }));
   }, [isUsuario, navigate, pendientesResguardo]);

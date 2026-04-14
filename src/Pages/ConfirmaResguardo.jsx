@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Button, Card, Col, Container, Form, Row, Spinner } from "react-bootstrap";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 import NavbarMenu from "../Components/NavbarMenu";
 import SidebarMenu from "../Components/SidebarMenu";
@@ -47,8 +47,13 @@ function hasMissingChecklistValue(checklist) {
   return CHECKLIST_ITEMS.some(({ key }) => checklist[key] === "");
 }
 
+function checklistToEnum(value) {
+  return value === "true" ? "SI" : "NO";
+}
+
 export default function ConfirmaResguardo() {
   const { id } = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const [openSidebar, setOpenSidebar] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -56,14 +61,11 @@ export default function ConfirmaResguardo() {
   const [checklist, setChecklist] = useState(EMPTY_CHECKLIST);
   const [observaciones, setObservaciones] = useState("");
   const [qrPreviewUrl, setQrPreviewUrl] = useState("");
-  const [photoEntries, setPhotoEntries] = useState([]);
   const [verifiedResguardo, setVerifiedResguardo] = useState(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const qrInputRef = useRef(null);
-  const photosInputRef = useRef(null);
   const redirectTimerRef = useRef(null);
-  const photoEntriesRef = useRef([]);
   const { currentUser, logout, menuItems } = useUsers();
 
   const expectedActivoId = useMemo(() => normalizeId(id), [id]);
@@ -77,12 +79,10 @@ export default function ConfirmaResguardo() {
     [verifiedResguardo]
   );
   const isChecklistComplete = !hasMissingChecklistValue(checklist);
-  const hasPhotos = photoEntries.length > 0;
   const canSubmit =
     Boolean(verifiedResguardo) &&
     Boolean(resguardoId) &&
     isChecklistComplete &&
-    hasPhotos &&
     !isVerifying &&
     !isSubmitting;
 
@@ -103,30 +103,38 @@ export default function ConfirmaResguardo() {
   }, [qrPreviewUrl]);
 
   useEffect(() => {
-    photoEntriesRef.current = photoEntries;
-  }, [photoEntries]);
+    const shouldAutoOpen = Boolean(location.state?.autoOpenQRPicker);
+    if (!shouldAutoOpen) return;
+    const timerId = window.setTimeout(() => {
+      qrInputRef.current?.click();
+    }, 0);
+
+    navigate(location.pathname, { replace: true, state: null });
+    return () => window.clearTimeout(timerId);
+  }, [location.pathname, location.state, navigate]);
 
   useEffect(() => {
-    return () => {
-      photoEntriesRef.current.forEach((entry) => {
-        if (entry?.previewUrl) {
-          URL.revokeObjectURL(entry.previewUrl);
-        }
-      });
-    };
-  }, []);
+    const state = location.state ?? {};
+    const qrError = state.qrError ?? "";
+    const validatedActivoId = state.validatedActivoId ?? null;
+    if (!qrError && validatedActivoId == null) return;
+
+    if (qrError) {
+      setErrorMessage(String(qrError));
+      setSuccessMessage("");
+      navigate(location.pathname, { replace: true, state: null });
+      return;
+    }
+
+    if (validatedActivoId != null) {
+      void loadResguardoByActivoId(validatedActivoId);
+      navigate(location.pathname, { replace: true, state: null });
+    }
+  }, [location.pathname, location.state, navigate]);
 
   const resetConfirmationState = () => {
     setChecklist(EMPTY_CHECKLIST);
     setObservaciones("");
-    setPhotoEntries((prev) => {
-      prev.forEach((entry) => {
-        if (entry?.previewUrl) {
-          URL.revokeObjectURL(entry.previewUrl);
-        }
-      });
-      return [];
-    });
     setVerifiedResguardo(null);
   };
 
@@ -134,9 +142,19 @@ export default function ConfirmaResguardo() {
     setChecklist((prev) => ({ ...prev, [key]: value }));
   };
 
+  const handleOpenQrPicker = () => {
+    if (isVerifying || isSubmitting) return;
+    qrInputRef.current?.click();
+  };
+
   const loadResguardoByActivoId = async (activoId) => {
     if (activoId == null || activoId === "") {
       setErrorMessage("El QR no contiene un id de activo válido.");
+      return;
+    }
+
+    if (expectedActivoId != null && String(expectedActivoId) !== String(activoId)) {
+      setErrorMessage("El QR no corresponde al activo esperado.");
       return;
     }
 
@@ -152,8 +170,13 @@ export default function ConfirmaResguardo() {
         return;
       }
 
-      if (expectedActivoId != null && String(expectedActivoId) !== String(activoId)) {
-        setErrorMessage("El QR no corresponde al activo esperado.");
+      const backendActivoId =
+        resguardo?.activoId ??
+        resguardo?.id_activo ??
+        resguardo?.activo?.id_activo ??
+        null;
+      if (backendActivoId != null && String(backendActivoId) !== String(activoId)) {
+        setErrorMessage("El QR no coincide con el bien asignado.");
         return;
       }
 
@@ -165,7 +188,6 @@ export default function ConfirmaResguardo() {
       setVerifiedResguardo(resguardo);
       setChecklist(EMPTY_CHECKLIST);
       setObservaciones("");
-      setPhotoEntries([]);
     } catch (error) {
       console.error("Error al validar QR:", error);
       if (error?.status === 404) {
@@ -211,27 +233,6 @@ export default function ConfirmaResguardo() {
     }
   };
 
-  const handlePhotoChange = (event) => {
-    const files = Array.from(event.target?.files ?? []).filter((file) =>
-      file.type.startsWith("image/")
-    );
-
-    if (!files.length) {
-      event.target.value = "";
-      return;
-    }
-
-    const nextEntries = files.map((file) => ({
-      id: `${file.name}-${file.lastModified}-${Math.random().toString(36).slice(2)}`,
-      file,
-      previewUrl: URL.createObjectURL(file),
-      name: file.name,
-    }));
-
-    setPhotoEntries((prev) => [...prev, ...nextEntries]);
-    event.target.value = "";
-  };
-
   const handleConfirmar = async () => {
     setErrorMessage("");
     setSuccessMessage("");
@@ -246,24 +247,23 @@ export default function ConfirmaResguardo() {
       return;
     }
 
-    if (!hasPhotos) {
-      setErrorMessage("Debes subir al menos una foto.");
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
+      const datos = {
+        resguardoId: Number(resguardoId),
+        enciende: checklistToEnum(checklist.enciende),
+        pantallaFunciona: checklistToEnum(checklist.pantallaFunciona),
+        tieneCargador: checklistToEnum(checklist.tieneCargador),
+        danios: checklistToEnum(checklist.danios),
+        observaciones: observaciones.trim(),
+      };
+
       const formData = new FormData();
-      formData.append("resguardoId", String(resguardoId));
-      formData.append("enciende", checklist.enciende);
-      formData.append("pantallaFunciona", checklist.pantallaFunciona);
-      formData.append("tieneCargador", checklist.tieneCargador);
-      formData.append("danios", checklist.danios);
-      formData.append("observaciones", observaciones.trim());
-      photoEntries.forEach((entry) => {
-        formData.append("fotos[]", entry.file);
-      });
+      formData.append(
+        "datos",
+        new Blob([JSON.stringify(datos)], { type: "application/json" })
+      );
 
       await confirmarResguardo(formData);
       setSuccessMessage("Resguardo confirmado correctamente.");
@@ -289,17 +289,6 @@ export default function ConfirmaResguardo() {
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const handleRemovePhoto = (idToRemove) => {
-    setPhotoEntries((prev) => {
-      const next = prev.filter((item) => item.id !== idToRemove);
-      const removed = prev.find((item) => item.id === idToRemove);
-      if (removed?.previewUrl) {
-        URL.revokeObjectURL(removed.previewUrl);
-      }
-      return next;
-    });
   };
 
   const ubicacion = activo?.ubicacion ?? {};
@@ -403,16 +392,28 @@ export default function ConfirmaResguardo() {
                   </Col>
                 </Row>
 
-                <div className="inv-confirmar-upload">
+                {!verifiedResguardo ? (
+                  <div className="inv-confirmar-upload">
+                  <div className="d-flex justify-content-end mb-2">
+                    <Button
+                      type="button"
+                      variant="primary"
+                      size="sm"
+                      onClick={handleOpenQrPicker}
+                      disabled={isVerifying || isSubmitting}
+                    >
+                      Subir QR
+                    </Button>
+                  </div>
                   <div
                     className="inv-confirmar-upload-zone"
-                    onClick={() => qrInputRef.current?.click()}
+                    onClick={handleOpenQrPicker}
                     role="button"
                     tabIndex={0}
                     onKeyDown={(event) => {
                       if (event.key === "Enter" || event.key === " ") {
                         event.preventDefault();
-                        qrInputRef.current?.click();
+                        handleOpenQrPicker();
                       }
                     }}
                   >
@@ -436,8 +437,11 @@ export default function ConfirmaResguardo() {
                   <p className="inv-confirmar-hint">
                     El QR debe contener únicamente el id del activo.
                   </p>
-                </div>
+                  </div>
+                ) : null}
 
+                {verifiedResguardo ? (
+                  <>
                 <div className="inv-confirmar-checklist">
                   {CHECKLIST_ITEMS.map(({ key, label }) => (
                     <div key={key} className="inv-confirmar-checklist__row">
@@ -482,55 +486,8 @@ export default function ConfirmaResguardo() {
                   />
                 </div>
 
-                <div className="inv-confirmar-evidence">
-                  <div className="inv-confirmar-evidence__header">
-                    <Form.Label className="inv-confirmar-checklist__label mb-0">
-                      Fotos obligatorias
-                    </Form.Label>
-                    <Button
-                      type="button"
-                      variant="outline-primary"
-                      size="sm"
-                      onClick={() => photosInputRef.current?.click()}
-                    >
-                      Agregar fotos
-                    </Button>
-                  </div>
+                
 
-                  <input
-                    ref={photosInputRef}
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    className="d-none"
-                    onChange={handlePhotoChange}
-                  />
-
-                  {photoEntries.length > 0 ? (
-                    <div className="inv-confirmar-photos">
-                      {photoEntries.map((entry) => (
-                        <div key={entry.id} className="inv-confirmar-photoThumb">
-                          <button
-                            type="button"
-                            className="inv-confirmar-photoThumb__remove"
-                            onClick={() => handleRemovePhoto(entry.id)}
-                            aria-label={`Eliminar foto ${entry.name}`}
-                          >
-                            ×
-                          </button>
-                          <img src={entry.previewUrl} alt={entry.name} />
-                          <span className="inv-confirmar-photoThumb__name">
-                            {entry.name}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="inv-confirmar-photosEmpty">
-                      Debes agregar al menos una foto para confirmar.
-                    </div>
-                  )}
-                </div>
 
                 <div className="inv-confirmar-actions">
                   <Button
@@ -543,6 +500,12 @@ export default function ConfirmaResguardo() {
                     {isSubmitting ? "Confirmando..." : "Confirmar resguardo"}
                   </Button>
                 </div>
+                  </>
+                ) : (
+                  <Alert variant="secondary" className="mt-3 mb-0">
+                    Selecciona el QR del bien asignado para desbloquear el checklist.
+                  </Alert>
+                )}
               </Card.Body>
             </Card>
           </Col>

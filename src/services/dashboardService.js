@@ -67,6 +67,10 @@ function toNumber(value, fallback = 0) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+function normalizeDashboardStatusKey(value) {
+  return normalizeText(value).toUpperCase().replace(/\s+/g, "_");
+}
+
 function readNumber(sources, paths, fallback = 0) {
   for (const source of sources) {
     if (!source || typeof source !== "object") continue;
@@ -514,4 +518,68 @@ export async function loadDashboardOverview({ signal } = {}) {
     lastUpdated: updatedAt,
     source: dashboardPayload,
   };
+}
+
+function normalizeDashboardSnapshot(payload = {}) {
+  const source =
+    payload && typeof payload === "object" && payload.data && typeof payload.data === "object"
+      ? payload.data
+      : payload;
+
+  const rawStatusObject =
+    source?.activosPorEstatus ??
+    source?.activos_por_estatus ??
+    source?.estatusActivos ??
+    source?.estatus_activos ??
+    {};
+
+  const activosPorEstatus = Object.entries(rawStatusObject).reduce((acc, [key, value]) => {
+    const statusKey = normalizeDashboardStatusKey(key);
+    if (!statusKey) return acc;
+    acc[statusKey] = toNumber(value, 0);
+    return acc;
+  }, {});
+
+  const activosMasReportadosRaw = Array.isArray(source?.activosMasReportados)
+    ? source.activosMasReportados
+    : Array.isArray(source?.activos_mas_reportados)
+      ? source.activos_mas_reportados
+      : [];
+
+  const mantenimientosPorTecnicoRaw = Array.isArray(source?.mantenimientosPorTecnico)
+    ? source.mantenimientosPorTecnico
+    : Array.isArray(source?.mantenimientos_por_tecnico)
+      ? source.mantenimientos_por_tecnico
+      : [];
+
+  return {
+    totalActivos: toNumber(source?.totalActivos ?? source?.total_activos, 0),
+    activosPorEstatus,
+    activosMasReportados: activosMasReportadosRaw.map((item) => ({
+      activoId: toNumber(item?.activoId ?? item?.activo_id ?? item?.idActivo ?? item?.id_activo, 0),
+      etiquetaBien: normalizeText(
+        item?.etiquetaBien ?? item?.etiqueta_bien ?? item?.codigo ?? item?.etiqueta
+      ),
+      totalReportes: toNumber(item?.totalReportes ?? item?.total_reportes, 0),
+    })),
+    mantenimientosPorTecnico: mantenimientosPorTecnicoRaw.map((item) => ({
+      nombreTecnico: normalizeText(item?.nombreTecnico ?? item?.nombre_tecnico ?? item?.tecnico),
+      totalMantenimientos: toNumber(item?.totalMantenimientos ?? item?.total_mantenimientos, 0),
+    })),
+    tiempoPromedioAtencion: toNumber(
+      source?.tiempoPromedioAtencion ?? source?.tiempo_promedio_atencion,
+      0
+    ),
+    updatedAt:
+      source?.updatedAt ??
+      source?.fechaActualizacion ??
+      source?.generatedAt ??
+      source?.timestamp ??
+      new Date().toISOString(),
+  };
+}
+
+export async function getDashboardSnapshot({ signal } = {}) {
+  const response = await api.get("/dashboard", { signal });
+  return normalizeDashboardSnapshot(response?.data ?? {});
 }

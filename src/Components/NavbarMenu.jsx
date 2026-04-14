@@ -60,9 +60,9 @@ export default function NavbarMenu({
                 <div className="inv-navbar__dropdown-title">Pendientes de resguardo</div>
                 {hasNotifications ? (
                   <div className="inv-navbar__dropdown-list">
-                    {notificationItems.map((item) => (
+                    {notificationItems.map((item, index) => (
                       <div
-                        key={item.id_activo ?? item.activoId ?? item.resguardoId}
+                        key={`${item.resguardoId ?? "res"}-${item.id_activo ?? item.activoId ?? "act"}-${index}`}
                         className="inv-navbar__dropdown-item"
                       >
                         <div className="inv-navbar__dropdown-item-info">

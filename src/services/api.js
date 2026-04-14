@@ -184,7 +184,9 @@ function getAxiosErrorMessage(error) {
 function shouldRedirectToLogin(config, status) {
   if (!isBrowser()) return false;
   if (config?.skipAuth || config?.skipAuthRedirect) return false;
-  if (status !== 401 && status !== 403) return false;
+  // Solo 401 debe cerrar sesión automáticamente (token vencido/no válido).
+  // 403 significa falta de permisos para un recurso específico.
+  if (status !== 401) return false;
 
   const path = window.location.pathname ?? "";
   if (path.startsWith("/login")) return false;
@@ -203,9 +205,6 @@ function scheduleLoginRedirect() {
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
 });
 
 api.interceptors.request.use((config) => {

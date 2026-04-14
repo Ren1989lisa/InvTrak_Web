@@ -10,6 +10,7 @@ import PrimaryButton from "../Components/PrimaryButton";
 import { useUsers } from "../context/UsersContext";
 import { usePendientesResguardo } from "../hooks/usePendientesResguardo";
 import { getPerfilActual, getUsuarios } from "../services/userService";
+import { openQRFilePicker } from "../utils/decodeQRFromFile";
 import "../Style/bienes-registrados.css";
 import "../Style/profile.css";
 import "../Style/sidebar.css";
@@ -130,7 +131,19 @@ export default function PerfilUsuario() {
                   const targetId =
                     item?.activoId ?? item?.id_activo ?? item?.activo?.id_activo;
                   if (targetId == null) return;
-                  navigate(`/confirmar-resguardo/${targetId}`);
+                  openQRFilePicker({
+                    activoIdEsperado: targetId,
+                    onSuccess: (activoId) => {
+                      navigate(`/confirmar-resguardo/${targetId}`, {
+                        state: { validatedActivoId: activoId },
+                      });
+                    },
+                    onError: (message) => {
+                      navigate(`/confirmar-resguardo/${targetId}`, {
+                        state: { qrError: message },
+                      });
+                    },
+                  });
                 },
               }))
             : null

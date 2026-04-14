@@ -16,64 +16,113 @@ function extractActivoIdFromText(text) {
       parsed?.idActivo ??
       parsed?.id ??
       parsed?.codigo ??
-      parsed?.valor;
+      parsed?.valor ??
+      null;
 
-    if (candidate == null) {
-      return null;
+    if (candidate != null) {
+      return extractActivoIdFromText(String(candidate));
+    }
+  } catch {
+    // Continue with string strategies.
+  }
+
+  const queryLikeMatch = rawText.match(
+    /(?:activoid|id_activo|idactivo|id|activo)[^0-9]{0,8}(\d{1,10})/i
+  );
+  if (queryLikeMatch?.[1]) {
+    return Number(queryLikeMatch[1]);
+  }
+
+  const pathLikeMatch = rawText.match(/\/(\d{1,10})(?:\/)?$/);
+  if (pathLikeMatch?.[1]) {
+    return Number(pathLikeMatch[1]);
+  }
+
+  const numericGroups = rawText.match(/\d{1,10}/g);
+  if (numericGroups && numericGroups.length > 0) {
+    return Number(numericGroups[numericGroups.length - 1]);
+  }
+
+  return null;
+}
+
+async function decodeWithBarcodeDetector(file) {
+  const BarcodeDetectorClass = window?.BarcodeDetector;
+  if (!BarcodeDetectorClass) return null;
+
+  try {
+    const detector = new BarcodeDetectorClass({ formats: ["qr_code"] });
+    const bitmap = await createImageBitmap(file);
+    const barcodes = await detector.detect(bitmap);
+    if (typeof bitmap.close === "function") {
+      bitmap.close();
     }
 
-    const normalized = String(candidate).trim();
-    if (!normalized) return null;
-    if (/^\d+$/.test(normalized)) return Number(normalized);
-    return normalized;
+    const rawText = barcodes?.[0]?.rawValue?.toString().trim();
+    if (!rawText) return null;
+
+    const activoId = extractActivoIdFromText(rawText);
+    if (activoId == null) return null;
+
+    return {
+      activoId,
+      rawText,
+    };
   } catch {
     return null;
   }
 }
 
-export function decodeQRFromFile(file) {
-  return new Promise((resolve) => {
-    if (!file || !file.type.startsWith("image/")) {
-      resolve(null);
-      return;
-    }
+function decodeWithJsQrFromImage(img) {
+  const scales = [1, 2, 3];
 
+  for (const scale of scales) {
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.floor(img.width * scale));
+    canvas.height = Math.max(1, Math.floor(img.height * scale));
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) continue;
+
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const code = jsQR(imageData.data, imageData.width, imageData.height, {
+      inversionAttempts: "attemptBoth",
+    });
+
+    if (!code?.data) continue;
+
+    const rawText = code.data.toString().trim();
+    const activoId = extractActivoIdFromText(rawText);
+    if (activoId == null) continue;
+
+    return {
+      activoId,
+      rawText,
+    };
+  }
+
+  return null;
+}
+
+export async function decodeQRFromFile(file) {
+  if (!file || !file.type.startsWith("image/")) {
+    return null;
+  }
+
+  const detectorResult = await decodeWithBarcodeDetector(file);
+  if (detectorResult) {
+    return detectorResult;
+  }
+
+  return new Promise((resolve) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
 
     img.onload = () => {
       URL.revokeObjectURL(url);
-      const canvas = document.createElement("canvas");
-      canvas.width = img.width;
-      canvas.height = img.height;
-
-      const ctx = canvas.getContext("2d");
-      if (!ctx) {
-        resolve(null);
-        return;
-      }
-
-      ctx.drawImage(img, 0, 0);
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const code = jsQR(imageData.data, imageData.width, imageData.height, {
-        inversionAttempts: "attemptBoth",
-      });
-
-      if (!code?.data) {
-        resolve(null);
-        return;
-      }
-
-      const activoId = extractActivoIdFromText(code.data);
-      if (activoId == null) {
-        resolve(null);
-        return;
-      }
-
-      resolve({
-        activoId,
-        rawText: code.data,
-      });
+      resolve(decodeWithJsQrFromImage(img));
     };
 
     img.onerror = () => {
