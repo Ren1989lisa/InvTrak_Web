@@ -9,7 +9,6 @@ import ProfileInfoCard from "../Components/ProfileInfoCard";
 import PrimaryButton from "../Components/PrimaryButton";
 import { useUsers } from "../context/UsersContext";
 import { usePendientesResguardo } from "../hooks/usePendientesResguardo";
-import { openQRFilePicker } from "../utils/decodeQRFromFile";
 import { getPerfilActual, getUsuarios } from "../services/userService";
 import "../Style/bienes-registrados.css";
 import "../Style/profile.css";
@@ -31,11 +30,15 @@ export default function PerfilUsuario() {
   const { id } = useParams();
   const { currentUser, logout, menuItems, isAdmin } = useUsers();
   const [openSidebar, setOpenSidebar] = useState(false);
-  const [qrError, setQrError] = useState("");
   const [perfil, setPerfil] = useState(null);
   const [perfilError, setPerfilError] = useState("");
   const [loadingPerfil, setLoadingPerfil] = useState(false);
-  const pendientesResguardo = usePendientesResguardo(currentUser);
+  const {
+    pendientesResguardo,
+    isLoading: loadingResguardos,
+    error: errorResguardos,
+    refresh: refreshResguardos,
+  } = usePendientesResguardo(currentUser);
   const isUsuario = (currentUser?.rol ?? "").toString().toLowerCase() === "usuario";
 
   useEffect(() => {
@@ -121,18 +124,13 @@ export default function PerfilUsuario() {
         onMenuClick={() => setOpenSidebar((v) => !v)}
         notificationItems={
           isUsuario
-            ? pendientesResguardo.map((a) => ({
-                ...a,
-                onSubirQR: (item) => {
-                  setQrError("");
-                  openQRFilePicker({
-                    codigoEsperado: item.etiqueta_bien,
-                    onSuccess: (idActivo) => {
-                      const targetId = idActivo ?? item.id_activo;
-                      navigate(`/confirmar-resguardo/${targetId}`);
-                    },
-                    onError: (msg) => setQrError(msg),
-                  });
+            ? pendientesResguardo.map((item) => ({
+                ...item,
+                onSubirQR: () => {
+                  const targetId =
+                    item?.activoId ?? item?.id_activo ?? item?.activo?.id_activo;
+                  if (targetId == null) return;
+                  navigate(`/confirmar-resguardo/${targetId}`);
                 },
               }))
             : null
@@ -163,16 +161,6 @@ export default function PerfilUsuario() {
         fluid
         className="inv-content px-3 px-md-4 py-3 inv-profile-content"
       >
-        {qrError && (
-          <Alert
-            variant="danger"
-            dismissible
-            onClose={() => setQrError("")}
-            className="mb-2"
-          >
-            {qrError}
-          </Alert>
-        )}
         {perfilError ? (
           <Alert
             variant="danger"
@@ -183,9 +171,30 @@ export default function PerfilUsuario() {
             {perfilError}
           </Alert>
         ) : null}
+        {errorResguardos ? (
+          <Alert variant="danger" className="d-flex align-items-center justify-content-between gap-3 mb-2">
+            <span>{errorResguardos}</span>
+            <PrimaryButton
+              variant="outline-danger"
+              label="Reintentar"
+              className="flex-shrink-0"
+              onClick={refreshResguardos}
+            />
+          </Alert>
+        ) : null}
         {loadingPerfil ? (
           <Alert variant="info" className="mb-2">
             Cargando perfil...
+          </Alert>
+        ) : null}
+        {loadingResguardos ? (
+          <Alert variant="info" className="mb-2">
+            Cargando resguardos pendientes...
+          </Alert>
+        ) : null}
+        {isUsuario && pendientesResguardo.length > 0 ? (
+          <Alert variant="warning" className="mb-2">
+            Tienes bienes pendientes por confirmar
           </Alert>
         ) : null}
         <Button
@@ -223,4 +232,3 @@ export default function PerfilUsuario() {
     </div>
   );
 }
-

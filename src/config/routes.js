@@ -28,12 +28,12 @@ export const PROTECTED_ROUTES = {
   PERFIL_ID_EDITAR: "/perfil/:id/editar",
 };
 
-export const POST_LOGIN_ROUTE = "/bienes-registrados";
+export const POST_LOGIN_ROUTE = "/dashboard";
 
 export const DEFAULT_ROUTE_BY_ROLE = {
   admin: POST_LOGIN_ROUTE,
-  usuario: POST_LOGIN_ROUTE,
-  tecnico: POST_LOGIN_ROUTE,
+  usuario: "/mis-bienes",
+  tecnico: "/mis-reparaciones",
 };
 
 export function getDefaultRouteByRole(rol) {

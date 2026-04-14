@@ -22,9 +22,12 @@
 .inv-navbar__menu {
   color: #fff !important;
   text-decoration: none !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.inv-navbar__hamburger {
+.inv-navbar__menuIcon {
   font-size: 1.6rem;
   line-height: 1;
 }

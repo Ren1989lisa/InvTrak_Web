@@ -1,5 +1,36 @@
 import jsQR from "jsqr";
 
+function extractActivoIdFromText(text) {
+  const rawText = (text ?? "").toString().trim();
+  if (!rawText) return null;
+
+  if (/^\d+$/.test(rawText)) {
+    return Number(rawText);
+  }
+
+  try {
+    const parsed = JSON.parse(rawText);
+    const candidate =
+      parsed?.activoId ??
+      parsed?.id_activo ??
+      parsed?.idActivo ??
+      parsed?.id ??
+      parsed?.codigo ??
+      parsed?.valor;
+
+    if (candidate == null) {
+      return null;
+    }
+
+    const normalized = String(candidate).trim();
+    if (!normalized) return null;
+    if (/^\d+$/.test(normalized)) return Number(normalized);
+    return normalized;
+  } catch {
+    return null;
+  }
+}
+
 export function decodeQRFromFile(file) {
   return new Promise((resolve) => {
     if (!file || !file.type.startsWith("image/")) {
@@ -15,27 +46,34 @@ export function decodeQRFromFile(file) {
       const canvas = document.createElement("canvas");
       canvas.width = img.width;
       canvas.height = img.height;
+
       const ctx = canvas.getContext("2d");
       if (!ctx) {
         resolve(null);
         return;
       }
+
       ctx.drawImage(img, 0, 0);
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const code = jsQR(imageData.data, imageData.width, imageData.height, {
         inversionAttempts: "attemptBoth",
       });
-      if (!code || !code.data) {
+
+      if (!code?.data) {
         resolve(null);
         return;
       }
-      try {
-        const parsed = JSON.parse(code.data);
-        const codigo = parsed?.etiqueta_bien ?? parsed?.codigo_interno ?? parsed?.codigo ?? null;
-        resolve(codigo ? { etiqueta_bien: String(codigo), raw: parsed } : null);
-      } catch {
+
+      const activoId = extractActivoIdFromText(code.data);
+      if (activoId == null) {
         resolve(null);
+        return;
       }
+
+      resolve({
+        activoId,
+        rawText: code.data,
+      });
     };
 
     img.onerror = () => {
@@ -47,7 +85,13 @@ export function decodeQRFromFile(file) {
   });
 }
 
-export function openQRFilePicker({ codigoEsperado, onSuccess, onError }) {
+export function openQRFilePicker({
+  activoIdEsperado,
+  codigoEsperado,
+  onSuccess,
+  onError,
+}) {
+  const expectedValue = activoIdEsperado ?? codigoEsperado ?? null;
   const input = document.createElement("input");
   input.type = "file";
   input.accept = "image/*";
@@ -66,17 +110,15 @@ export function openQRFilePicker({ codigoEsperado, onSuccess, onError }) {
       return;
     }
 
-    const codigoQR = (result.etiqueta_bien ?? result.codigo_interno ?? "").toString().trim();
-    const codigoEsperadoNorm = (codigoEsperado ?? "").toString().trim();
-
-    if (codigoQR !== codigoEsperadoNorm) {
+    const actualValue = result.activoId;
+    if (expectedValue != null && String(actualValue) !== String(expectedValue)) {
       onError?.(
-        `El QR no corresponde a este bien. Código escaneado: ${codigoQR || "(vacío)"}. Se esperaba: ${codigoEsperadoNorm}`
+        `El QR no corresponde al activo esperado. Código leído: ${actualValue}. Se esperaba: ${expectedValue}`
       );
       return;
     }
 
-    onSuccess?.(result.raw?.id_activo);
+    onSuccess?.(result.activoId, result);
   };
 
   input.addEventListener("change", handleChange);

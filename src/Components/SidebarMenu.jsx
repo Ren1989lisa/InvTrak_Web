@@ -11,12 +11,13 @@ export default function SidebarMenu({
   onLogout,
   onViewProfile,
 }) {
-
   useEffect(() => {
     if (!open) return;
 
-    const onKeyDown = (e) => {
-      if (e.key === "Escape") onClose?.();
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") {
+        onClose?.();
+      }
     };
 
     document.addEventListener("keydown", onKeyDown);
@@ -40,13 +41,9 @@ export default function SidebarMenu({
 
       <aside className={`inv-sidebar${open ? " inv-sidebar--open" : ""}`}>
         <div className="inv-sidebar__inner">
+          <UserProfileCard name={userName} onViewProfile={onViewProfile} />
 
-          <UserProfileCard
-            name={userName}
-            onViewProfile={onViewProfile}
-          />
-
-          <nav className="inv-sidebar__nav" aria-label="Menú principal">
+          <nav className="inv-sidebar__nav" aria-label="Menu principal">
             {items.map((item) => (
               <SidebarItem
                 key={item.route}
@@ -61,12 +58,11 @@ export default function SidebarMenu({
           <div className="inv-sidebar__footer">
             <PrimaryButton
               variant="danger"
-              label="Cerrar Sesión"
+              label="Cerrar sesion"
               onClick={onLogout}
               className="w-100 inv-sidebar__logoutBtn"
             />
           </div>
-
         </div>
       </aside>
     </>

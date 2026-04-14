@@ -1,38 +1,125 @@
-import { useMemo } from "react";
-import { getStoredActivos } from "../activosStorage";
-import { getStoredResguardos } from "../resguardosStorage";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  getResguardos,
+  isResguardoConfirmado,
+  isResguardoPendiente,
+  normalizeResguardo,
+  resguardoToActivo,
+} from "../services/resguardoService";
+
+const INITIAL_STATE = {
+  resguardos: [],
+  isLoading: true,
+  error: "",
+};
+
+function normalizeUserRole(currentUser) {
+  return (currentUser?.rol ?? "").toString().trim().toLowerCase();
+}
+
+function buildProductLabel(resguardo) {
+  const activo = normalizeResguardo(resguardo)?.activo ?? {};
+  return (
+    activo?.producto?.completo ||
+    activo?.producto?.tipo_activo ||
+    activo?.producto?.modelo ||
+    activo?.tipo_activo ||
+    "Sin producto"
+  );
+}
+
+function buildLocationLabel(resguardo) {
+  const activo = normalizeResguardo(resguardo)?.activo ?? {};
+  return (
+    activo?.ubicacion?.completa ||
+    [activo?.ubicacion?.campus, activo?.ubicacion?.edificio, activo?.ubicacion?.aula]
+      .filter(Boolean)
+      .join(" ")
+  );
+}
+
+function buildPendingItem(resguardo) {
+  const normalized = normalizeResguardo(resguardo);
+  return {
+    ...normalized,
+    id_activo: normalized.activoId ?? normalized.activo?.id_activo ?? normalized.activo?.idActivo ?? null,
+    etiqueta_bien: normalized.activo?.etiqueta_bien ?? normalized.activo?.etiquetaBien ?? "",
+    productoNombre: buildProductLabel(normalized),
+    ubicacionNombre: buildLocationLabel(normalized),
+  };
+}
 
 export function usePendientesResguardo(currentUser) {
-  const activos = useMemo(() => getStoredActivos(), []);
-  const resguardos = useMemo(() => getStoredResguardos(), []);
+  const [state, setState] = useState(INITIAL_STATE);
+  const [refreshToken, setRefreshToken] = useState(0);
 
-  const isUsuario = (currentUser?.rol ?? "").toString().toLowerCase() === "usuario";
+  const isUsuario = normalizeUserRole(currentUser) === "usuario";
 
-  const misBienes = useMemo(() => {
-    if (!isUsuario) return [];
-    const idUsuario = Number(currentUser?.id_usuario);
-    const idsDesdeResguardos = new Set(
-      resguardos
-        .filter((r) => Number(r?.id_usuario) === idUsuario)
-        .map((r) => Number(r?.id_activo))
-    );
-    return activos.filter(
-      (a) =>
-        Number(a?.id_usuario_asignado) === idUsuario ||
-        idsDesdeResguardos.has(Number(a?.id_activo))
-    );
-  }, [activos, resguardos, currentUser?.id_usuario, isUsuario]);
+  const refresh = useCallback(() => {
+    setRefreshToken((value) => value + 1);
+  }, []);
 
-  return useMemo(() => {
-    if (!isUsuario) return [];
-    const pendiente = (v) =>
-      (v ?? "").toString().toLowerCase().includes("pendiente");
-    return misBienes
-      .filter((a) => pendiente(a?.estado_asignacion))
-      .map((a) => ({
-        ...a,
-        productoNombre:
-          a?.producto?.tipo_activo ?? a?.tipo_activo ?? a?.producto?.modelo ?? "—",
+  useEffect(() => {
+    let active = true;
+
+    if (!isUsuario) {
+      return () => {
+        active = false;
+      };
+    }
+
+    async function loadResguardos() {
+      setState((prev) => ({
+        ...prev,
+        isLoading: true,
+        error: "",
       }));
-  }, [misBienes, isUsuario]);
+
+      try {
+        const list = await getResguardos();
+        if (!active) return;
+
+        setState({
+          resguardos: Array.isArray(list) ? list : [],
+          isLoading: false,
+          error: "",
+        });
+      } catch (error) {
+        if (!active) return;
+
+        setState({
+          resguardos: [],
+          isLoading: false,
+          error: error?.message || "No fue posible cargar los resguardos.",
+        });
+      }
+    }
+
+    loadResguardos();
+
+    return () => {
+      active = false;
+    };
+  }, [isUsuario, refreshToken]);
+
+  const pendientesResguardo = useMemo(() => {
+    if (!isUsuario) return [];
+    return state.resguardos.filter(isResguardoPendiente).map(buildPendingItem);
+  }, [state.resguardos, isUsuario]);
+
+  const bienesConfirmados = useMemo(() => {
+    if (!isUsuario) return [];
+    return state.resguardos
+      .filter(isResguardoConfirmado)
+      .map(resguardoToActivo);
+  }, [state.resguardos, isUsuario]);
+
+  return {
+    resguardos: state.resguardos,
+    pendientesResguardo,
+    bienesConfirmados,
+    isLoading: isUsuario ? state.isLoading : false,
+    error: isUsuario ? state.error : "",
+    refresh,
+  };
 }

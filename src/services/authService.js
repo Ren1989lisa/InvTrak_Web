@@ -1,12 +1,20 @@
-import { apiRequest } from "../api/apiClient";
-
-const TOKEN_KEY = "invtrack_auth_token";
-const USER_KEY = "invtrack_auth_user";
+import {
+  apiRequest,
+  clearAuthSession,
+  getStoredUser,
+  getToken as getStoredToken,
+  isTokenExpired,
+  setAuthSession,
+} from "./api";
 
 function decodeJwtPayload(token) {
   try {
-    const [, payloadBase64] = token.split(".");
+    const rawToken = (token ?? "").toString().trim();
+    if (!rawToken) return null;
+
+    const [, payloadBase64] = rawToken.split(".");
     if (!payloadBase64) return null;
+
     const base64 = payloadBase64.replace(/-/g, "+").replace(/_/g, "/");
     const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, "=");
     const decoded = atob(padded);
@@ -77,43 +85,21 @@ function normalizeUser(usuario = {}, token = null) {
   };
 }
 
-function setStoredToken(token) {
-  window.localStorage.setItem(TOKEN_KEY, token);
-}
-
-function setStoredUser(user) {
-  window.localStorage.setItem(USER_KEY, JSON.stringify(user));
-}
-
-function clearAuthStorage() {
-  window.localStorage.removeItem(TOKEN_KEY);
-  window.localStorage.removeItem(USER_KEY);
-}
-
 export function getToken() {
-  return window.localStorage.getItem(TOKEN_KEY);
+  return getStoredToken();
 }
 
 export function getCurrentUser() {
   const token = getToken();
   if (!token) return null;
 
-  const payload = decodeJwtPayload(token);
-  const exp = Number(payload?.exp);
-  if (Number.isFinite(exp) && Date.now() >= exp * 1000) {
-    clearAuthStorage();
+  if (isTokenExpired(token)) {
+    clearAuthSession();
     return null;
   }
 
-  let parsedUser = null;
-  try {
-    const raw = window.localStorage.getItem(USER_KEY);
-    parsedUser = raw ? JSON.parse(raw) : null;
-  } catch {
-    parsedUser = null;
-  }
-
-  return normalizeUser(parsedUser ?? {}, token);
+  const storedUser = getStoredUser();
+  return normalizeUser(storedUser ?? {}, token);
 }
 
 export async function login(correo, password) {
@@ -124,6 +110,7 @@ export async function login(correo, password) {
     {},
     { omitAuth: true }
   );
+
   const token = data?.token ?? data?.accessToken;
   const usuario = data?.usuario ?? data?.user ?? {};
   const mergedUser = {
@@ -133,15 +120,14 @@ export async function login(correo, password) {
   };
 
   if (!token) {
-    throw new Error("Respuesta inválida del servidor");
+    throw new Error("Respuesta invalida del servidor");
   }
 
   const user = normalizeUser(mergedUser, token);
-  setStoredToken(token);
-  setStoredUser(user);
+  setAuthSession(token, user);
   return user;
 }
 
 export function logout() {
-  clearAuthStorage();
+  clearAuthSession();
 }

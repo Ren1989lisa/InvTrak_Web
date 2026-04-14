@@ -1,83 +1,79 @@
 import { useMemo, useState } from "react";
-import { Alert, Container, Row, Col } from "react-bootstrap";
+import { Alert, Container, Row, Col, Spinner } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 
 import NavbarMenu from "../Components/NavbarMenu";
 import SearchBar from "../Components/SearchBar";
 import AssetCard from "../Components/AssetCard";
 import SidebarMenu from "../Components/SidebarMenu";
+import PrimaryButton from "../Components/PrimaryButton";
 import { useUsers } from "../context/UsersContext";
 import { usePendientesResguardo } from "../hooks/usePendientesResguardo";
-import { openQRFilePicker } from "../utils/decodeQRFromFile";
-import { getStoredActivos } from "../activosStorage";
-import { getStoredResguardos } from "../resguardosStorage";
 import "../Style/bienes-registrados.css";
 import "../Style/sidebar.css";
+
+function normalize(value) {
+  return (value ?? "").toString().trim().toLowerCase();
+}
 
 export default function MisBienes() {
   const [search, setSearch] = useState("");
   const [openSidebar, setOpenSidebar] = useState(false);
-  const [qrError, setQrError] = useState("");
   const navigate = useNavigate();
   const { currentUser, logout, menuItems } = useUsers();
-  const pendientesResguardo = usePendientesResguardo(currentUser);
+  const {
+    pendientesResguardo,
+    bienesConfirmados,
+    isLoading,
+    error,
+    refresh,
+  } = usePendientesResguardo(currentUser);
 
-  const activos = useMemo(() => getStoredActivos(), []);
-  const resguardos = useMemo(() => getStoredResguardos(), []);
   const query = search.trim().toLowerCase();
-
-  const misBienes = useMemo(() => {
-    const idUsuario = Number(currentUser?.id_usuario);
-    const idsDesdeResguardos = new Set(
-      resguardos
-        .filter((r) => Number(r?.id_usuario) === idUsuario)
-        .map((r) => Number(r?.id_activo))
-    );
-    const pendiente = (v) =>
-      (v ?? "").toString().toLowerCase().includes("pendiente");
-    return activos.filter((a) => {
-      const assigned =
-        Number(a?.id_usuario_asignado) === idUsuario ||
-        idsDesdeResguardos.has(Number(a?.id_activo));
-      if (!assigned) return false;
-      return !pendiente(a?.estado_asignacion);
-    });
-  }, [activos, resguardos, currentUser?.id_usuario]);
-
   const isUsuario = (currentUser?.rol ?? "").toString().toLowerCase() === "usuario";
 
   const activosFiltrados = useMemo(() => {
-    return misBienes.filter((a) => {
-      const codigo = (a?.etiqueta_bien ?? "").toString().toLowerCase();
-      const tipo = (a?.producto?.tipo_activo ?? a?.tipo_activo ?? "").toString().toLowerCase();
+    return bienesConfirmados.filter((activo) => {
+      const codigo = normalize(activo?.etiqueta_bien);
+      const tipo = normalize(
+        activo?.producto?.completo ??
+          activo?.producto?.tipo_activo ??
+          activo?.tipo_activo
+      );
+      const descripcion = normalize(activo?.descripcion);
+      const ubicacion = normalize(activo?.ubicacion?.completa);
+
       if (!query) return true;
-      return codigo.includes(query) || tipo.includes(query);
+      return (
+        codigo.includes(query) ||
+        tipo.includes(query) ||
+        descripcion.includes(query) ||
+        ubicacion.includes(query)
+      );
     });
-  }, [misBienes, query]);
+  }, [bienesConfirmados, query]);
+
+  const notificationItems = useMemo(() => {
+    if (!isUsuario) return null;
+
+    return pendientesResguardo.map((item) => ({
+      ...item,
+      onSubirQR: () => {
+        const targetId = item?.activoId ?? item?.id_activo ?? item?.activo?.id_activo;
+        if (targetId == null) return;
+        navigate(`/confirmar-resguardo/${targetId}`);
+      },
+    }));
+  }, [isUsuario, navigate, pendientesResguardo]);
+
+  const hasPending = isUsuario && pendientesResguardo.length > 0;
 
   return (
     <div className="inv-page">
       <NavbarMenu
         title="Mis bienes"
         onMenuClick={() => setOpenSidebar((v) => !v)}
-        notificationItems={
-          isUsuario
-            ? pendientesResguardo.map((a) => ({
-                ...a,
-                onSubirQR: (item) => {
-                  setQrError("");
-                  openQRFilePicker({
-                    codigoEsperado: item.etiqueta_bien,
-                    onSuccess: (idActivo) => {
-                      const targetId = idActivo ?? item.id_activo;
-                      navigate(`/confirmar-resguardo/${targetId}`);
-                    },
-                    onError: (msg) => setQrError(msg),
-                  });
-                },
-              }))
-            : null
-        }
+        notificationItems={notificationItems}
       />
 
       <SidebarMenu
@@ -101,24 +97,56 @@ export default function MisBienes() {
       />
 
       <Container fluid className="inv-content px-3 px-md-4 py-3">
-        {qrError && (
-          <Alert variant="danger" dismissible onClose={() => setQrError("")}>
-            {qrError}
+        {error ? (
+          <Alert
+            variant="danger"
+            className="d-flex align-items-center justify-content-between gap-3"
+            dismissible
+            onClose={refresh}
+          >
+            <span>{error}</span>
+            <PrimaryButton
+              variant="outline-danger"
+              label="Reintentar"
+              onClick={refresh}
+            />
           </Alert>
-        )}
+        ) : null}
+
+        {isLoading ? (
+          <Alert variant="info" className="d-flex align-items-center gap-2">
+            <Spinner animation="border" size="sm" />
+            <span>Cargando tus resguardos...</span>
+          </Alert>
+        ) : null}
+
+        {hasPending ? (
+          <Alert variant="warning" className="mb-3">
+            Tienes bienes pendientes por confirmar
+          </Alert>
+        ) : null}
+
         <SearchBar
           value={search}
           onChange={setSearch}
-          placeholder="Buscar por código o tipo de activo"
+          placeholder="Buscar por código, producto, descripción o ubicación"
         />
 
-        {misBienes.length === 0 ? (
+        {!isLoading && bienesConfirmados.length === 0 ? (
           <Alert variant="info" className="mt-3">
             {pendientesResguardo.length > 0
-              ? "No tienes bienes confirmados. Revisa las notificaciones y sube el QR para confirmar tus asignaciones."
-              : "No tienes bienes asignados. Contacta al administrador para que te asigne activos."}
+              ? "Tienes bienes pendientes por confirmar. Usa la notificación para subir el QR y completar el resguardo."
+              : "No tienes bienes confirmados. Si te asignaron un activo, confirma el resguardo desde las notificaciones."}
           </Alert>
-        ) : (
+        ) : null}
+
+        {!isLoading && bienesConfirmados.length > 0 && activosFiltrados.length === 0 ? (
+          <Alert variant="info" className="mt-3">
+            No hay bienes confirmados con ese filtro.
+          </Alert>
+        ) : null}
+
+        {!isLoading && activosFiltrados.length > 0 ? (
           <Row className="g-4 mt-2">
             {activosFiltrados.map((activo) => (
               <Col md={4} key={activo.id_activo}>
@@ -126,7 +154,7 @@ export default function MisBienes() {
               </Col>
             ))}
           </Row>
-        )}
+        ) : null}
       </Container>
     </div>
   );

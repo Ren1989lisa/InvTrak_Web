@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Alert, Button, Card, Col, Container, Form, Row } from "react-bootstrap";
-import { useNavigate, Link, useLocation } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import "./../Style/login.css";
@@ -9,18 +9,17 @@ import FormInput from "../Components/FormInput";
 import { useUsers } from "../context/UsersContext";
 import { loginSchema } from "../utils/schemas";
 import { ApiError } from "../api/apiClient";
+import { getDefaultRouteByRole } from "../config/routes";
 
 function Login() {
   const navigate = useNavigate();
-  const location = useLocation();
-  const { login, defaultRoute } = useUsers();
+  const { login } = useUsers();
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const {
     control,
     handleSubmit: submitForm,
-    formState: { errors },
   } = useForm({
     resolver: zodResolver(loginSchema),
     defaultValues: { correo: "", password: "" },
@@ -30,9 +29,9 @@ function Login() {
     setError("");
     setSubmitting(true);
     try {
-      await login(data.correo.trim(), data.password);
-      const fromRoute = location.state?.from?.pathname;
-      navigate(fromRoute || defaultRoute, { replace: true });
+      const nextUser = await login(data.correo.trim(), data.password);
+      const roleRoute = getDefaultRouteByRole(nextUser?.rol);
+      navigate(roleRoute, { replace: true });
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
         setError("Credenciales incorrectas");
