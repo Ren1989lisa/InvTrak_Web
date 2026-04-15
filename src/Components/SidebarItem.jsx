@@ -1,7 +1,6 @@
 import { NavLink } from "react-router-dom";
 
 function Icon({ name }) {
-  // Íconos simples inline (sin dependencias externas).
   const common = { className: "inv-sidebar-item__icon", viewBox: "0 0 24 24" };
 
   switch (name) {

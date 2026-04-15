@@ -1,6 +1,5 @@
 import { QRCodeCanvas } from "qrcode.react";
 
-//Seccion que muestra el código QR del activo (datos en JSON)
 export default function QRSection({ activo }) {
   if (!activo) return null;
 

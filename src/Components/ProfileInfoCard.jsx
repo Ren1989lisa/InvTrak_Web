@@ -9,7 +9,7 @@ export default function ProfileInfoCard({ usuario }) {
       <Card.Body className="inv-profile-card__body">
         <Row>
           <Col xs={12} md={6} className="inv-profile-card__col">
-            <ProfileField label="Nombre completo" value={usuario.nombre_completo} />
+            <ProfileField label="Nombre completo" value={usuario.nombre ?? usuario.nombre_completo} />
             <ProfileField label="Correo electrónico" value={usuario.correo} />
             <ProfileField
               label="Fecha de nacimiento"
@@ -26,7 +26,7 @@ export default function ProfileInfoCard({ usuario }) {
             <ProfileField label="Contraseña" value={usuario.password} />
             <ProfileField
               label="Área / Departamento"
-              value={usuario.departamento}
+              value={usuario.area ?? usuario.departamento}
             />
           </Col>
         </Row>

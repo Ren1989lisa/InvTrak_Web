@@ -21,7 +21,7 @@ function buildExportRows(activos) {
     const ubicacion = activo?.ubicacion ?? {};
     return {
       id_activo: activo?.id_activo ?? "",
-      codigo_interno: activo?.codigo_interno ?? "",
+      etiqueta_bien: activo?.etiqueta_bien ?? "",
       numero_serie: activo?.numero_serie ?? "",
       tipo_activo: producto?.tipo_activo ?? activo?.tipo_activo ?? "",
       marca: producto?.marca ?? activo?.marca ?? "",
@@ -61,7 +61,7 @@ export default function BienesRegistrados() {
 
   const activosFiltrados = useMemo(() => {
     return activos.filter((a) => {
-      const codigo = (a?.codigo_interno ?? "").toString().toLowerCase();
+      const codigo = (a?.etiqueta_bien ?? "").toString().toLowerCase();
       const tipo = (a?.producto?.tipo_activo ?? a?.tipo_activo ?? "")
         .toString()
         .toLowerCase();

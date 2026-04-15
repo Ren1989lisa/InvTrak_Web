@@ -1,0 +1,134 @@
+.inv-reporte-info-page .inv-navbar__title {
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.inv-reporte-info-content {
+  max-width: 700px;
+}
+
+.inv-reporte-info-back {
+  color: #0d6efd !important;
+  font-weight: 600;
+  text-decoration: none !important;
+  padding-left: 0;
+  margin-bottom: 0.5rem;
+}
+
+.inv-reporte-info-back:hover {
+  text-decoration: underline !important;
+}
+
+.inv-reporte-info-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2c5e91;
+  margin-bottom: 1rem;
+}
+
+.inv-reporte-info-photo {
+  margin-bottom: 1.5rem;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #eef5fb;
+  min-height: 200px;
+}
+
+.inv-reporte-info-photo-empty {
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  color: #64748b;
+}
+
+.inv-reporte-info-photo-icon {
+  font-size: 3rem;
+  color: #94a3b8;
+}
+
+.inv-reporte-carousel {
+  background: #eef5fb;
+}
+
+.inv-reporte-carousel-img {
+  width: 100%;
+  max-height: 320px;
+  object-fit: contain;
+  display: block;
+}
+
+.inv-reporte-info-card {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+}
+
+.inv-reporte-info-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #eef5fb;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.inv-reporte-info-card-header-label {
+  font-weight: 700;
+  color: #233241;
+}
+
+.inv-reporte-info-card-header-value {
+  font-weight: 600;
+  color: #2c5e91;
+}
+
+.inv-reporte-info-card-body {
+  padding: 16px;
+}
+
+.inv-reporte-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 10px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.inv-reporte-info-row:last-child {
+  border-bottom: none;
+}
+
+.inv-reporte-info-label {
+  font-weight: 500;
+  color: #64748b;
+  flex-shrink: 0;
+  margin-right: 1rem;
+}
+
+.inv-reporte-info-value {
+  color: #233241;
+  text-align: right;
+  word-break: break-word;
+}
+
+.inv-reporte-info-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+}
+
+.inv-reporte-info-btn {
+  padding: 0.6rem 1.5rem;
+  font-weight: 600;
+  border-radius: 10px;
+  background: linear-gradient(90deg, #2c5e91 0%, #6ea3d8 100%);
+  border: none;
+}
+
+.inv-reporte-info-btn:hover {
+  background: linear-gradient(90deg, #234a73 0%, #5a8fc4 100%);
+}

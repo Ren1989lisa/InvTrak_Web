@@ -1,6 +1,8 @@
 import { useMemo, useState, useRef } from "react";
 import { Alert, Button, Card, Col, Container, Form, Row } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { BsClipboard2Fill } from "react-icons/bs";
 import { BiBarcodeReader } from "react-icons/bi";
 import { FiUploadCloud } from "react-icons/fi";
@@ -8,10 +10,15 @@ import { BsImage } from "react-icons/bs";
 
 import NavbarMenu from "../Components/NavbarMenu";
 import SidebarMenu from "../Components/SidebarMenu";
+import FormInput from "../Components/FormInput";
+import FormSelect from "../Components/FormSelect";
 import { useUsers } from "../context/UsersContext";
 import { getStoredActivos, saveActivos } from "../activosStorage";
 import { getStoredResguardos } from "../resguardosStorage";
 import { addReporte } from "../reportesStorage";
+import { reportarBienSchema } from "../utils/schemas";
+import { ESTATUS_ACTIVO } from "../config/estatusActivo";
+import { ESTATUS_REPORTE_DANIO, PRIORIDAD } from "../config/databaseEnums";
 import "../Style/bienes-registrados.css";
 import "../Style/sidebar.css";
 import "../Style/reportar-bien.css";
@@ -31,15 +38,21 @@ const ESTATUS_OPCIONES = [
 export default function ReportarBien() {
   const navigate = useNavigate();
   const [openSidebar, setOpenSidebar] = useState(false);
-  const [etiqueta, setEtiqueta] = useState("");
-  const [estatus, setEstatus] = useState("");
-  const [descripcion, setDescripcion] = useState("");
   const [archivos, setArchivos] = useState([]);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const fileInputRef = useRef(null);
 
   const { currentUser, setCurrentUserId, menuItems, defaultRoute } = useUsers();
+
+  const {
+    control,
+    handleSubmit,
+    reset,
+  } = useForm({
+    resolver: zodResolver(reportarBienSchema),
+    defaultValues: { etiqueta: "", estatus: "", descripcion: "" },
+  });
 
   const activos = useMemo(() => getStoredActivos(), []);
   const resguardos = useMemo(() => getStoredResguardos(), []);
@@ -84,49 +97,63 @@ export default function ReportarBien() {
     setArchivos((prev) => prev.filter((_, i) => i !== idx));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const fileToBase64 = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+  const onSubmit = handleSubmit(async (data) => {
     setErrorMessage("");
     setSuccessMessage("");
 
-    const codigo = etiqueta.trim();
-    if (!codigo) {
-      setErrorMessage("Ingresa la etiqueta del bien.");
-      return;
-    }
+    const codigo = data.etiqueta.trim();
 
     const activo = misBienes.find(
-      (a) => (a?.codigo_interno ?? "").toString().trim().toUpperCase() === codigo.toUpperCase()
+      (a) => (a?.etiqueta_bien ?? "").toString().trim().toUpperCase() === codigo.toUpperCase()
     );
     if (!activo) {
       setErrorMessage("La etiqueta no corresponde a ninguno de tus bienes registrados.");
       return;
     }
 
+    let fotosEvidencia = [];
+    try {
+      fotosEvidencia = await Promise.all(
+        archivos.filter((f) => f.type.startsWith("image/")).map(fileToBase64)
+      );
+    } catch {
+      setErrorMessage("No se pudieron procesar las imágenes.");
+      return;
+    }
+
     addReporte({
       id_activo: activo.id_activo,
       folio: null,
-      descripcion: descripcion.trim() || `Reporte de bien ${activo.codigo_interno}`,
-      prioridad: "media",
-      estatus: "pendiente",
+      tipo_falla: null,
+      descripcion: (data.descripcion ?? "").trim() || `Reporte de bien ${activo.etiqueta_bien}`,
+      prioridad: PRIORIDAD.MEDIA,
+      id_prioridad: null,
+      estatus: ESTATUS_REPORTE_DANIO.PENDIENTE,
       id_tecnico_asignado: null,
       fecha_reporte: todayDateString(),
+      fotos_evidencia: fotosEvidencia,
     });
 
     const updated = activos.map((a) =>
       Number(a?.id_activo) === Number(activo.id_activo)
-        ? { ...a, estatus: "Reportado" }
+        ? { ...a, estatus: ESTATUS_ACTIVO.MANTENIMIENTO }
         : a
     );
     saveActivos(updated);
 
     setSuccessMessage("Reporte creado correctamente");
-    setEtiqueta("");
-    setEstatus("");
-    setDescripcion("");
+    reset({ etiqueta: "", estatus: "", descripcion: "" });
     setArchivos([]);
     setTimeout(() => setSuccessMessage(""), 3500);
-  };
+  });
 
   const handleCancel = () => {
     navigate(defaultRoute);
@@ -187,59 +214,75 @@ export default function ReportarBien() {
                 Creación de Reporte Técnico
               </Card.Header>
               <Card.Body className="inv-reportar-card__body">
-                <Form onSubmit={handleSubmit}>
+                <Form onSubmit={onSubmit}>
                   <Row className="g-3">
                     <Col xs={12} md={6}>
-                      <Form.Group>
-                        <Form.Label>Etiqueta del bien</Form.Label>
-                        <div className="inv-reportar-input-wrap">
-                          <BiBarcodeReader className="inv-reportar-input-icon" />
-                          <Form.Control
-                            type="text"
-                            placeholder="Ingresa la etiqueta del bien"
-                            value={etiqueta}
-                            onChange={(e) => setEtiqueta(e.target.value)}
-                            list="etiquetas-sugeridas"
-                            className="inv-reportar-input"
-                          />
-                          <datalist id="etiquetas-sugeridas">
-                            {misBienes.map((a) => (
-                              <option key={a.id_activo} value={a.codigo_interno} />
-                            ))}
-                          </datalist>
-                        </div>
-                      </Form.Group>
+                      <Controller
+                        name="etiqueta"
+                        control={control}
+                        render={({ field, fieldState }) => (
+                          <>
+                            <FormInput
+                              label="Etiqueta del bien"
+                              name={field.name}
+                              type="text"
+                              placeholder="Ingresa la etiqueta del bien"
+                              value={field.value}
+                              onChange={field.onChange}
+                              onBlur={field.onBlur}
+                              list="etiquetas-sugeridas"
+                              className="inv-reportar-input"
+                              leftIcon={<BiBarcodeReader className="inv-reportar-input-icon" />}
+                              error={fieldState.error?.message}
+                            />
+                            <datalist id="etiquetas-sugeridas">
+                              {misBienes.map((a) => (
+                                <option key={a.id_activo} value={a.etiqueta_bien} />
+                              ))}
+                            </datalist>
+                          </>
+                        )}
+                      />
                     </Col>
                     <Col xs={12} md={6}>
-                      <Form.Group>
-                        <Form.Label>Estatus del Producto</Form.Label>
-                        <Form.Select
-                          value={estatus}
-                          onChange={(e) => setEstatus(e.target.value)}
-                          className="inv-reportar-select"
-                        >
-                          <option value="">Selecciona el estatus</option>
-                          {ESTATUS_OPCIONES.map((opt) => (
-                            <option key={opt.value} value={opt.value}>
-                              {opt.label}
-                            </option>
-                          ))}
-                        </Form.Select>
-                      </Form.Group>
+                      <Controller
+                        name="estatus"
+                        control={control}
+                        render={({ field, fieldState }) => (
+                          <FormSelect
+                            label="Estatus del Producto"
+                            name={field.name}
+                            value={field.value}
+                            onChange={field.onChange}
+                            onBlur={field.onBlur}
+                            options={ESTATUS_OPCIONES}
+                            placeholder="Selecciona el estatus"
+                            className="inv-reportar-select"
+                            error={fieldState.error?.message}
+                          />
+                        )}
+                      />
                     </Col>
                   </Row>
 
-                  <Form.Group className="mt-3">
-                    <Form.Label>Descripción de problema</Form.Label>
-                    <Form.Control
-                      as="textarea"
-                      rows={4}
-                      placeholder="Describe los detalles del problema..."
-                      value={descripcion}
-                      onChange={(e) => setDescripcion(e.target.value)}
-                      className="inv-reportar-textarea"
-                    />
-                  </Form.Group>
+                  <Controller
+                    name="descripcion"
+                    control={control}
+                    render={({ field, fieldState }) => (
+                      <FormInput
+                        label="Descripción de problema"
+                        name={field.name}
+                        as="textarea"
+                        rows={4}
+                        placeholder="Describe los detalles del problema..."
+                        value={field.value}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        className="inv-reportar-textarea"
+                        error={fieldState.error?.message}
+                      />
+                    )}
+                  />
 
                   <Form.Group className="mt-4">
                     <Form.Label>Subir Imágenes o videos</Form.Label>

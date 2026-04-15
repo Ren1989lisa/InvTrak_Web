@@ -1,4 +1,5 @@
 import reportesSeed from "./Data/reportes.json";
+import { ESTATUS_REPORTE_DANIO } from "./config/databaseEnums";
 
 const STORAGE_KEY = "invtrack_reportes";
 
@@ -41,7 +42,7 @@ export function assignTecnicoToReporte(idReporte, idTecnico) {
   const reportes = getStoredReportes();
   const updated = reportes.map((r) =>
     Number(r?.id_reporte) === Number(idReporte)
-      ? { ...r, id_tecnico_asignado: Number(idTecnico), estatus: "asignado" }
+      ? { ...r, id_tecnico_asignado: Number(idTecnico), estatus: ESTATUS_REPORTE_DANIO.ASIGNADO }
       : r
   );
   saveReportes(updated);
@@ -56,8 +57,33 @@ export function addReporte(reporte) {
     ...reporte,
     id_reporte: nextId,
     folio: reporte.folio ?? nextFolio,
+    fotos_evidencia: reporte.fotos_evidencia ?? [],
+    tipo_falla: reporte.tipo_falla ?? null,
+    id_prioridad: reporte.id_prioridad ?? null,
   };
   const next = [...current, nuevo];
   saveReportes(next);
   return next;
+}
+
+export function updateReporteEstatus(idReporte, nuevoEstatus) {
+  const reportes = getStoredReportes();
+  const updated = reportes.map((r) =>
+    Number(r?.id_reporte) === Number(idReporte)
+      ? { ...r, estatus: nuevoEstatus }
+      : r
+  );
+  saveReportes(updated);
+  return updated;
+}
+
+export function updateReporteTecnico(idReporte, datos) {
+  const reportes = getStoredReportes();
+  const updated = reportes.map((r) =>
+    Number(r?.id_reporte) === Number(idReporte)
+      ? { ...r, ...datos }
+      : r
+  );
+  saveReportes(updated);
+  return updated;
 }

@@ -53,7 +53,6 @@
   padding-top: 10px;
 }
 
-/*Card de usuarioss*/
 .inv-user-card {
   display: flex;
   align-items: center;
@@ -99,7 +98,6 @@
   background: #eef5fb;
 }
 
-/* SidebarItem */
 .inv-sidebar-item {
   display: flex;
   align-items: center;
@@ -133,7 +131,6 @@
   font-size: 0.95rem;
 }
 
-/* Logout button */
 .inv-sidebar__logoutBtn {
   border-radius: 12px;
   font-weight: 700;

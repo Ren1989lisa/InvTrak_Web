@@ -3,8 +3,10 @@
     "id_reporte": 1,
     "id_activo": 1,
     "folio": "REP-01",
+    "tipo_falla": null,
     "descripcion": "Monitor con fallas intermitentes de encendido",
     "prioridad": "alta",
+    "id_prioridad": null,
     "estatus": "pendiente",
     "id_tecnico_asignado": null,
     "fecha_reporte": "2026-02-05"
@@ -13,8 +15,10 @@
     "id_reporte": 2,
     "id_activo": 2,
     "folio": "REP-02",
+    "tipo_falla": null,
     "descripcion": "El equipo no inicia correctamente",
     "prioridad": "alta",
+    "id_prioridad": null,
     "estatus": "pendiente",
     "id_tecnico_asignado": null,
     "fecha_reporte": "2026-02-04"
@@ -23,8 +27,10 @@
     "id_reporte": 3,
     "id_activo": 3,
     "folio": "REP-03",
+    "tipo_falla": null,
     "descripcion": "Mouse no responde correctamente",
     "prioridad": "media",
+    "id_prioridad": null,
     "estatus": "pendiente",
     "id_tecnico_asignado": null,
     "fecha_reporte": "2026-02-03"

@@ -1,7 +1,7 @@
 [
   {
     "id_activo": 1,
-    "codigo_interno": "MOTHUTEZD3CC1",
+    "etiqueta_bien": "MOTHUTEZD3CC1",
     "numero_serie": "CN-0GH567-74445-321-A10B",
     "producto": {
       "tipo_activo": "Monitor",
@@ -10,7 +10,7 @@
     },
     "descripcion": "Monitor ThinkVision",
     "propietario": "Fernanda Rodriguez Martinez",
-    "estatus": "Resguardado",
+    "estatus": "RESGUARDADO",
     "costo": 2555.00,
     "fecha_alta": "2025-05-15",
     "ubicacion": {
@@ -21,7 +21,7 @@
   },
   {
     "id_activo": 2,
-    "codigo_interno": "LADEUPEMORE1A1",
+    "etiqueta_bien": "LADEUPEMORE1A1",
     "numero_serie": "DL-55678-99123-AB23",
     "producto": {
       "tipo_activo": "Laptop",
@@ -30,7 +30,7 @@
     },
     "descripcion": "Laptop empresarial Dell",
     "propietario": "Carlos Hernandez Lopez",
-    "estatus": "Disponible",
+    "estatus": "DISPONIBLE",
     "costo": 18500.00,
     "fecha_alta": "2025-04-10",
     "ubicacion": {
@@ -41,7 +41,7 @@
   },
   {
     "id_activo": 3,
-    "codigo_interno": "MOMOUPEMORE2B4",
+    "etiqueta_bien": "MOMOUPEMORE2B4",
     "numero_serie": "LOG-99887766",
     "producto": {
       "tipo_activo": "Mouse",
@@ -50,7 +50,7 @@
     },
     "descripcion": "Mouse inalámbrico Logitech",
     "propietario": "Ana Torres Ramirez",
-    "estatus": "Resguardado",
+    "estatus": "RESGUARDADO",
     "costo": 1200.00,
     "fecha_alta": "2025-03-20",
     "imagen": "/assets/codigoQR.png",
@@ -63,14 +63,14 @@
   },
   {
     "id_activo": 4,
-    "codigo_interno": "TELOUTEZD1A4",
+    "etiqueta_bien": "TELOUTEZD1A4",
     "numero_serie": "LOG-22334455",
     "producto": {"tipo_activo": "Teclado",
     "marca": "Logitech",
     "modelo": "K380"},
     "descripcion": "Teclado bluetooth compacto",
     "propietario": "Luis Mendoza Perez",
-    "estatus": "Disponible",
+    "estatus": "DISPONIBLE",
     "costo": 850.00,
     "fecha_alta": "2025-02-11",
     "ubicacion": {

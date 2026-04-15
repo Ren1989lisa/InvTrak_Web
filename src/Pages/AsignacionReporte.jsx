@@ -64,7 +64,7 @@ export default function AsignacionReporte() {
     const query = normalize(assetSearch);
     return bienesReportados.filter(({ asset }) => {
       const tipo = normalize(asset?.producto?.tipo_activo ?? asset?.tipo_activo);
-      const etiqueta = normalize(asset?.codigo_interno);
+      const etiqueta = normalize(asset?.etiqueta_bien);
       const descripcion = normalize(asset?.descripcion);
       const ubicacion = asset?.ubicacion ?? {};
       const ubicacionTexto = normalize(
@@ -105,7 +105,7 @@ export default function AsignacionReporte() {
   const filteredTecnicos = useMemo(() => {
     const query = normalize(tecnicoSearch);
     return tecnicos.filter((user) => {
-      const name = normalize(user?.nombre_completo);
+      const name = normalize(user?.nombre ?? user?.nombre_completo);
       const employeeNumber = normalize(user?.numero_empleado);
       const matchesQuery = !query || name.includes(query) || employeeNumber.includes(query);
       const matchesType =

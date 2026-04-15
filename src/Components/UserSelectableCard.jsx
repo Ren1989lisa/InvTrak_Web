@@ -29,7 +29,7 @@ export default function UserSelectableCard({ user, selected = false, onSelect })
       <span className="inv-assign-user-card__icon">
         <UserIcon />
       </span>
-      <span className="inv-assign-user-card__name">{user?.nombre_completo}</span>
+      <span className="inv-assign-user-card__name">{user?.nombre ?? user?.nombre_completo}</span>
     </button>
   );
 }

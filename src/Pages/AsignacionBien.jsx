@@ -12,6 +12,8 @@ import UserSearchBar from "../Components/UserSearchBar";
 import FiltersModal from "../Components/FiltersModal";
 import { useUsers } from "../context/UsersContext";
 import { getStoredActivos, saveActivos } from "../activosStorage";
+import { ESTATUS_ACTIVO } from "../config/estatusActivo";
+import { ESTADO_RESGUARDO } from "../config/databaseEnums";
 import { addResguardo, getStoredResguardos } from "../resguardosStorage";
 
 import "../Style/bienes-registrados.css";
@@ -47,7 +49,7 @@ export default function AsignacionBien() {
   const [activos, setActivos] = useState(() => getStoredActivos());
 
   const activosDisponibles = useMemo(() => {
-    return activos.filter((a) => normalize(a?.estatus) === "disponible");
+    return activos.filter((a) => normalize(a?.estatus) === normalize(ESTATUS_ACTIVO.DISPONIBLE));
   }, [activos]);
 
   const filteredAssets = useMemo(() => {
@@ -55,7 +57,7 @@ export default function AsignacionBien() {
 
     return activosDisponibles.filter((asset) => {
       const tipo = normalize(asset?.producto?.tipo_activo ?? asset?.tipo_activo);
-      const etiqueta = normalize(asset?.codigo_interno);
+      const etiqueta = normalize(asset?.etiqueta_bien);
       const descripcion = normalize(asset?.descripcion);
       const ubicacion = asset?.ubicacion ?? {};
       const ubicacionTexto = normalize(
@@ -107,7 +109,7 @@ export default function AsignacionBien() {
 
     return list.filter((user) => {
       const role = normalize(user?.rol);
-      const name = normalize(user?.nombre_completo);
+      const name = normalize(user?.nombre ?? user?.nombre_completo);
       const employeeNumber = normalize(user?.numero_empleado);
       const matchesQuery = !query || name.includes(query) || employeeNumber.includes(query);
       const matchesRole = userRoleFilter === "todo" || role === normalize(userRoleFilter);
@@ -154,10 +156,10 @@ export default function AsignacionBien() {
       Number(asset?.id_activo) === Number(selectedAsset.id_activo)
         ? {
             ...asset,
-            estatus: "Resguardado",
-            propietario: selectedUser.nombre_completo,
+            estatus: ESTATUS_ACTIVO.RESGUARDADO,
+            propietario: selectedUser.nombre ?? selectedUser.nombre_completo,
             id_usuario_asignado: Number(selectedUser.id_usuario),
-            estado_asignacion: "pendiente de confirmacion",
+            estado_asignacion: ESTADO_RESGUARDO.PENDIENTE_CONFIRMACION,
           }
         : asset
     );

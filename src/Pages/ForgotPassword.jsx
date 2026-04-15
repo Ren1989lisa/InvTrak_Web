@@ -1,17 +1,24 @@
-import { useState } from "react";
 import { Container, Row, Col, Card, Form, Button } from "react-bootstrap";
 import { Link } from "react-router-dom";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import FormInput from "../Components/FormInput";
+import { forgotPasswordSchema } from "../utils/schemas";
 import "../Style/forgot-password.css";
 
 function ForgotPassword() {
-  const [email, setEmail] = useState("");
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(forgotPasswordSchema),
+    defaultValues: { email: "" },
+  });
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    // Aquí iría la llamada a la API para enviar el correo de recuperación
-    console.log("Enviar link de recuperación a:", email);
-    // TODO: Implementar lógica de envío de correo de recuperación
-  };
+  const onSubmit = handleSubmit((data) => {
+    console.log("Enviar link de recuperación a:", data.email);
+  });
 
   return (
     <Container
@@ -21,7 +28,6 @@ function ForgotPassword() {
       <Row className="w-100 justify-content-center">
         <Col xs={11} sm={8} md={6} lg={4}>
           <Card className="p-4 forgot-password-card">
-            {/* Icono circular con ícono de llave/candado */}
             <div className="forgot-password-icon-wrapper">
               <svg
                 width="32"
@@ -37,56 +43,39 @@ function ForgotPassword() {
               </svg>
             </div>
 
-            {/* Título */}
             <h3 className="text-center mb-2 fw-bold forgot-password-title">
               ¿Olvidaste tu contraseña?
             </h3>
 
-            {/* Texto descriptivo */}
             <p className="text-center mb-4 forgot-password-description">
               Ingresa tu correo, te enviaremos un link para restablecer la
               contraseña
             </p>
 
-            {/* Formulario */}
-            <Form onSubmit={handleSubmit}>
-              <Form.Group className="mb-3 forgot-password-form-group" controlId="forgotPasswordEmail">
-                <Form.Label className="forgot-password-label">
-                  Correo electrónico
-                </Form.Label>
-                <div className="forgot-password-input-wrapper">
-                  <Form.Control
+            <Form onSubmit={onSubmit}>
+              <Controller
+                name="email"
+                control={control}
+                render={({ field, fieldState }) => (
+                  <FormInput
+                    label="Correo electrónico"
+                    name={field.name}
                     type="email"
                     placeholder="your.email@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    error={fieldState.error?.message}
                     className="forgot-password-input"
                   />
-                  <div className="forgot-password-input-icon">
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M20 4H4C2.9 4 2.01 4.9 2.01 6L2 18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4ZM20 8L12 13L4 8V6L12 11L20 6V8Z"
-                        fill="currentColor"
-                      />
-                    </svg>
-                  </div>
-                </div>
-              </Form.Group>
+                )}
+              />
 
-              {/* Texto de ayuda */}
               <p className="mb-3 forgot-password-help-text">
                 Te enviaremos instrucciones a este correo para cambiar tu
                 contraseña.
               </p>
 
-              {/* Botón de envío */}
               <Button
                 type="submit"
                 className="w-100 forgot-password-submit-btn"
@@ -95,7 +84,6 @@ function ForgotPassword() {
               </Button>
             </Form>
 
-            {/* Link de regreso al Login */}
             <div className="text-center mt-3">
               <Link to="/" className="forgot-password-link">
                 <span>←</span> Login

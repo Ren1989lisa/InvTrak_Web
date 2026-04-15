@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { Alert, Card, Container, Form } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 import NavbarMenu from "../Components/NavbarMenu";
 import SidebarMenu from "../Components/SidebarMenu";
@@ -11,6 +13,9 @@ import SelectProductModal from "../Components/SelectProductModal";
 import SelectLocationModal from "../Components/SelectLocationModal";
 import { useUsers } from "../context/UsersContext";
 import { addActivo, getStoredActivos } from "../activosStorage";
+import { registroBienSchema } from "../utils/schemas";
+import { ESTATUS_ACTIVO, ESTATUS_ACTIVO_OPTIONS } from "../config/estatusActivo";
+import { ESTADO_RESGUARDO } from "../config/databaseEnums";
 
 import productosData from "../Data/productos.json";
 import marcasData from "../Data/marcas.json";
@@ -42,73 +47,50 @@ export default function RegistroBien() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [selectedLocation, setSelectedLocation] = useState(null);
 
-  const [form, setForm] = useState({
+  const defaultValues = {
     numero_serie: "",
     fecha_alta: todayDateString(),
     descripcion: "",
-    estatus: "Disponible",
+    estatus: ESTATUS_ACTIVO.DISPONIBLE,
     costo: "",
-  });
-
-  const estatusOptions = useMemo(
-    () => [
-      { value: "Disponible", label: "Disponible" },
-      { value: "Resguardado", label: "Resguardado" },
-      { value: "Mantenimiento", label: "Mantenimiento" },
-    ],
-    []
-  );
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
+  const {
+    control,
+    handleSubmit,
+    reset,
+  } = useForm({
+    resolver: zodResolver(registroBienSchema),
+    defaultValues,
+  });
+
+  const estatusOptions = ESTATUS_ACTIVO_OPTIONS;
+
   const resetForm = () => {
-    setForm({
-      numero_serie: "",
+    reset({
+      ...defaultValues,
       fecha_alta: todayDateString(),
-      descripcion: "",
-      estatus: "Disponible",
-      costo: "",
+      estatus: ESTATUS_ACTIVO.DISPONIBLE,
     });
     setSelectedProduct(null);
     setSelectedLocation(null);
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const onSubmit = handleSubmit((data) => {
     setErrorMessage("");
     setSuccessMessage("");
 
-    if (!form.numero_serie.trim()) {
-      setErrorMessage("El número de serie es obligatorio.");
-      return;
-    }
     if (!selectedProduct?.displayText) {
       setErrorMessage("Debes seleccionar un producto.");
-      return;
-    }
-    if (!form.fecha_alta) {
-      setErrorMessage("La fecha de alta es obligatoria.");
       return;
     }
     if (!selectedLocation?.displayText) {
       setErrorMessage("Debes seleccionar una ubicación.");
       return;
     }
-    if (!form.descripcion.trim()) {
-      setErrorMessage("La descripción es obligatoria.");
-      return;
-    }
-    const costNumber = Number(form.costo);
-    if (!form.costo || Number.isNaN(costNumber) || costNumber < 0) {
-      setErrorMessage("El costo debe ser un número válido.");
-      return;
-    }
 
     const activosActuales = getStoredActivos();
-    const serieNormalizada = form.numero_serie.trim().toLowerCase();
+    const serieNormalizada = data.numero_serie.trim().toLowerCase();
     const serieDuplicada = activosActuales.some(
       (item) => (item?.numero_serie ?? "").toString().trim().toLowerCase() === serieNormalizada
     );
@@ -125,21 +107,22 @@ export default function RegistroBien() {
     const tipo = selectedProduct.nombre.toUpperCase().slice(0, 2);
     const codigoInterno = `${tipo}${campus}${edificio}${aula}${nextId}`;
 
+    const costNumber = Number(data.costo);
     const newAsset = {
       id_activo: nextId,
-      codigo_interno: codigoInterno,
-      numero_serie: form.numero_serie.trim(),
+      etiqueta_bien: codigoInterno,
+      numero_serie: data.numero_serie.trim(),
       producto: {
         tipo_activo: selectedProduct.nombre,
         marca: selectedProduct.marca,
         modelo: selectedProduct.modelo,
       },
-      descripcion: form.descripcion.trim(),
+      descripcion: data.descripcion.trim(),
       propietario: "",
-      estado_asignacion: "pendiente de asignacion",
-      estatus: form.estatus,
+      estado_asignacion: ESTADO_RESGUARDO.PENDIENTE_ASIGNACION,
+      estatus: data.estatus,
       costo: Number(costNumber.toFixed(2)),
-      fecha_alta: form.fecha_alta,
+      fecha_alta: data.fecha_alta,
       ubicacion: {
         campus: selectedLocation.campus,
         edificio: selectedLocation.edificio,
@@ -151,7 +134,7 @@ export default function RegistroBien() {
     setRegisteredCount((prev) => prev + 1);
     setSuccessMessage("Bien registrado correctamente");
     resetForm();
-  };
+  });
 
   return (
     <div className="inv-page inv-register-asset-page">
@@ -193,13 +176,21 @@ export default function RegistroBien() {
               </Alert>
             ) : null}
 
-            <Form onSubmit={handleSubmit} className="inv-register-asset__form">
-              <FormInput
-                label="Número de serie"
+            <Form onSubmit={onSubmit} className="inv-register-asset__form">
+              <Controller
                 name="numero_serie"
-                value={form.numero_serie}
-                onChange={handleChange}
-                placeholder="Ingrese el número de serie"
+                control={control}
+                render={({ field, fieldState }) => (
+                  <FormInput
+                    label="Número de serie"
+                    name={field.name}
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    placeholder="Ingrese el número de serie"
+                    error={fieldState.error?.message}
+                  />
+                )}
               />
 
               <Form.Group className="mb-3">
@@ -216,12 +207,20 @@ export default function RegistroBien() {
                 </button>
               </Form.Group>
 
-              <FormInput
-                label="Fecha de alta"
+              <Controller
                 name="fecha_alta"
-                type="date"
-                value={form.fecha_alta}
-                onChange={handleChange}
+                control={control}
+                render={({ field, fieldState }) => (
+                  <FormInput
+                    label="Fecha de alta"
+                    name={field.name}
+                    type="date"
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    error={fieldState.error?.message}
+                  />
+                )}
               />
 
               <Form.Group className="mb-3">
@@ -238,34 +237,57 @@ export default function RegistroBien() {
                 </button>
               </Form.Group>
 
-              <Form.Group className="mb-3">
-                <Form.Label className="inv-register__label">Descripción</Form.Label>
-                <Form.Control
-                  as="textarea"
-                  rows={3}
-                  name="descripcion"
-                  value={form.descripcion}
-                  onChange={handleChange}
-                  className="inv-register__input inv-register-asset__textarea"
-                  placeholder="Ingrese la descripción del activo"
-                />
-              </Form.Group>
-
-              <FormSelect
-                label="Estatus"
-                name="estatus"
-                value={form.estatus}
-                onChange={handleChange}
-                options={estatusOptions}
+              <Controller
+                name="descripcion"
+                control={control}
+                render={({ field, fieldState }) => (
+                  <FormInput
+                    label="Descripción"
+                    name={field.name}
+                    as="textarea"
+                    rows={3}
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    placeholder="Ingrese la descripción del activo"
+                    className="inv-register__input inv-register-asset__textarea"
+                    error={fieldState.error?.message}
+                  />
+                )}
               />
 
-              <FormInput
-                label="Costo"
+              <Controller
+                name="estatus"
+                control={control}
+                render={({ field, fieldState }) => (
+                  <FormSelect
+                    label="Estatus"
+                    name={field.name}
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    options={estatusOptions}
+                    error={fieldState.error?.message}
+                  />
+                )}
+              />
+
+              <Controller
                 name="costo"
-                type="number"
-                value={form.costo}
-                onChange={handleChange}
-                placeholder="Ingrese el costo"
+                control={control}
+                render={({ field, fieldState }) => (
+                  <FormInput
+                    label="Costo"
+                    name={field.name}
+                    type="text"
+                    inputMode="decimal"
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    placeholder="Ingrese el costo"
+                    error={fieldState.error?.message}
+                  />
+                )}
               />
 
               <div className="inv-register-asset__actions">

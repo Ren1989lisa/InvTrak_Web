@@ -25,6 +25,7 @@ import SidebarMenu from "../Components/SidebarMenu";
 import { useUsers } from "../context/UsersContext";
 import { getStoredActivos } from "../activosStorage";
 import { getStoredReportes } from "../reportesStorage";
+import { normalize } from "../utils/catalogUtils";
 import historialData from "../Data/historial_activo.json";
 import "../Style/bienes-registrados.css";
 import "../Style/sidebar.css";
@@ -72,12 +73,11 @@ export default function Dashboard() {
   const activos = useMemo(() => getStoredActivos(), []);
   const reportes = useMemo(() => getStoredReportes(), []);
 
-  // Métricas de vista general
   const metrics = useMemo(() => {
     const total = activos.length;
     const enMantenimiento = activos.filter(
       (a) =>
-        (a?.estatus ?? "").toLowerCase().includes("mantenimiento") ||
+        normalize(a?.estatus) === "mantenimiento" ||
         reportes.some(
           (r) =>
             Number(r?.id_activo) === Number(a?.id_activo) &&
@@ -86,12 +86,10 @@ export default function Dashboard() {
     ).length;
     const activosOk = activos.filter(
       (a) =>
-        ["disponible", "resguardado"].includes(
-          (a?.estatus ?? "").toLowerCase()
-        )
+        ["disponible", "resguardado"].includes(normalize(a?.estatus ?? ""))
     ).length;
     const deBaja = activos.filter((a) =>
-      (a?.estatus ?? "").toLowerCase().includes("baja")
+      normalize(a?.estatus) === "baja"
     ).length;
 
     return {
@@ -102,7 +100,6 @@ export default function Dashboard() {
     };
   }, [activos, reportes]);
 
-  // Gráfico: tiempo promedio de atención (simulado con reportes)
   const chartTiempoData = useMemo(() => {
     const reportesConFecha = reportes
       .filter((r) => r?.fecha_reporte)
@@ -142,7 +139,6 @@ export default function Dashboard() {
         ];
   }, [reportes]);
 
-  // Gráfico: estado de bienes
   const estadoBienesData = useMemo(() => {
     const byStatus = {};
     activos.forEach((a) => {
@@ -164,7 +160,6 @@ export default function Dashboard() {
     ];
   }, [estadoBienesData, activos.length]);
 
-  // Activos más reportados
   const activosReportados = useMemo(() => {
     const map = {};
     reportes.forEach((r) => {
@@ -185,7 +180,6 @@ export default function Dashboard() {
     }));
   }, [activosReportados]);
 
-  // Si no hay reportes, mostrar datos de ejemplo basados en tipo
   const reportedDisplay = useMemo(() => {
     if (reportedWithMax.length > 0) return reportedWithMax;
     const byTipo = {};
@@ -201,7 +195,6 @@ export default function Dashboard() {
     return arr.map((a) => ({ ...a, porcentaje: (a.cantidad / max) * 100 }));
   }, [reportedWithMax, activos]);
 
-  // Feed: Mantenimientos por técnico (nombre del técnico + qué reparó)
   const feedEvents = useMemo(() => {
     const events = [];
     const allHistorial = Array.isArray(historialData) ? historialData : [];
@@ -210,7 +203,7 @@ export default function Dashboard() {
 
     allHistorial.forEach((h) => {
       const activo = activosMap.get(Number(h?.id_activo));
-      const codigo = activo?.codigo_interno ?? `#${h?.id_activo}`;
+      const codigo = activo?.etiqueta_bien ?? `#${h?.id_activo}`;
       const tipoActivo = activo?.producto?.tipo_activo ?? activo?.tipo_activo ?? "bien";
       const reporte = reportesMap.get(h?.folio_reporte ?? h?.reporte_relacionado);
 
@@ -253,7 +246,6 @@ export default function Dashboard() {
       });
     });
 
-    // Agregar altas recientes de activos (sin técnico de reparación)
     activos
       .filter((a) => a?.fecha_alta)
       .sort((a, b) => new Date(b.fecha_alta) - new Date(a.fecha_alta))
@@ -264,9 +256,9 @@ export default function Dashboard() {
         tipo: "alta",
         title: "Nuevo bien agregado",
         tecnico: "Administrador",
-        reparo: `${a?.producto?.tipo_activo ?? "Bien"} ${a?.codigo_interno ?? ""}`,
+        reparo: `${a?.producto?.tipo_activo ?? "Bien"} ${a?.etiqueta_bien ?? ""}`,
         labelReparo: "Registró",
-        codigo: a?.codigo_interno,
+        codigo: a?.etiqueta_bien,
         tiempo: formatTimeAgo(a?.fecha_alta),
         fecha: a?.fecha_alta,
       });
@@ -305,7 +297,6 @@ export default function Dashboard() {
 
       <Container fluid className="inv-content px-3 px-md-4 py-3">
 
-        {/* Métricas */}
         <div className="inv-dashboard__metrics">
           <div className="inv-metric-card">
             <div className="inv-metric-card__icon">
@@ -345,7 +336,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Gráficos */}
         <div className="inv-dashboard__charts">
           <div className="inv-chart-card">
             <h3 className="inv-chart-card__title">Tiempo promedio de atención</h3>
@@ -408,7 +398,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Activos más reportados */}
         <div className="inv-dashboard__reported">
           <h3 className="inv-reported__title">Activos más reportados</h3>
           <div className="inv-reported__header">
@@ -437,7 +426,6 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Mantenimientos por técnico */}
         <div className="inv-dashboard__feed">
           <h3 className="inv-feed__title">Mantenimientos por técnico</h3>
           <div className="inv-feed__grid">

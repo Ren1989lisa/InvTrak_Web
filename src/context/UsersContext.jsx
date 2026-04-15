@@ -1,12 +1,13 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import usuariosSeed from "../data/usuarios.json";
+import usuariosSeed from "../Data/usuarios.json";
+import { getDefaultRouteByRole } from "../config/routes";
+import { normalizeUsuario, normalizeUsuariosList } from "../utils/entityFields";
 
 const STORAGE_KEY = "invtrack_users";
 const STORAGE_CURRENT_USER_KEY = "invtrack_current_user_id";
 
 const UsersContext = createContext(null);
 
-// Menú completo para admin
 const MENU_ADMIN = [
   { icon: "grid", label: "Bienes", route: "/bienes-registrados" },
   { icon: "users", label: "Usuarios", route: "/usuarios" },
@@ -18,15 +19,15 @@ const MENU_ADMIN = [
   { icon: "box", label: "Registro de bienes", route: "/registro-bien" },
 ];
 
-// Menú para usuario (mis bienes, reportar bien y perfil)
 const MENU_USUARIO = [
+  { icon: "grid", label: "Bienes registrados", route: "/bienes-registrados" },
   { icon: "grid", label: "Mis bienes", route: "/mis-bienes" },
   { icon: "report", label: "Reportar bien", route: "/reportar-bien" },
   { icon: "users", label: "Mi perfil", route: "/perfil" },
 ];
 
-// Menú para técnico (solo mis reparaciones y perfil)
 const MENU_TECNICO = [
+  { icon: "grid", label: "Bienes registrados", route: "/bienes-registrados" },
   { icon: "report", label: "Mis reparaciones", route: "/mis-reparaciones" },
   { icon: "users", label: "Mi perfil", route: "/perfil" },
 ];
@@ -39,8 +40,8 @@ function getMenuByRol(rol) {
   return MENU_USUARIO;
 }
 
-const RUTAS_USUARIO = ["/mis-bienes", "/perfil", "/reportar-bien"];
-const RUTAS_TECNICO = ["/mis-reparaciones", "/perfil"];
+const RUTAS_USUARIO = ["/bienes-registrados", "/mis-bienes", "/perfil", "/reportar-bien"];
+const RUTAS_TECNICO = ["/bienes-registrados", "/mis-reparaciones", "/perfil"];
 
 function canAccessRoute(rol, path) {
   const r = (rol ?? "").toString().toLowerCase();
@@ -59,29 +60,24 @@ function canAccessRoute(rol, path) {
   if (r === "tecnico") {
     if (RUTAS_TECNICO.some((ruta) => p === ruta)) return true;
     if (p.endsWith("/editar")) return false;
-    if (p.startsWith("/perfil/") || p.startsWith("/activo/")) return true;
+    if (p.startsWith("/perfil/") || p.startsWith("/activo/") || p.startsWith("/reporte/"))
+      return true;
     return false;
   }
 
   return false;
 }
 
-function getDefaultRouteByRol(rol) {
-  const r = (rol ?? "").toString().toLowerCase();
-  if (r === "admin") return "/dashboard";
-  if (r === "usuario") return "/mis-bienes";
-  if (r === "tecnico") return "/mis-reparaciones";
-  return "/mis-bienes";
-}
-
 function loadUsers() {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return Array.isArray(usuariosSeed) ? usuariosSeed : [];
+    if (!raw) {
+      return normalizeUsuariosList(Array.isArray(usuariosSeed) ? usuariosSeed : []);
+    }
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    return Array.isArray(parsed) ? normalizeUsuariosList(parsed) : [];
   } catch {
-    return Array.isArray(usuariosSeed) ? usuariosSeed : [];
+    return normalizeUsuariosList(Array.isArray(usuariosSeed) ? usuariosSeed : []);
   }
 }
 
@@ -113,7 +109,7 @@ export function UsersProvider({ children }) {
   }, [currentUserId]);
 
   const addUser = (user) => {
-    setUsers((prev) => [...prev, user]);
+    setUsers((prev) => [...prev, normalizeUsuario(user)]);
   };
 
   const currentUser =
@@ -132,7 +128,7 @@ export function UsersProvider({ children }) {
   );
 
   const defaultRoute = useMemo(
-    () => getDefaultRouteByRol(currentUser?.rol),
+    () => getDefaultRouteByRole(currentUser?.rol),
     [currentUser?.rol]
   );
 

@@ -25,7 +25,7 @@ export default function AssetSelectableCard({ asset, selected = false, onSelect 
     >
       <div className="inv-assign-asset-card__top">
         <span className="inv-assign-asset-card__tag">
-          Etq. bien: {asset?.codigo_interno || "N/A"}
+          Etq. bien: {asset?.etiqueta_bien || "N/A"}
         </span>
       </div>
 
@@ -41,7 +41,7 @@ export default function AssetSelectableCard({ asset, selected = false, onSelect 
         </p>
         <div className="inv-assign-asset-card__footer">
           <span className="inv-assign-asset-card__cost">{formatCurrency(asset?.costo)}</span>
-          <span className="inv-assign-asset-card__badge">Disponible</span>
+          <span className="inv-assign-asset-card__badge">{asset?.estatus ?? "DISPONIBLE"}</span>
         </div>
       </div>
     </button>

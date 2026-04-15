@@ -6,6 +6,8 @@ import SidebarMenu from "../Components/SidebarMenu";
 import AssetInfoField from "../Components/AssetInfoField";
 import { useUsers } from "../context/UsersContext";
 import { getStoredActivos, saveActivos } from "../activosStorage";
+import { ESTATUS_ACTIVO, getEstadoDisplay } from "../config/estatusActivo";
+import { ESTADO_RESGUARDO } from "../config/databaseEnums";
 import "../Style/bienes-registrados.css";
 import "../Style/asset-detail.css";
 import "../Style/sidebar.css";
@@ -99,8 +101,8 @@ export default function ConfirmaResguardo() {
       Number(a?.id_activo) === idNum
         ? {
             ...a,
-            estado_asignacion: "confirmado",
-            estatus: "Resguardado",
+            estado_asignacion: ESTADO_RESGUARDO.CONFIRMADO,
+            estatus: ESTATUS_ACTIVO.RESGUARDADO,
           }
         : a
     );
@@ -188,7 +190,7 @@ export default function ConfirmaResguardo() {
           <Col xs={12} md={10} lg={8}>
             <Card className="inv-confirmar-card shadow-sm border-0">
               <Card.Header className="inv-confirmar-card__header">
-                Etq. bien: {activo.codigo_interno}
+                Etq. bien: {activo.etiqueta_bien}
               </Card.Header>
               <Card.Body className="inv-confirmar-card__body">
                 <Row>
@@ -198,7 +200,7 @@ export default function ConfirmaResguardo() {
                       label="Tipo de activo:"
                       value={producto.tipo_activo ?? activo.tipo_activo}
                     />
-                    <AssetInfoField label="Estado:" value={activo.estatus} />
+                    <AssetInfoField label="Estado:" value={getEstadoDisplay(activo)} />
                     <AssetInfoField label="Ubicación:" value={ubicacionStr} />
                     <AssetInfoField label="Costo:" value={formatCurrency(activo.costo)} />
                     <AssetInfoField label="Descripción:" value={activo.descripcion} />

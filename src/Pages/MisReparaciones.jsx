@@ -34,7 +34,7 @@ function ReparacionCard({ reporte, activo, onClick }) {
         <span>
           <span className="inv-asset-card__headerLabel">{reporte?.folio}</span>{" "}
           <span className="inv-asset-card__headerValue">
-            {activo?.codigo_interno ?? `Activo #${reporte?.id_activo}`}
+            {activo?.etiqueta_bien ?? `Activo #${reporte?.id_activo}`}
           </span>
         </span>
         <span className={`badge bg-${prioridadColor}`}>{reporte?.prioridad ?? ""}</span>
@@ -100,15 +100,15 @@ export default function MisReparaciones() {
     if (!query) return reportesConActivo;
     return reportesConActivo.filter(({ reporte, activo }) => {
       const desc = (reporte?.descripcion ?? "").toLowerCase();
-      const codigo = (activo?.codigo_interno ?? "").toLowerCase();
+      const codigo = (activo?.etiqueta_bien ?? "").toLowerCase();
       const folio = (reporte?.folio ?? "").toLowerCase();
       return desc.includes(query) || codigo.includes(query) || folio.includes(query);
     });
   }, [reportesConActivo, query]);
 
-  const handleClick = (activo) => {
-    if (activo?.id_activo) {
-      navigate(`/activo/${activo.id_activo}`);
+  const handleClick = (reporte) => {
+    if (reporte?.id_reporte) {
+      navigate(`/reporte/${reporte.id_reporte}`);
     }
   };
 
@@ -157,7 +157,7 @@ export default function MisReparaciones() {
                 <ReparacionCard
                   reporte={reporte}
                   activo={activo}
-                  onClick={() => handleClick(activo)}
+                  onClick={() => handleClick(reporte)}
                 />
               </Col>
             ))}
