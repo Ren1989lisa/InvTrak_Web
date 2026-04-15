@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Col, Container, Row, Button, Alert } from "react-bootstrap";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import NavbarMenu from "../Components/NavbarMenu";
 import SidebarMenu from "../Components/SidebarMenu";
@@ -19,6 +19,7 @@ import "../Style/usuarios.css";
 
 export default function Usuarios() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [openSidebar, setOpenSidebar] = useState(false);
   const [search, setSearch] = useState("");
   const [filterRol, setFilterRol] = useState("todos");
@@ -30,6 +31,7 @@ export default function Usuarios() {
   const [userToDelete, setUserToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const { currentUser, logout, menuItems } = useUsers();
+  const isAdmin = (currentUser?.rol ?? "").toString().toLowerCase() === "admin";
 
   const query = search.trim().toLowerCase();
 
@@ -60,6 +62,14 @@ export default function Usuarios() {
       active = false;
     };
   }, [navigate]);
+
+  useEffect(() => {
+    const toastMessage = location.state?.toastMessage;
+    if (!toastMessage) return;
+
+    setSuccessMsg(toastMessage);
+    navigate(location.pathname, { replace: true, state: null });
+  }, [location.pathname, location.state, navigate]);
 
   const usuariosFiltrados = useMemo(() => {
     return usuarios.filter((u) => {
@@ -199,6 +209,7 @@ export default function Usuarios() {
             onUserSelect={(usuario) => navigate(`/perfil/${usuario.id_usuario}`)}
             onUserEdit={(usuario) => navigate(`/perfil/${usuario.id_usuario}/editar`)}
             onUserDelete={handleDeleteClick}
+            canEdit={isAdmin}
           />
           {!isLoading && usuariosFiltrados.length === 0 ? (
             <Alert variant="secondary" className="mt-3 mb-0">

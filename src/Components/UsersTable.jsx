@@ -1,7 +1,13 @@
 import { Card, Table } from "react-bootstrap";
 import UserRow from "./UserRow";
 
-export default function UsersTable({ usuarios = [], onUserSelect, onUserEdit, onUserDelete }) {
+export default function UsersTable({
+  usuarios = [],
+  onUserSelect,
+  onUserEdit,
+  onUserDelete,
+  canEdit = true,
+}) {
   return (
     <Card className="inv-users-card shadow-sm border-0">
       <Card.Body className="p-0">
@@ -23,6 +29,7 @@ export default function UsersTable({ usuarios = [], onUserSelect, onUserEdit, on
                 onSelect={onUserSelect}
                 onEdit={onUserEdit}
                 onDelete={onUserDelete}
+                canEdit={canEdit}
               />
             ))}
           </tbody>

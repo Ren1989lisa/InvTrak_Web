@@ -1,6 +1,6 @@
 import UserActions from "./UserActions";
 
-export default function UserRow({ usuario, onSelect, onEdit, onDelete }) {
+export default function UserRow({ usuario, onSelect, onEdit, onDelete, canEdit = true }) {
   const handleSelect = () => {
     onSelect?.(usuario);
   };
@@ -24,6 +24,7 @@ export default function UserRow({ usuario, onSelect, onEdit, onDelete }) {
       <td>{usuario.area ?? usuario.departamento}</td>
       <td>
         <UserActions 
+          canEdit={canEdit}
           onEdit={() => onEdit?.(usuario)} 
           onDelete={() => onDelete?.(usuario)}
         />

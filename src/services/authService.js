@@ -25,7 +25,18 @@ function decodeJwtPayload(token) {
 }
 
 function mapRole(rawRole) {
-  const roleCandidates = Array.isArray(rawRole) ? rawRole : [rawRole];
+  const flattened =
+    rawRole && typeof rawRole === "object" && !Array.isArray(rawRole)
+      ? [rawRole?.nombre ?? rawRole?.name ?? rawRole?.authority ?? rawRole?.role ?? rawRole?.rol]
+      : Array.isArray(rawRole)
+        ? rawRole.map((entry) =>
+            entry && typeof entry === "object"
+              ? (entry?.nombre ?? entry?.name ?? entry?.authority ?? entry?.role ?? entry?.rol)
+              : entry
+          )
+        : [rawRole];
+
+  const roleCandidates = flattened;
   const normalizedRoles = roleCandidates
     .map((r) => (r ?? "").toString().trim().toUpperCase())
     .filter(Boolean);
@@ -33,6 +44,9 @@ function mapRole(rawRole) {
   if (normalizedRoles.includes("ROLE_ADMINISTRADOR")) return "admin";
   if (normalizedRoles.includes("ROLE_TECNICO")) return "tecnico";
   if (normalizedRoles.includes("ROLE_USUARIO")) return "usuario";
+  if (normalizedRoles.includes("ADMINISTRADOR") || normalizedRoles.includes("ADMIN")) return "admin";
+  if (normalizedRoles.includes("TECNICO")) return "tecnico";
+  if (normalizedRoles.includes("USUARIO")) return "usuario";
   return "usuario";
 }
 

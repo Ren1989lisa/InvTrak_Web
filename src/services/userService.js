@@ -32,11 +32,19 @@ function getBackendErrorMessage(data, fallbackMessage) {
 }
 
 function mapRol(value) {
-  const role = (value ?? "").toString().trim().toUpperCase();
+  const rawRole =
+    value && typeof value === "object"
+      ? value?.nombre ?? value?.name ?? value?.authority ?? value?.rol ?? value?.role
+      : value;
+
+  const role = (rawRole ?? "").toString().trim().toUpperCase();
   if (role === "ROLE_ADMINISTRADOR") return "admin";
   if (role === "ROLE_TECNICO") return "tecnico";
   if (role === "ROLE_USUARIO") return "usuario";
-  return (value ?? "").toString().trim().toLowerCase();
+  if (role === "ADMINISTRADOR" || role === "ADMIN") return "admin";
+  if (role === "TECNICO") return "tecnico";
+  if (role === "USUARIO") return "usuario";
+  return (rawRole ?? "").toString().trim().toLowerCase();
 }
 
 function mapFrontendRolToBackend(value) {
@@ -153,6 +161,21 @@ export async function getUsuarios() {
   throw lastError ?? new Error("No fue posible obtener los usuarios.");
 }
 
+export async function getUsuarioById(idUsuario) {
+  if (idUsuario == null || idUsuario === "") {
+    const error = new Error("ID de usuario invalido.");
+    error.status = 400;
+    throw error;
+  }
+
+  const data = await authGet(
+    `/usuario/${encodeURIComponent(idUsuario)}`,
+    "No fue posible obtener el usuario."
+  );
+
+  return normalizeUsuario(data?.data ?? data?.usuario ?? data);
+}
+
 export async function createUsuario(input) {
   const rolId = mapFrontendRolToId(input?.rol);
   const payload = {
@@ -199,6 +222,35 @@ export async function updateUsuarioPassword(idUsuario, password) {
     "PUT",
     `/usuario/${idUsuario}`,
     { password: password ?? "" },
+    "No fue posible actualizar el usuario."
+  );
+
+  return normalizeUsuario(data?.data ?? data?.usuario ?? data);
+}
+
+export async function updateUsuario(idUsuario, input) {
+  if (idUsuario == null || idUsuario === "") {
+    const error = new Error("ID de usuario invalido.");
+    error.status = 400;
+    throw error;
+  }
+
+  const payload = {
+    nombre: (input?.nombre ?? "").toString().trim(),
+    correo: (input?.correo ?? "").toString().trim(),
+    fechaNacimiento: input?.fecha_nacimiento ?? input?.fechaNacimiento ?? "",
+    curp: (input?.curp ?? "").toString().trim().toUpperCase(),
+    numeroEmpleado: (input?.numero_empleado ?? input?.numeroEmpleado ?? "").toString().trim(),
+    rolId:
+      input?.rolId ??
+      mapFrontendRolToId(input?.rol),
+    area: (input?.area ?? input?.departamento ?? "").toString().trim(),
+  };
+
+  const data = await authRequest(
+    "PUT",
+    `/usuario/${encodeURIComponent(idUsuario)}`,
+    payload,
     "No fue posible actualizar el usuario."
   );
 
