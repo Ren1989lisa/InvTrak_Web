@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { getDefaultRouteByRole } from "../config/routes";
 import {
   getCurrentUser as getStoredCurrentUser,
@@ -6,6 +6,7 @@ import {
   logout as authLogout,
   getToken,
 } from "../services/authService";
+import { getPerfilActual } from "../services/userService";
 
 const UsersContext = createContext(null);
 
@@ -21,10 +22,8 @@ const MENU_ADMIN = [
 ];
 
 const MENU_USUARIO = [
-  { icon: "grid", label: "Bienes registrados", route: "/bienes-registrados" },
   { icon: "grid", label: "Mis bienes", route: "/mis-bienes" },
   { icon: "report", label: "Reportar bien", route: "/reportar-bien" },
-  { icon: "users", label: "Mi perfil", route: "/perfil" },
 ];
 
 const MENU_TECNICO = [
@@ -69,6 +68,13 @@ function canAccessRoute(rol, path) {
   return false;
 }
 
+function extractPerfilPayload(payload) {
+  if (!payload || typeof payload !== "object") return null;
+  if (payload.data && typeof payload.data === "object") return payload.data;
+  if (payload.usuario && typeof payload.usuario === "object") return payload.usuario;
+  return payload;
+}
+
 export function UsersProvider({ children }) {
   const [user, setUser] = useState(() => getStoredCurrentUser());
   const [isAuthenticated, setIsAuthenticated] = useState(() => Boolean(getToken() && getStoredCurrentUser()));
@@ -92,6 +98,86 @@ export function UsersProvider({ children }) {
   );
 
   const isAdmin = (user?.rol ?? "").toString().toLowerCase() === "admin";
+
+  useEffect(() => {
+    let active = true;
+
+    if (!isAuthenticated || !getToken()) {
+      return () => {
+        active = false;
+      };
+    }
+
+    async function hydrateCurrentUserProfile() {
+      try {
+        const rawPerfil = await getPerfilActual();
+        if (!active) return;
+
+        const perfil = extractPerfilPayload(rawPerfil);
+        if (!perfil) return;
+
+        const perfilNombre = (
+          perfil?.nombre ??
+          perfil?.nombreCompleto ??
+          perfil?.nombre_completo ??
+          ""
+        )
+          .toString()
+          .trim();
+        const perfilCorreo = (perfil?.correo ?? perfil?.email ?? "").toString().trim();
+        const perfilId =
+          perfil?.id_usuario ??
+          perfil?.idUsuario ??
+          perfil?.id ??
+          null;
+
+        setUser((prev) => {
+          if (!prev) return prev;
+
+          const nextNombre =
+            perfilNombre ||
+            (prev?.nombre ?? prev?.nombre_completo ?? "").toString().trim();
+          const nextNombreCompleto =
+            perfilNombre ||
+            (prev?.nombre_completo ?? prev?.nombre ?? "").toString().trim();
+          const nextCorreo =
+            perfilCorreo || (prev?.correo ?? "").toString().trim();
+          const nextId =
+            perfilId ??
+            prev?.id_usuario ??
+            prev?.id ??
+            null;
+
+          const nextUser = {
+            ...prev,
+            id_usuario: nextId,
+            nombre: nextNombre,
+            nombre_completo: nextNombreCompleto,
+            correo: nextCorreo,
+          };
+
+          const changed =
+            nextUser.id_usuario !== prev.id_usuario ||
+            nextUser.nombre !== prev.nombre ||
+            nextUser.nombre_completo !== prev.nombre_completo ||
+            nextUser.correo !== prev.correo;
+
+          if (!changed) return prev;
+
+          window.localStorage.setItem("invtrack_auth_user", JSON.stringify(nextUser));
+          return nextUser;
+        });
+      } catch {
+        // Si falla /usuario/me mantenemos la sesión actual sin romper UI.
+      }
+    }
+
+    hydrateCurrentUserProfile();
+
+    return () => {
+      active = false;
+    };
+  }, [isAuthenticated]);
 
   const login = useCallback(async (correo, password) => {
     const nextUser = await authLogin(correo, password);
@@ -154,4 +240,3 @@ export function useUsers() {
   }
   return ctx;
 }
-

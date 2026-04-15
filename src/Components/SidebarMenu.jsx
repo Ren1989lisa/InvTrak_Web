@@ -1,7 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import UserProfileCard from "./UserProfileCard";
 import SidebarItem from "./SidebarItem";
 import PrimaryButton from "./PrimaryButton";
+import { useUsers } from "../context/UsersContext";
 
 export default function SidebarMenu({
   open,
@@ -11,6 +12,8 @@ export default function SidebarMenu({
   onLogout,
   onViewProfile,
 }) {
+  const { currentUser } = useUsers();
+
   useEffect(() => {
     if (!open) return;
 
@@ -31,6 +34,29 @@ export default function SidebarMenu({
     };
   }, [open]);
 
+  const displayUserName = useMemo(() => {
+    const toText = (value) => (value ?? "").toString().trim();
+    const isLikelyIdentifier = (value) => {
+      if (!value) return true;
+      if (value.includes("@")) return true;
+      return /\d/.test(value) && !/\s/.test(value);
+    };
+
+    const candidates = [
+      toText(currentUser?.nombre),
+      toText(currentUser?.nombre_completo),
+      toText(currentUser?.nombreCompleto),
+      toText(userName),
+    ];
+
+    for (const candidate of candidates) {
+      if (!candidate || isLikelyIdentifier(candidate)) continue;
+      return candidate;
+    }
+
+    return "Usuario";
+  }, [currentUser?.nombre, currentUser?.nombreCompleto, currentUser?.nombre_completo, userName]);
+
   return (
     <>
       <div
@@ -41,7 +67,7 @@ export default function SidebarMenu({
 
       <aside className={`inv-sidebar${open ? " inv-sidebar--open" : ""}`}>
         <div className="inv-sidebar__inner">
-          <UserProfileCard name={userName} onViewProfile={onViewProfile} />
+          <UserProfileCard name={displayUserName} onViewProfile={onViewProfile} />
 
           <nav className="inv-sidebar__nav" aria-label="Menu principal">
             {items.map((item) => (
