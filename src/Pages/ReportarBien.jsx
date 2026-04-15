@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { BsClipboard2Fill } from "react-icons/bs";
-import { BiBarcodeReader } from "react-icons/bi";
 import { FiUploadCloud } from "react-icons/fi";
 import { BsImage } from "react-icons/bs";
 
@@ -13,6 +12,7 @@ import SidebarMenu from "../Components/SidebarMenu";
 import FormInput from "../Components/FormInput";
 import FormSelect from "../Components/FormSelect";
 import { useUsers } from "../context/UsersContext";
+import { usePendientesResguardo } from "../hooks/usePendientesResguardo";
 import { getStoredActivos, saveActivos } from "../activosStorage";
 import { getStoredResguardos } from "../resguardosStorage";
 import { addReporte } from "../reportesStorage";
@@ -44,6 +44,12 @@ export default function ReportarBien() {
   const fileInputRef = useRef(null);
 
   const { currentUser, logout, menuItems, defaultRoute } = useUsers();
+  const {
+    bienesConfirmados,
+    isLoading: isLoadingMisBienes,
+    error: misBienesError,
+    refresh: refreshMisBienes,
+  } = usePendientesResguardo(currentUser);
 
   const {
     control,
@@ -57,12 +63,17 @@ export default function ReportarBien() {
   const activos = useMemo(() => getStoredActivos(), []);
   const resguardos = useMemo(() => getStoredResguardos(), []);
 
-  const misBienes = useMemo(() => {
-    const idUsuario = Number(currentUser?.id_usuario);
+  const misBienesLocal = useMemo(() => {
+    const idUsuario = Number(currentUser?.id_usuario ?? currentUser?.idUsuario ?? currentUser?.id ?? NaN);
+    if (!Number.isFinite(idUsuario)) return [];
+
     const idsDesdeResguardos = new Set(
       resguardos
-        .filter((r) => Number(r?.id_usuario) === idUsuario)
-        .map((r) => Number(r?.id_activo))
+        .filter(
+          (r) =>
+            Number(r?.id_usuario ?? r?.idUsuario ?? r?.usuarioId) === idUsuario
+        )
+        .map((r) => Number(r?.id_activo ?? r?.idActivo ?? r?.activoId))
     );
     const pendiente = (v) =>
       (v ?? "").toString().toLowerCase().includes("pendiente");
@@ -73,7 +84,26 @@ export default function ReportarBien() {
       if (!assigned) return false;
       return !pendiente(a?.estado_asignacion);
     });
-  }, [activos, resguardos, currentUser?.id_usuario]);
+  }, [activos, resguardos, currentUser?.id_usuario, currentUser?.idUsuario, currentUser?.id]);
+
+  const misBienes = useMemo(() => {
+    if (Array.isArray(bienesConfirmados) && bienesConfirmados.length > 0) {
+      return bienesConfirmados;
+    }
+    return misBienesLocal;
+  }, [bienesConfirmados, misBienesLocal]);
+
+  const getEtiquetaBien = (activo) =>
+    (activo?.etiqueta_bien ?? activo?.etiquetaBien ?? "").toString().trim();
+
+  const etiquetaOptions = useMemo(
+    () =>
+      misBienes
+        .map((activo) => getEtiquetaBien(activo))
+        .filter(Boolean)
+        .map((etiqueta) => ({ value: etiqueta, label: etiqueta })),
+    [misBienes]
+  );
 
   const handleFileChange = (e) => {
     const files = Array.from(e.target?.files ?? []);
@@ -111,9 +141,7 @@ export default function ReportarBien() {
 
     const codigo = data.etiqueta.trim();
 
-    const activo = misBienes.find(
-      (a) => (a?.etiqueta_bien ?? "").toString().trim().toUpperCase() === codigo.toUpperCase()
-    );
+    const activo = misBienes.find((a) => getEtiquetaBien(a).toUpperCase() === codigo.toUpperCase());
     if (!activo) {
       setErrorMessage("La etiqueta no corresponde a ninguno de tus bienes registrados.");
       return;
@@ -130,10 +158,12 @@ export default function ReportarBien() {
     }
 
     addReporte({
-      id_activo: activo.id_activo,
+      id_activo: activo.id_activo ?? activo.idActivo ?? null,
       folio: null,
       tipo_falla: null,
-      descripcion: (data.descripcion ?? "").trim() || `Reporte de bien ${activo.etiqueta_bien}`,
+      descripcion:
+        (data.descripcion ?? "").trim() ||
+        `Reporte de bien ${getEtiquetaBien(activo)}`,
       prioridad: PRIORIDAD.MEDIA,
       id_prioridad: null,
       estatus: ESTATUS_REPORTE_DANIO.PENDIENTE,
@@ -143,7 +173,8 @@ export default function ReportarBien() {
     });
 
     const updated = activos.map((a) =>
-      Number(a?.id_activo) === Number(activo.id_activo)
+      Number(a?.id_activo ?? a?.idActivo) ===
+      Number(activo.id_activo ?? activo.idActivo)
         ? { ...a, estatus: ESTATUS_ACTIVO.MANTENIMIENTO }
         : a
     );
@@ -206,6 +237,26 @@ export default function ReportarBien() {
           </Alert>
         )}
 
+        {isLoadingMisBienes ? (
+          <Alert variant="info" className="mt-2 mb-0">
+            Cargando tus bienes...
+          </Alert>
+        ) : null}
+
+        {misBienesError ? (
+          <Alert
+            variant="warning"
+            dismissible
+            onClose={refreshMisBienes}
+            className="mt-2 mb-0 d-flex align-items-center justify-content-between gap-3"
+          >
+            <span>{misBienesError}</span>
+            <Button variant="outline-warning" size="sm" onClick={refreshMisBienes}>
+              Reintentar
+            </Button>
+          </Alert>
+        ) : null}
+
         <Row className="justify-content-center mt-3">
           <Col xs={12} lg={10} xl={8}>
             <Card className="inv-reportar-card shadow-sm border-0">
@@ -221,26 +272,17 @@ export default function ReportarBien() {
                         name="etiqueta"
                         control={control}
                         render={({ field, fieldState }) => (
-                          <>
-                            <FormInput
-                              label="Etiqueta del bien"
-                              name={field.name}
-                              type="text"
-                              placeholder="Ingresa la etiqueta del bien"
-                              value={field.value}
-                              onChange={field.onChange}
-                              onBlur={field.onBlur}
-                              list="etiquetas-sugeridas"
-                              className="inv-reportar-input"
-                              leftIcon={<BiBarcodeReader className="inv-reportar-input-icon" />}
-                              error={fieldState.error?.message}
-                            />
-                            <datalist id="etiquetas-sugeridas">
-                              {misBienes.map((a) => (
-                                <option key={a.id_activo} value={a.etiqueta_bien} />
-                              ))}
-                            </datalist>
-                          </>
+                          <FormSelect
+                            label="Etiqueta del bien"
+                            name={field.name}
+                            value={field.value}
+                            onChange={field.onChange}
+                            onBlur={field.onBlur}
+                            options={etiquetaOptions}
+                            placeholder="Selecciona la etiqueta del bien"
+                            className="inv-reportar-select"
+                            error={fieldState.error?.message}
+                          />
                         )}
                       />
                     </Col>
