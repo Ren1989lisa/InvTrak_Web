@@ -95,6 +95,14 @@ export async function getActivos() {
   return normalizeActivosList(extractActivos(response));
 }
 
+export async function getActivoById(id) {
+  if (id == null || id === "") {
+    throw new Error("ID de activo invalido.");
+  }
+  const response = await apiRequest(`/activo/${encodeURIComponent(id)}`, "GET");
+  return normalizeActivo(response?.data ?? response?.activo ?? response?.item ?? response);
+}
+
 export async function getProductos() {
   const response = await apiRequest("/producto", "GET");
   return extractCollection(response)
@@ -129,4 +137,13 @@ export async function createActivo(payload) {
   const response = await apiRequest("/activo", "POST", payload);
   const created = response?.data ?? response?.activo ?? response?.item ?? response;
   return normalizeActivo(created);
+}
+
+export async function updateActivo(id, payload) {
+  if (id == null || id === "") {
+    throw new Error("ID de activo invalido.");
+  }
+  const response = await apiRequest(`/activo/${encodeURIComponent(id)}`, "PUT", payload);
+  const updated = response?.data ?? response?.activo ?? response?.item ?? response;
+  return normalizeActivo(updated);
 }

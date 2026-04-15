@@ -32,6 +32,27 @@ export function normalizeActivo(a) {
   const idActivo = a.id_activo ?? a.idActivo ?? a.id ?? null;
   const etiqueta = a.etiqueta_bien ?? a.etiquetaBien ?? a.codigo_interno ?? "";
   const numeroSerie = a.numero_serie ?? a.numeroSerie ?? a.serie ?? "";
+  const aulaId =
+    a?.aula?.idAula ??
+    a?.aula?.id_aula ??
+    a?.id_aula ??
+    a?.aulaId ??
+    a?.ubicacion?.id_aula ??
+    null;
+  const edificioId =
+    a?.aula?.edificio?.idEdificio ??
+    a?.aula?.edificio?.id_edificio ??
+    a?.id_edificio ??
+    a?.edificioId ??
+    a?.ubicacion?.id_edificio ??
+    null;
+  const campusId =
+    a?.aula?.edificio?.campus?.idCampus ??
+    a?.aula?.edificio?.campus?.id_campus ??
+    a?.id_campus ??
+    a?.campusId ??
+    a?.ubicacion?.id_campus ??
+    null;
   
   // Extraer ubicación desde estructura anidada
   let campus = "";
@@ -60,6 +81,9 @@ export function normalizeActivo(a) {
   }
 
   const ubicacion = {
+    id_campus: campusId != null ? Number(campusId) : null,
+    id_edificio: edificioId != null ? Number(edificioId) : null,
+    id_aula: aulaId != null ? Number(aulaId) : null,
     campus,
     edificio,
     aula,
@@ -72,6 +96,24 @@ export function normalizeActivo(a) {
   let modeloProducto = "";
   let tipoActivo = "";
   let productoCompleto = "";
+  const productoId =
+    a?.producto?.id_producto ??
+    a?.producto?.idProducto ??
+    a?.id_producto ??
+    a?.productoId ??
+    null;
+  const modeloId =
+    a?.producto?.modelo?.id_modelo ??
+    a?.producto?.modelo?.idModelo ??
+    a?.id_modelo ??
+    a?.modeloId ??
+    null;
+  const marcaId =
+    a?.producto?.modelo?.marca?.id_marca ??
+    a?.producto?.modelo?.marca?.idMarca ??
+    a?.id_marca ??
+    a?.marcaId ??
+    null;
 
   if (a.producto && typeof a.producto === "object") {
     // Estructura anidada del backend: producto.modelo.marca
@@ -96,6 +138,9 @@ export function normalizeActivo(a) {
   }
 
   const producto = {
+    id_producto: productoId != null ? Number(productoId) : null,
+    id_modelo: modeloId != null ? Number(modeloId) : null,
+    id_marca: marcaId != null ? Number(marcaId) : null,
     nombre: nombreProducto,
     tipo_activo: tipoActivo,
     marca: marcaProducto,

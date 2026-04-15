@@ -35,6 +35,7 @@ const {
   REGISTRAR_USUARIO,
   CATALOGOS,
   REGISTRO_BIEN,
+  REGISTRO_BIEN_EDITAR,
   ASIGNAR_BIEN,
   ASIGNAR_REPORTE,
   HISTORIAL,
@@ -126,6 +127,14 @@ export default function AppRoutes() {
         />
         <Route
           path={REGISTRO_BIEN}
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <RegistroBien />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={REGISTRO_BIEN_EDITAR}
           element={
             <ProtectedRoute requiredRole="admin">
               <RegistroBien />

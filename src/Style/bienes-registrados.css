@@ -230,6 +230,26 @@
   min-width: 110px;
 }
 
+.inv-asset-card__actions {
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.inv-asset-card__edit-btn {
+  border: 1px solid rgba(44, 94, 145, 0.35);
+  background: #eef5fb;
+  color: #2c5e91;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 6px 12px;
+  line-height: 1.2;
+}
+
+.inv-asset-card__edit-btn:hover {
+  background: #deebf7;
+}
+
 .inv-pagination .page-link {
   border-radius: 6px !important;
 }

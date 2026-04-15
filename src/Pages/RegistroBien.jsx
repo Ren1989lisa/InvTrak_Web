@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, Card, Container, Form, Modal, Spinner } from "react-bootstrap";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -11,7 +11,12 @@ import FormInput from "../Components/FormInput";
 import FormSelect from "../Components/FormSelect";
 import SelectLocationModal from "../Components/SelectLocationModal";
 import { useUsers } from "../context/UsersContext";
-import { createActivo, getActivos } from "../services/activoService";
+import {
+  createActivo,
+  getActivoById,
+  getActivos,
+  updateActivo,
+} from "../services/activoService";
 import { getProductos } from "../services/catalogoService";
 import { registroBienSchema } from "../utils/schemas";
 import { ESTATUS_ACTIVO, ESTATUS_ACTIVO_OPTIONS } from "../config/estatusActivo";
@@ -27,12 +32,31 @@ function todayDateString() {
   return `${date.getFullYear()}-${month}-${day}`;
 }
 
+function getDefaultValues() {
+  return {
+    numero_serie: "",
+    fecha_alta: todayDateString(),
+    descripcion: "",
+    estatus: ESTATUS_ACTIVO.DISPONIBLE,
+    costo: "",
+  };
+}
+
 function getProductLoadErrorMessage(error) {
   const status = Number(error?.status ?? 0);
-  if (status === 401) return "Sesión expirada. Inicia sesión nuevamente.";
+  if (status === 401) return "Sesion expirada. Inicia sesion nuevamente.";
   if (status === 404) return "No se encontraron productos.";
-  if (status === 0) return "Error de red. Verifica tu conexión.";
+  if (status === 0) return "Error de red. Verifica tu conexion.";
   return error?.message || "No fue posible cargar los productos.";
+}
+
+function getEditLoadErrorMessage(error) {
+  const status = Number(error?.status ?? 0);
+  if (status === 401) return "Sesion expirada. Inicia sesion nuevamente.";
+  if (status === 403) return "No tienes permisos para editar activos.";
+  if (status === 404) return "Activo no encontrado.";
+  if (status === 0) return "Error de red. Verifica tu conexion.";
+  return error?.message || "No fue posible cargar los datos del activo.";
 }
 
 function uniqueById(items, idKey, labelKey) {
@@ -47,7 +71,56 @@ function uniqueById(items, idKey, labelKey) {
   return [...seen.values()];
 }
 
-function SelectProductModalInline({ show, onClose, onSave }) {
+function buildChainDisplay(values) {
+  return values.map((value) => String(value ?? "").trim()).filter(Boolean).join(" > ");
+}
+
+function buildProductSelectionFromActivo(activo) {
+  const producto = activo?.producto ?? {};
+  const idProducto = Number(producto?.id_producto ?? producto?.idProducto ?? activo?.productoId);
+  if (!Number.isFinite(idProducto) || idProducto <= 0) return null;
+
+  const idMarca = Number(producto?.id_marca ?? producto?.marca?.id_marca ?? producto?.marca?.idMarca);
+  const idModelo = Number(producto?.id_modelo ?? producto?.modelo?.id_modelo ?? producto?.modelo?.idModelo);
+  const marca = String(producto?.marca ?? producto?.modelo?.marca?.nombre ?? "").trim();
+  const modelo = String(producto?.modelo ?? producto?.modelo?.nombre ?? "").trim();
+  const nombre =
+    String(producto?.nombre ?? producto?.tipo_activo ?? producto?.tipoActivo ?? "").trim() || "Producto";
+
+  return {
+    id_marca: Number.isFinite(idMarca) ? idMarca : null,
+    id_modelo: Number.isFinite(idModelo) ? idModelo : null,
+    id_producto: idProducto,
+    marca,
+    modelo,
+    nombre,
+    displayText: buildChainDisplay([marca, modelo, nombre]) || nombre,
+  };
+}
+
+function buildLocationSelectionFromActivo(activo) {
+  const ubicacion = activo?.ubicacion ?? {};
+  const idCampus = Number(ubicacion?.id_campus ?? activo?.campusId);
+  const idEdificio = Number(ubicacion?.id_edificio ?? activo?.edificioId);
+  const idAula = Number(ubicacion?.id_aula ?? activo?.aulaId);
+  if (!Number.isFinite(idAula) || idAula <= 0) return null;
+
+  const campus = String(ubicacion?.campus ?? "").trim();
+  const edificio = String(ubicacion?.edificio ?? "").trim();
+  const aula = String(ubicacion?.aula ?? "").trim();
+
+  return {
+    id_campus: Number.isFinite(idCampus) ? idCampus : null,
+    id_edificio: Number.isFinite(idEdificio) ? idEdificio : null,
+    id_aula: idAula,
+    campus,
+    edificio,
+    aula,
+    displayText: [campus, edificio, aula].filter(Boolean).join(" ").trim() || aula,
+  };
+}
+
+function SelectProductModalInline({ show, onClose, onSave, initialSelection = null }) {
   const [selectedBrandId, setSelectedBrandId] = useState("");
   const [selectedModelId, setSelectedModelId] = useState("");
   const [selectedProductId, setSelectedProductId] = useState("");
@@ -72,18 +145,21 @@ function SelectProductModalInline({ show, onClose, onSave }) {
   useEffect(() => {
     if (!show) return;
 
-    setSelectedBrandId("");
-    setSelectedModelId("");
-    setSelectedProductId("");
+    setSelectedBrandId(String(initialSelection?.id_marca ?? ""));
+    setSelectedModelId(String(initialSelection?.id_modelo ?? ""));
+    setSelectedProductId(String(initialSelection?.id_producto ?? ""));
     setCatalog([]);
     setError("");
     loadCatalog();
-  }, [show, loadCatalog]);
+  }, [
+    show,
+    loadCatalog,
+    initialSelection?.id_marca,
+    initialSelection?.id_modelo,
+    initialSelection?.id_producto,
+  ]);
 
-  const brandOptions = useMemo(
-    () => uniqueById(catalog, "id_marca", "marca"),
-    [catalog]
-  );
+  const brandOptions = useMemo(() => uniqueById(catalog, "id_marca", "marca"), [catalog]);
 
   const modelOptions = useMemo(() => {
     const brandId = Number(selectedBrandId);
@@ -144,7 +220,7 @@ function SelectProductModalInline({ show, onClose, onSave }) {
       marca: matchedItem.marca,
       modelo: matchedItem.modelo,
       nombre: matchedItem.nombre,
-      displayText: `${matchedItem.marca} > ${matchedItem.modelo} > ${matchedItem.nombre}`,
+      displayText: buildChainDisplay([matchedItem.marca, matchedItem.modelo, matchedItem.nombre]),
     });
   };
 
@@ -165,7 +241,7 @@ function SelectProductModalInline({ show, onClose, onSave }) {
           {isLoading ? (
             <Alert variant="info" className="d-flex align-items-center gap-2">
               <Spinner animation="border" size="sm" />
-              <span>Cargando catálogos de producto...</span>
+              <span>Cargando catalogos de producto...</span>
             </Alert>
           ) : null}
 
@@ -256,15 +332,29 @@ function getCreateErrorMessage(error) {
   const status = Number(error?.status ?? 0);
   const backendMessage = error?.data?.message || error?.message || "";
 
-  if (status === 401) return "Sesión expirada. Inicia sesión nuevamente.";
-  if (status === 400) return backendMessage || "Datos inválidos. Revisa la información capturada.";
-  if (status === 409) return backendMessage || "Ya existe un activo con ese número de serie.";
-  if (status === 500) return backendMessage || "Error del servidor. Inténtalo nuevamente.";
+  if (status === 401) return "Sesion expirada. Inicia sesion nuevamente.";
+  if (status === 400) return backendMessage || "Datos invalidos. Revisa la informacion capturada.";
+  if (status === 409) return backendMessage || "Ya existe un activo con ese numero de serie.";
+  if (status === 500) return backendMessage || "Error del servidor. Intentalo nuevamente.";
   if (status === 0) return "No fue posible conectar con el servidor.";
-  if (/número de serie ya está registrado/i.test(backendMessage)) {
-    return "Ya existe un activo con ese número de serie.";
+  if (/numero de serie ya esta registrado/i.test(backendMessage)) {
+    return "Ya existe un activo con ese numero de serie.";
   }
   return backendMessage || "No fue posible crear el bien.";
+}
+
+function getUpdateErrorMessage(error) {
+  const status = Number(error?.status ?? 0);
+  const backendMessage = error?.data?.message || error?.message || "";
+
+  if (status === 401) return "Sesion expirada. Inicia sesion nuevamente.";
+  if (status === 403) return "No tienes permisos para editar activos.";
+  if (status === 404) return backendMessage || "Activo no encontrado.";
+  if (status === 409) return backendMessage || "Ya existe un activo con ese numero de serie.";
+  if (status === 400) return backendMessage || "Datos invalidos. Revisa la informacion capturada.";
+  if (status === 500) return backendMessage || "Error del servidor. Intentalo nuevamente.";
+  if (status === 0) return "No fue posible conectar con el servidor.";
+  return backendMessage || "No fue posible actualizar el activo.";
 }
 
 function parseCosto(value) {
@@ -275,6 +365,10 @@ function parseCosto(value) {
 
 export default function RegistroBien() {
   const navigate = useNavigate();
+  const { id } = useParams();
+  const isEditMode = Boolean(id);
+  const editActivoId = isEditMode ? Number(id) : null;
+
   const { currentUser, logout, menuItems } = useUsers();
   const [openSidebar, setOpenSidebar] = useState(false);
   const [showProductModal, setShowProductModal] = useState(false);
@@ -283,22 +377,15 @@ export default function RegistroBien() {
   const [successMessage, setSuccessMessage] = useState("");
   const [registeredCount, setRegisteredCount] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
+  const [isHydratingEdit, setIsHydratingEdit] = useState(false);
   const [existingActivos, setExistingActivos] = useState([]);
 
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [selectedLocation, setSelectedLocation] = useState(null);
 
-  const defaultValues = {
-    numero_serie: "",
-    fecha_alta: todayDateString(),
-    descripcion: "",
-    estatus: ESTATUS_ACTIVO.DISPONIBLE,
-    costo: "",
-  };
-
   const { control, handleSubmit, reset } = useForm({
     resolver: zodResolver(registroBienSchema),
-    defaultValues,
+    defaultValues: getDefaultValues(),
   });
 
   useEffect(() => {
@@ -322,9 +409,56 @@ export default function RegistroBien() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!isEditMode) return;
+    if (!Number.isFinite(editActivoId) || editActivoId <= 0) {
+      setErrorMessage("El activo que intentas editar no es valido.");
+      return;
+    }
+
+    let active = true;
+
+    async function loadActivoForEdit() {
+      setIsHydratingEdit(true);
+      setErrorMessage("");
+      setSuccessMessage("");
+      try {
+        const activo = await getActivoById(editActivoId);
+        if (!active) return;
+
+        const nextProduct = buildProductSelectionFromActivo(activo);
+        const nextLocation = buildLocationSelectionFromActivo(activo);
+
+        setSelectedProduct(nextProduct);
+        setSelectedLocation(nextLocation);
+        reset({
+          numero_serie: String(activo?.numero_serie ?? "").trim(),
+          fecha_alta: String(activo?.fecha_alta ?? "").trim() || todayDateString(),
+          descripcion: String(activo?.descripcion ?? "").trim(),
+          estatus: String(activo?.estatus ?? ESTATUS_ACTIVO.DISPONIBLE).trim() || ESTATUS_ACTIVO.DISPONIBLE,
+          costo:
+            activo?.costo != null && activo?.costo !== ""
+              ? String(activo.costo)
+              : "",
+        });
+      } catch (error) {
+        if (!active) return;
+        setErrorMessage(getEditLoadErrorMessage(error));
+      } finally {
+        if (active) setIsHydratingEdit(false);
+      }
+    }
+
+    loadActivoForEdit();
+
+    return () => {
+      active = false;
+    };
+  }, [isEditMode, editActivoId, reset]);
+
   const clearForm = () => {
     reset({
-      ...defaultValues,
+      ...getDefaultValues(),
       fecha_alta: todayDateString(),
       estatus: ESTATUS_ACTIVO.DISPONIBLE,
     });
@@ -333,6 +467,10 @@ export default function RegistroBien() {
   };
 
   const resetForm = () => {
+    if (isEditMode) {
+      navigate("/bienes-registrados");
+      return;
+    }
     clearForm();
     setErrorMessage("");
     setSuccessMessage("");
@@ -341,8 +479,9 @@ export default function RegistroBien() {
   const onSubmit = handleSubmit(async (data) => {
     setErrorMessage("");
     setSuccessMessage("");
-    const numeroSerie = data.numero_serie.trim();
 
+    const numeroSerie = String(data.numero_serie ?? "").trim();
+    const descripcion = String(data.descripcion ?? "").trim();
     const productoId = Number(selectedProduct?.id_producto);
     const aulaId = Number(selectedLocation?.id_aula);
 
@@ -352,52 +491,84 @@ export default function RegistroBien() {
     }
 
     if (!aulaId) {
-      setErrorMessage("Debes seleccionar una ubicación.");
+      setErrorMessage("Debes seleccionar una ubicacion.");
       return;
     }
 
     const serieNormalizada = numeroSerie.toLowerCase();
-    const serieDuplicada = existingActivos.some((item) =>
-      String(item?.numero_serie ?? "").trim().toLowerCase() === serieNormalizada
-    );
+    const serieDuplicada = existingActivos.some((item) => {
+      const sameSerie = String(item?.numero_serie ?? "").trim().toLowerCase() === serieNormalizada;
+      if (!sameSerie) return false;
+      if (!isEditMode) return true;
+      return Number(item?.id_activo) !== Number(editActivoId);
+    });
 
     if (serieDuplicada) {
-      setErrorMessage("Ya existe un activo con ese número de serie.");
+      setErrorMessage("Ya existe un activo con ese numero de serie.");
       return;
     }
 
     const costo = parseCosto(data.costo);
     if (!Number.isFinite(costo) || costo <= 0) {
-      setErrorMessage("El costo debe ser un número válido mayor a 0.");
+      setErrorMessage("El costo debe ser un numero valido mayor a 0.");
       return;
     }
+
+    const payload = {
+      numeroSerie,
+      productoId,
+      fechaAlta: data.fecha_alta,
+      aulaId,
+      descripcion,
+      costo,
+    };
 
     setIsSaving(true);
 
     try {
-      await createActivo({
-        numeroSerie,
-        productoId,
-        fechaAlta: data.fecha_alta,
-        aulaId,
-        descripcion: data.descripcion.trim(),
-        costo,
-      });
+      if (isEditMode) {
+        const estatus = String(data.estatus ?? "").trim() || ESTATUS_ACTIVO.DISPONIBLE;
+        await updateActivo(editActivoId, {
+          ...payload,
+          estatus,
+        });
+
+        navigate("/bienes-registrados", {
+          replace: true,
+          state: { toastMessage: "Activo actualizado correctamente" },
+        });
+        return;
+      }
+
+      await createActivo(payload);
 
       setRegisteredCount((prev) => prev + 1);
-      setExistingActivos((prev) => [...prev, { numero_serie: numeroSerie }]);
+      setExistingActivos((prev) => [
+        ...(Array.isArray(prev) ? prev : []),
+        { id_activo: Date.now(), numero_serie: numeroSerie },
+      ]);
       clearForm();
       setSuccessMessage("Bien creado correctamente");
     } catch (error) {
-      setErrorMessage(getCreateErrorMessage(error));
+      setErrorMessage(isEditMode ? getUpdateErrorMessage(error) : getCreateErrorMessage(error));
     } finally {
       setIsSaving(false);
     }
   });
 
+  const pageTitle = isEditMode ? "Editar activo" : "Registro de Bienes";
+  const formTitle = isEditMode ? "Editar bien" : "Registro de Bien";
+  const submitLabel = isSaving
+    ? isEditMode
+      ? "Guardando..."
+      : "Guardando..."
+    : isEditMode
+      ? "Guardar cambios"
+      : "Registrar";
+
   return (
     <div className="inv-page inv-register-asset-page">
-      <NavbarMenu title="Registro de Bienes" onMenuClick={() => setOpenSidebar((value) => !value)} />
+      <NavbarMenu title={pageTitle} onMenuClick={() => setOpenSidebar((value) => !value)} />
 
       <SidebarMenu
         open={openSidebar}
@@ -422,7 +593,7 @@ export default function RegistroBien() {
       <Container fluid className="inv-content px-3 px-md-4 py-4">
         <Card className="inv-register-asset__card shadow-sm border-0">
           <Card.Body className="inv-register-asset__cardBody">
-            <h2 className="inv-register-asset__title">Registro de Bien</h2>
+            <h2 className="inv-register-asset__title">{formTitle}</h2>
 
             {successMessage ? (
               <Alert
@@ -434,9 +605,17 @@ export default function RegistroBien() {
                 {successMessage}
               </Alert>
             ) : null}
+
             {errorMessage ? (
               <Alert variant="danger" className="mb-3" dismissible onClose={() => setErrorMessage("")}>
                 {errorMessage}
+              </Alert>
+            ) : null}
+
+            {isHydratingEdit ? (
+              <Alert variant="info" className="d-flex align-items-center gap-2">
+                <Spinner animation="border" size="sm" />
+                <span>Cargando datos del activo...</span>
               </Alert>
             ) : null}
 
@@ -446,13 +625,28 @@ export default function RegistroBien() {
                 control={control}
                 render={({ field, fieldState }) => (
                   <FormInput
-                    label="Número de serie"
+                    label="Numero de serie"
                     name={field.name}
                     value={field.value}
-                    onChange={field.onChange}
+                    onChange={(event) => {
+                      const onlyDigits = String(event?.target?.value ?? "")
+                        .replace(/\D/g, "")
+                        .slice(0, 6);
+                      field.onChange(onlyDigits);
+                    }}
                     onBlur={field.onBlur}
-                    placeholder="Ingrese el número de serie"
+                    inputMode="numeric"
+                    maxLength={6}
+                    pattern="[0-9]{6}"
+                    onInvalid={(event) => {
+                      event.target.setCustomValidity("El numero de serie debe tener 6 digitos exactos.");
+                    }}
+                    onInput={(event) => {
+                      event.target.setCustomValidity("");
+                    }}
+                    placeholder="Ingrese el numero de serie"
                     error={fieldState.error?.message}
+                    disabled={isSaving || isHydratingEdit}
                   />
                 )}
               />
@@ -463,10 +657,11 @@ export default function RegistroBien() {
                   type="button"
                   className="inv-register-asset__picker"
                   onClick={() => setShowProductModal(true)}
+                  disabled={isSaving || isHydratingEdit}
                 >
                   <span>{selectedProduct?.displayText || "Seleccione producto"}</span>
                   <span className="inv-register-asset__pickerIcon" aria-hidden="true">
-                    ▼
+                    v
                   </span>
                 </button>
               </Form.Group>
@@ -483,20 +678,22 @@ export default function RegistroBien() {
                     onChange={field.onChange}
                     onBlur={field.onBlur}
                     error={fieldState.error?.message}
+                    disabled={isSaving || isHydratingEdit}
                   />
                 )}
               />
 
               <Form.Group className="mb-3">
-                <Form.Label className="inv-register__label">Ubicación</Form.Label>
+                <Form.Label className="inv-register__label">Ubicacion</Form.Label>
                 <button
                   type="button"
                   className="inv-register-asset__picker"
                   onClick={() => setShowLocationModal(true)}
+                  disabled={isSaving || isHydratingEdit}
                 >
-                  <span>{selectedLocation?.displayText || "Seleccione ubicación"}</span>
+                  <span>{selectedLocation?.displayText || "Seleccione ubicacion"}</span>
                   <span className="inv-register-asset__pickerIcon" aria-hidden="true">
-                    ▼
+                    v
                   </span>
                 </button>
               </Form.Group>
@@ -506,16 +703,17 @@ export default function RegistroBien() {
                 control={control}
                 render={({ field, fieldState }) => (
                   <FormInput
-                    label="Descripción"
+                    label="Descripcion"
                     name={field.name}
                     as="textarea"
                     rows={3}
                     value={field.value}
                     onChange={field.onChange}
                     onBlur={field.onBlur}
-                    placeholder="Ingrese la descripción del activo"
+                    placeholder="Ingrese la descripcion del activo"
                     className="inv-register__input inv-register-asset__textarea"
                     error={fieldState.error?.message}
+                    disabled={isSaving || isHydratingEdit}
                   />
                 )}
               />
@@ -531,7 +729,7 @@ export default function RegistroBien() {
                     onChange={field.onChange}
                     onBlur={field.onBlur}
                     options={ESTATUS_ACTIVO_OPTIONS}
-                    disabled
+                    disabled={!isEditMode || isSaving || isHydratingEdit}
                     error={fieldState.error?.message}
                   />
                 )}
@@ -551,6 +749,7 @@ export default function RegistroBien() {
                     onBlur={field.onBlur}
                     placeholder="Ingrese el costo"
                     error={fieldState.error?.message}
+                    disabled={isSaving || isHydratingEdit}
                   />
                 )}
               />
@@ -559,14 +758,14 @@ export default function RegistroBien() {
                 <PrimaryButton
                   type="submit"
                   variant="primary"
-                  label={isSaving ? "Guardando..." : "Registrar"}
+                  label={submitLabel}
                   className="inv-register-asset__submit"
-                  disabled={isSaving}
+                  disabled={isSaving || isHydratingEdit}
                 />
                 <PrimaryButton
                   type="button"
                   variant="light"
-                  label="Cancelar"
+                  label={isEditMode ? "Volver" : "Cancelar"}
                   className="inv-register-asset__cancel"
                   onClick={resetForm}
                   disabled={isSaving}
@@ -574,15 +773,18 @@ export default function RegistroBien() {
               </div>
             </Form>
 
-            <p className="inv-register-asset__counter mb-0">
-              Registros en esta sesión: {registeredCount}
-            </p>
+            {!isEditMode ? (
+              <p className="inv-register-asset__counter mb-0">
+                Registros en esta sesion: {registeredCount}
+              </p>
+            ) : null}
           </Card.Body>
         </Card>
       </Container>
 
       <SelectProductModalInline
         show={showProductModal}
+        initialSelection={selectedProduct}
         onClose={() => setShowProductModal(false)}
         onSave={(selection) => {
           setSelectedProduct(selection);
@@ -592,6 +794,7 @@ export default function RegistroBien() {
 
       <SelectLocationModal
         show={showLocationModal}
+        initialSelection={selectedLocation}
         onClose={() => setShowLocationModal(false)}
         onSave={(selection) => {
           setSelectedLocation(selection);

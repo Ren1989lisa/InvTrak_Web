@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Alert, Container, Row, Col } from "react-bootstrap";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import * as XLSX from "xlsx";
 
 import NavbarMenu from "../Components/NavbarMenu";
@@ -44,9 +44,12 @@ export default function BienesRegistrados() {
   const [isLoadingActivos, setIsLoadingActivos] = useState(false);
   const [loadError, setLoadError] = useState("");
   const [exportFeedback, setExportFeedback] = useState(null);
+  const [pageFeedback, setPageFeedback] = useState(null);
   const navigate = useNavigate();
+  const location = useLocation();
   const { currentUser, logout, menuItems } = useUsers();
   const query = search.trim().toLowerCase();
+  const isAdmin = (currentUser?.rol ?? "").toString().toLowerCase() === "admin";
 
   useEffect(() => {
     let active = true;
@@ -72,6 +75,18 @@ export default function BienesRegistrados() {
       active = false;
     };
   }, []);
+
+  useEffect(() => {
+    const toastMessage = location.state?.toastMessage;
+    if (!toastMessage) return;
+
+    setPageFeedback({
+      variant: "success",
+      message: toastMessage,
+    });
+
+    navigate(location.pathname, { replace: true, state: null });
+  }, [location.pathname, location.state, navigate]);
 
   const ubicaciones = useMemo(() => {
     const values = new Set();
@@ -191,6 +206,16 @@ export default function BienesRegistrados() {
             {exportFeedback.message}
           </Alert>
         ) : null}
+        {pageFeedback ? (
+          <Alert
+            variant={pageFeedback.variant}
+            className="mt-3 mb-0"
+            dismissible
+            onClose={() => setPageFeedback(null)}
+          >
+            {pageFeedback.message}
+          </Alert>
+        ) : null}
         {loadError ? (
           <Alert variant="warning" className="mt-3 mb-0">
             {loadError}
@@ -213,7 +238,11 @@ export default function BienesRegistrados() {
         <Row className="g-4 mt-2">
           {activosFiltrados.map((activo) => (
             <Col md={4} key={activo.id_activo}>
-              <AssetCard activo={activo} />
+              <AssetCard
+                activo={activo}
+                canEdit={isAdmin}
+                onEdit={(item) => navigate(`/registro-bien/${item?.id_activo}/editar`)}
+              />
             </Col>
           ))}
         </Row>

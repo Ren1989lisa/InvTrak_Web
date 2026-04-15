@@ -3,6 +3,7 @@ export const ESTATUS_ACTIVO = {
   DISPONIBLE: "DISPONIBLE",
   MANTENIMIENTO: "MANTENIMIENTO",
   BAJA: "BAJA",
+  REPORTADO: "REPORTADO",
 };
 
 export const ESTATUS_ACTIVO_OPTIONS = [
@@ -10,6 +11,7 @@ export const ESTATUS_ACTIVO_OPTIONS = [
   { value: ESTATUS_ACTIVO.RESGUARDADO, label: "Resguardado" },
   { value: ESTATUS_ACTIVO.MANTENIMIENTO, label: "Mantenimiento" },
   { value: ESTATUS_ACTIVO.BAJA, label: "Baja" },
+  { value: ESTATUS_ACTIVO.REPORTADO, label: "Reportado" },
 ];
 
 export const ESTADO_RESGUARDO = {

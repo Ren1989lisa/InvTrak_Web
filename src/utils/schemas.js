@@ -1,22 +1,22 @@
 import { z } from "zod";
 
 export const loginSchema = z.object({
-  correo: z.string().min(1, "El correo es obligatorio").email("Correo inválido"),
-  password: z.string().min(1, "La contraseña es obligatoria"),
+  correo: z.string().min(1, "El correo es obligatorio").email("Correo invalido"),
+  password: z.string().min(1, "La contrasena es obligatoria"),
 });
 
 export const forgotPasswordSchema = z.object({
-  email: z.string().min(1, "El correo es obligatorio").email("Correo inválido"),
+  email: z.string().min(1, "El correo es obligatorio").email("Correo invalido"),
 });
 
 export const usuarioSchema = z.object({
   nombre: z.string().min(1, "El nombre es obligatorio"),
-  correo: z.string().min(1, "El correo es obligatorio").email("Correo inválido"),
+  correo: z.string().min(1, "El correo es obligatorio").email("Correo invalido"),
   fecha_nacimiento: z.string().min(1, "La fecha de nacimiento es obligatoria"),
   curp: z.string().length(18, "La CURP debe tener exactamente 18 caracteres"),
   rol: z.string().min(1, "El rol es obligatorio"),
-  numero_empleado: z.string().min(1, "El número de empleado es obligatorio"),
-  area: z.string().min(1, "El área es obligatoria"),
+  numero_empleado: z.string().min(1, "El numero de empleado es obligatorio"),
+  area: z.string().min(1, "El area es obligatoria"),
 });
 
 export const editarPerfilSchema = z.object({
@@ -37,7 +37,11 @@ export const reportarBienSchema = z.object({
 });
 
 export const registroBienSchema = z.object({
-  numero_serie: z.string().trim().min(1, "El número de serie es obligatorio"),
+  numero_serie: z
+    .string()
+    .trim()
+    .min(1, "El numero de serie es obligatorio")
+    .regex(/^\d{6}$/, "El numero de serie debe tener 6 digitos exactos."),
   fecha_alta: z
     .string()
     .trim()
@@ -50,7 +54,7 @@ export const registroBienSchema = z.object({
       today.setHours(0, 0, 0, 0);
       return selectedDate <= today;
     }, "La fecha no puede ser futura"),
-  descripcion: z.string().trim().min(1, "La descripción es obligatoria"),
+  descripcion: z.string().trim().min(1, "La descripcion es obligatoria"),
   estatus: z.string().optional(),
   costo: z.string().trim().min(1, "El costo es obligatorio").refine(
     (value) => {
@@ -58,6 +62,6 @@ export const registroBienSchema = z.object({
       const parsed = Number(normalized);
       return Number.isFinite(parsed) && parsed > 0;
     },
-    "El costo debe ser un número válido mayor a 0"
+    "El costo debe ser un numero valido mayor a 0"
   ),
 });

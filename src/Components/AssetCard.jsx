@@ -14,7 +14,7 @@ function formatCurrency(value) {
   }).format(number);
 }
 
-export default function AssetCard({ activo }) {
+export default function AssetCard({ activo, canEdit = false, onEdit = null }) {
   const navigate = useNavigate();
   const ubicacionStr = activo?.ubicacion?.completa ??
     [activo?.ubicacion?.campus, activo?.ubicacion?.edificio, activo?.ubicacion?.aula]
@@ -91,6 +91,22 @@ export default function AssetCard({ activo }) {
             <span className="inv-field__value">{getEstadoDisplay(activo)}</span>
           </div>
         </div>
+
+        {canEdit ? (
+          <div className="inv-asset-card__actions">
+            <button
+              type="button"
+              className="inv-asset-card__edit-btn"
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                onEdit?.(activo);
+              }}
+            >
+              Editar
+            </button>
+          </div>
+        ) : null}
       </Card.Body>
     </Card>
   );

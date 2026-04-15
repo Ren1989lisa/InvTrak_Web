@@ -12,7 +12,7 @@ function getLoadErrorMessage(error, entityLabel) {
   return error?.message || `No fue posible cargar ${entityLabel}.`;
 }
 
-export default function SelectLocationModal({ show, onClose, onSave }) {
+export default function SelectLocationModal({ show, onClose, onSave, initialSelection = null }) {
   const [selectedCampusId, setSelectedCampusId] = useState("");
   const [selectedBuildingId, setSelectedBuildingId] = useState("");
   const [selectedClassroomId, setSelectedClassroomId] = useState("");
@@ -97,9 +97,9 @@ export default function SelectLocationModal({ show, onClose, onSave }) {
   useEffect(() => {
     if (!show) return;
 
-    setSelectedCampusId("");
-    setSelectedBuildingId("");
-    setSelectedClassroomId("");
+    setSelectedCampusId(String(initialSelection?.id_campus ?? ""));
+    setSelectedBuildingId(String(initialSelection?.id_edificio ?? ""));
+    setSelectedClassroomId(String(initialSelection?.id_aula ?? ""));
     setCampusOptions([]);
     setBuildingOptions([]);
     setClassroomOptions([]);
@@ -126,7 +126,7 @@ export default function SelectLocationModal({ show, onClose, onSave }) {
     return () => {
       active = false;
     };
-  }, [show]);
+  }, [show, initialSelection?.id_aula, initialSelection?.id_campus, initialSelection?.id_edificio]);
 
   useEffect(() => {
     if (!show || !selectedCampusId) {
