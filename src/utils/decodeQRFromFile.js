@@ -155,15 +155,13 @@ export function openQRFilePicker({
 
     const result = await decodeQRFromFile(file);
     if (!result) {
-      onError?.("No se pudo leer el código QR. Asegúrate de seleccionar una imagen válida.");
+      onError?.("No se pudo leer el codigo QR. Asegurate de seleccionar una imagen valida.");
       return;
     }
 
     const actualValue = result.activoId;
     if (expectedValue != null && String(actualValue) !== String(expectedValue)) {
-      onError?.(
-        `El QR no corresponde al activo esperado. Código leído: ${actualValue}. Se esperaba: ${expectedValue}`
-      );
+      onError?.("El codigo QR no corresponde a este bien");
       return;
     }
 

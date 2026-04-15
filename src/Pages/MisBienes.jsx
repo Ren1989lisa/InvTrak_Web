@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
-import { Alert, Container, Row, Col, Spinner } from "react-bootstrap";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { Alert, Container, Row, Col, Spinner, Toast, ToastContainer } from "react-bootstrap";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import NavbarMenu from "../Components/NavbarMenu";
 import SearchBar from "../Components/SearchBar";
@@ -9,7 +9,6 @@ import SidebarMenu from "../Components/SidebarMenu";
 import PrimaryButton from "../Components/PrimaryButton";
 import { useUsers } from "../context/UsersContext";
 import { usePendientesResguardo } from "../hooks/usePendientesResguardo";
-import { openQRFilePicker } from "../utils/decodeQRFromFile";
 import "../Style/bienes-registrados.css";
 import "../Style/sidebar.css";
 
@@ -17,9 +16,26 @@ function normalize(value) {
   return (value ?? "").toString().trim().toLowerCase();
 }
 
+function isUserRole(roleValue) {
+  const candidates = [roleValue]
+    .flatMap((value) => (Array.isArray(value) ? value : [value]))
+    .map((value) => {
+      if (value && typeof value === "object") {
+        return value.nombre ?? value.name ?? "";
+      }
+      return value ?? "";
+    })
+    .join(" ")
+    .toLowerCase();
+
+  return candidates.includes("usuario") || candidates.includes("role_user");
+}
+
 export default function MisBienes() {
   const [search, setSearch] = useState("");
   const [openSidebar, setOpenSidebar] = useState(false);
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const location = useLocation();
   const navigate = useNavigate();
   const { currentUser, logout, menuItems } = useUsers();
   const {
@@ -31,11 +47,7 @@ export default function MisBienes() {
   } = usePendientesResguardo(currentUser);
 
   const query = search.trim().toLowerCase();
-  const isUsuario = (currentUser?.rol ?? "")
-    .toString()
-    .trim()
-    .toLowerCase()
-    .includes("usuario");
+  const isUsuario = isUserRole(currentUser?.rol ?? currentUser?.roles);
 
   const activosFiltrados = useMemo(() => {
     return bienesConfirmados.filter((activo) => {
@@ -66,24 +78,18 @@ export default function MisBienes() {
       onSubirQR: () => {
         const targetId = item?.activoId ?? item?.id_activo ?? item?.activo?.id_activo;
         if (targetId == null) return;
-        openQRFilePicker({
-          activoIdEsperado: targetId,
-          onSuccess: (activoId) => {
-            navigate(`/confirmar-resguardo/${targetId}`, {
-              state: { validatedActivoId: activoId },
-            });
-          },
-          onError: (message) => {
-            navigate(`/confirmar-resguardo/${targetId}`, {
-              state: { qrError: message },
-            });
-          },
-        });
+        navigate(`/confirmar-resguardo/${targetId}`);
       },
     }));
   }, [isUsuario, navigate, pendientesResguardo]);
 
   const hasPending = isUsuario && pendientesResguardo.length > 0;
+
+  useEffect(() => {
+    if (!location.state?.resguardoConfirmedToast) return;
+    setShowSuccessToast(true);
+    navigate(location.pathname, { replace: true, state: null });
+  }, [location.pathname, location.state, navigate]);
 
   return (
     <div className="inv-page">
@@ -91,6 +97,7 @@ export default function MisBienes() {
         title="Mis bienes"
         onMenuClick={() => setOpenSidebar((v) => !v)}
         notificationItems={notificationItems}
+        onNotificationsOpen={refresh}
       />
 
       <SidebarMenu
@@ -114,6 +121,20 @@ export default function MisBienes() {
       />
 
       <Container fluid className="inv-content px-3 px-md-4 py-3">
+        <ToastContainer position="top-end" className="p-3">
+          <Toast
+            bg="success"
+            onClose={() => setShowSuccessToast(false)}
+            show={showSuccessToast}
+            delay={2600}
+            autohide
+          >
+            <Toast.Body className="text-white fw-semibold">
+              Resguardo confirmado correctamente
+            </Toast.Body>
+          </Toast>
+        </ToastContainer>
+
         {error ? (
           <Alert
             variant="danger"
@@ -165,8 +186,8 @@ export default function MisBienes() {
 
         {!isLoading && activosFiltrados.length > 0 ? (
           <Row className="g-4 mt-2">
-            {activosFiltrados.map((activo) => (
-              <Col md={4} key={activo.id_activo}>
+            {activosFiltrados.map((activo, index) => (
+              <Col md={4} key={`${activo.id_activo ?? "act"}-${activo.resguardo_id ?? index}`}>
                 <AssetCard activo={activo} />
               </Col>
             ))}

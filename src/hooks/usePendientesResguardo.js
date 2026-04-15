@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  RESGUARDOS_CHANGED_EVENT,
   getResguardos,
   isResguardoConfirmado,
   isResguardoPendiente,
@@ -14,11 +15,30 @@ const INITIAL_STATE = {
 };
 
 function normalizeUserRole(currentUser) {
-  const role = (currentUser?.rol ?? "").toString().trim().toLowerCase();
+  const roleCandidates = [
+    currentUser?.rol,
+    currentUser?.role,
+    currentUser?.roles,
+    currentUser?.rol?.nombre,
+    currentUser?.rol?.name,
+  ]
+    .flatMap((value) => (Array.isArray(value) ? value : [value]))
+    .map((value) => {
+      if (value && typeof value === "object") {
+        return value.nombre ?? value.name ?? "";
+      }
+      return value ?? "";
+    })
+    .filter(Boolean);
+
+  const role = roleCandidates.join(" ").toString().trim().toLowerCase();
+  const roleNoAccents = role.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   if (!role) return "";
-  if (role.includes("usuario")) return "usuario";
-  if (role.includes("admin")) return "admin";
-  if (role.includes("tecnico") || role.includes("técnico")) return "tecnico";
+  if (roleNoAccents.includes("usuario") || roleNoAccents.includes("role_user")) return "usuario";
+  if (roleNoAccents.includes("admin") || roleNoAccents.includes("role_admin")) return "admin";
+  if (roleNoAccents.includes("tecnico") || roleNoAccents.includes("role_technician")) {
+    return "tecnico";
+  }
   return role;
 }
 
@@ -121,6 +141,30 @@ export function usePendientesResguardo(currentUser) {
       active = false;
     };
   }, [isUsuario, refreshToken]);
+
+  useEffect(() => {
+    if (!isUsuario) return undefined;
+
+    const handleRefresh = () => {
+      setRefreshToken((value) => value + 1);
+    };
+
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        handleRefresh();
+      }
+    };
+
+    window.addEventListener("focus", handleRefresh);
+    window.addEventListener(RESGUARDOS_CHANGED_EVENT, handleRefresh);
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      window.removeEventListener("focus", handleRefresh);
+      window.removeEventListener(RESGUARDOS_CHANGED_EVENT, handleRefresh);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, [isUsuario]);
 
   const pendientesResguardo = useMemo(() => {
     if (!isUsuario) return [];

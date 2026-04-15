@@ -25,6 +25,9 @@ export default function AssetCard({ activo }) {
     activo?.producto?.tipo_activo ??
     activo?.tipo_activo ??
     "";
+  const fechaAsignacion = activo?.fecha_asignacion ?? activo?.fechaAsignacion ?? null;
+  const fechaDisplay = fechaAsignacion || activo?.fecha_alta || "";
+  const fechaLabel = fechaAsignacion ? "Fecha de asignacion:" : "Fecha de alta:";
 
   const handleClick = () => {
     navigate(`/activo/${activo?.id_activo}`);
@@ -65,8 +68,8 @@ export default function AssetCard({ activo }) {
         </div>
 
         <div className="inv-field">
-          <span className="inv-field__label">Fecha de alta:</span>
-          <span className="inv-field__value">{activo?.fecha_alta}</span>
+          <span className="inv-field__label">{fechaLabel}</span>
+          <span className="inv-field__value">{fechaDisplay}</span>
         </div>
 
         <div className="inv-field inv-field--stack">

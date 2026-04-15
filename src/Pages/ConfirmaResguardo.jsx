@@ -154,7 +154,7 @@ export default function ConfirmaResguardo() {
     }
 
     if (expectedActivoId != null && String(expectedActivoId) !== String(activoId)) {
-      setErrorMessage("El QR no corresponde al activo esperado.");
+      setErrorMessage("El código QR no corresponde a este bien");
       return;
     }
 
@@ -176,7 +176,7 @@ export default function ConfirmaResguardo() {
         resguardo?.activo?.id_activo ??
         null;
       if (backendActivoId != null && String(backendActivoId) !== String(activoId)) {
-        setErrorMessage("El QR no coincide con el bien asignado.");
+        setErrorMessage("El código QR no corresponde a este bien");
         return;
       }
 
@@ -193,9 +193,10 @@ export default function ConfirmaResguardo() {
       if (error?.status === 404) {
         setErrorMessage("QR no encontrado");
       } else if (error?.status === 401) {
-        setErrorMessage("No autorizado");
+        navigate("/login", { replace: true });
+        return;
       } else if (error?.status === 403) {
-        setErrorMessage("No autorizado");
+        setErrorMessage("Sin permisos");
       } else if (error?.status === 0) {
         setErrorMessage("Error de red");
       } else {
@@ -243,7 +244,7 @@ export default function ConfirmaResguardo() {
     }
 
     if (!isChecklistComplete) {
-      setErrorMessage("Completa todo el checklist antes de confirmar.");
+      setErrorMessage("Completa el checklist antes de continuar");
       return;
     }
 
@@ -269,7 +270,10 @@ export default function ConfirmaResguardo() {
       setSuccessMessage("Resguardo confirmado correctamente.");
 
       redirectTimerRef.current = window.setTimeout(() => {
-        navigate("/mis-bienes", { replace: true });
+        navigate("/mis-bienes", {
+          replace: true,
+          state: { resguardoConfirmedToast: true },
+        });
       }, 1400);
     } catch (error) {
       console.error("Error al confirmar resguardo:", error);
@@ -278,9 +282,10 @@ export default function ConfirmaResguardo() {
       } else if (error?.status === 400) {
         setErrorMessage("Datos inválidos.");
       } else if (error?.status === 401) {
-        setErrorMessage("No autorizado");
+        navigate("/login", { replace: true });
+        return;
       } else if (error?.status === 403) {
-        setErrorMessage("No autorizado");
+        setErrorMessage("Sin permisos");
       } else if (error?.status === 0) {
         setErrorMessage("Error de red");
       } else {

@@ -10,7 +10,6 @@ import PrimaryButton from "../Components/PrimaryButton";
 import { useUsers } from "../context/UsersContext";
 import { usePendientesResguardo } from "../hooks/usePendientesResguardo";
 import { getPerfilActual, getUsuarios } from "../services/userService";
-import { openQRFilePicker } from "../utils/decodeQRFromFile";
 import "../Style/bienes-registrados.css";
 import "../Style/profile.css";
 import "../Style/sidebar.css";
@@ -24,6 +23,21 @@ function mapRol(value) {
   if (role === "ROLE_TECNICO" || role === "TECNICO") return "tecnico";
   if (role === "ROLE_USUARIO" || role === "USUARIO") return "usuario";
   return (value ?? "").toString().trim().toLowerCase();
+}
+
+function isUserRole(roleValue) {
+  const role = [roleValue]
+    .flatMap((value) => (Array.isArray(value) ? value : [value]))
+    .map((value) => {
+      if (value && typeof value === "object") {
+        return value.nombre ?? value.name ?? "";
+      }
+      return value ?? "";
+    })
+    .join(" ")
+    .toLowerCase();
+
+  return role.includes("usuario") || role.includes("role_user");
 }
 
 export default function PerfilUsuario() {
@@ -40,7 +54,7 @@ export default function PerfilUsuario() {
     error: errorResguardos,
     refresh: refreshResguardos,
   } = usePendientesResguardo(currentUser);
-  const isUsuario = (currentUser?.rol ?? "").toString().toLowerCase() === "usuario";
+  const isUsuario = isUserRole(currentUser?.rol ?? currentUser?.roles);
 
   useEffect(() => {
     let active = true;
@@ -123,6 +137,7 @@ export default function PerfilUsuario() {
       <NavbarMenu
         title="Perfil"
         onMenuClick={() => setOpenSidebar((v) => !v)}
+        onNotificationsOpen={refreshResguardos}
         notificationItems={
           isUsuario
             ? pendientesResguardo.map((item) => ({
@@ -131,19 +146,7 @@ export default function PerfilUsuario() {
                   const targetId =
                     item?.activoId ?? item?.id_activo ?? item?.activo?.id_activo;
                   if (targetId == null) return;
-                  openQRFilePicker({
-                    activoIdEsperado: targetId,
-                    onSuccess: (activoId) => {
-                      navigate(`/confirmar-resguardo/${targetId}`, {
-                        state: { validatedActivoId: activoId },
-                      });
-                    },
-                    onError: (message) => {
-                      navigate(`/confirmar-resguardo/${targetId}`, {
-                        state: { qrError: message },
-                      });
-                    },
-                  });
+                  navigate(`/confirmar-resguardo/${targetId}`);
                 },
               }))
             : null

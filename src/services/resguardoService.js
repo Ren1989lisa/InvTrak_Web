@@ -1,6 +1,20 @@
 import { apiRequest } from "./api";
 import { normalizeActivo, normalizeUsuario as normalizeEntityUsuario } from "../utils/entityFields";
 
+export const RESGUARDOS_CHANGED_EVENT = "invtrack-resguardos-changed";
+
+function dispatchResguardosChanged(detail = {}) {
+  if (typeof window === "undefined" || typeof window.dispatchEvent !== "function") return;
+  window.dispatchEvent(
+    new CustomEvent(RESGUARDOS_CHANGED_EVENT, {
+      detail: {
+        ...detail,
+        at: Date.now(),
+      },
+    })
+  );
+}
+
 function normalizeText(value) {
   return (value ?? "").toString().trim();
 }
@@ -42,6 +56,18 @@ function toNumberOrValue(value) {
 }
 
 function extractPayload(payload) {
+  if (typeof payload === "string") {
+    const text = payload.trim();
+    if (text) {
+      try {
+        return JSON.parse(text);
+      } catch {
+        return payload;
+      }
+    }
+    return payload;
+  }
+
   if (Array.isArray(payload)) return payload;
   if (!payload || typeof payload !== "object") return payload ?? null;
 
@@ -90,6 +116,15 @@ function extractList(payload) {
 
   if (mergedLists.length > 0) {
     return mergedLists;
+  }
+
+  // Fallback: detectar cualquier propiedad array con objetos "tipo resguardo".
+  for (const value of Object.values(data)) {
+    if (!Array.isArray(value) || value.length === 0) continue;
+    const first = value[0];
+    if (first && typeof first === "object") {
+      return value;
+    }
   }
 
   const singleResguardoCandidate =
@@ -177,6 +212,7 @@ function isChecklistEnumLikeValue(value) {
 export function normalizeResguardo(raw = {}) {
   const source = raw && typeof raw === "object" ? raw : {};
   const checklistSource =
+    source.checklists ??
     source.checklist ??
     source.checklistResguardo ??
     source.checklist_resguardo ??
@@ -239,7 +275,14 @@ export function normalizeResguardo(raw = {}) {
   const fechaConfirmacion = normalizeNullableDate(
     source.fechaConfirmacion ?? source.fecha_confirmacion
   );
-  const fechaAsignacion = source.fechaAsignacion ?? source.fecha_asignacion ?? source.createdAt ?? null;
+  const fechaAsignacion =
+    source.fechaAsignacion ??
+    source.fecha_asignacion ??
+    source.fechaCreacion ??
+    source.fecha_creacion ??
+    source.asignadoEn ??
+    source.createdAt ??
+    null;
   const observaciones = normalizeText(
     source.observaciones ?? source.observacion ?? source.comentarios ?? ""
   );
@@ -278,6 +321,7 @@ export function normalizeResguardo(raw = {}) {
       checklistSource?.id_checklist_resguardo,
       checklistSource?.idChecklist,
       checklistSource?.id_checklist,
+      source.checklists ? 1 : null,
     ].some(hasMeaningfulValue);
 
   const inferredConfirmed =
@@ -302,6 +346,10 @@ export function normalizeResguardo(raw = {}) {
     fechaConfirmacion,
     fechaDevolucion,
     observaciones,
+    checklists:
+      checklistSource && typeof checklistSource === "object" && Object.keys(checklistSource).length > 0
+        ? checklistSource
+        : null,
     activo,
     usuario,
   };
@@ -332,13 +380,32 @@ export function resguardoToActivo(resguardo) {
     ...activo,
     id_activo: toNumberOrValue(item.activoId ?? activo?.id_activo ?? activo?.idActivo),
     propietario: ownerName,
+    resguardo_id: item.resguardoId ?? item.id_resguardo ?? null,
+    fecha_asignacion: item.fechaAsignacion ?? null,
     estado_asignacion: item.confirmado === true ? "confirmado" : "pendiente de confirmacion",
-    estatus: normalizeText(activo?.estatus).toUpperCase() || "RESGUARDADO",
+    estatus: item.confirmado === true ? "RESGUARDADO" : (normalizeText(activo?.estatus).toUpperCase() || "DISPONIBLE"),
   };
 }
 
 export async function getResguardos(requestOptions = {}) {
   const payload = await apiRequest("/resguardo", "GET", null, {}, requestOptions);
+
+  if (typeof payload === "string") {
+    const text = payload.trim();
+    if (!text) return [];
+
+    try {
+      const parsed = JSON.parse(text);
+      return extractList(parsed).map(normalizeResguardo);
+    } catch {
+      const error = new Error(
+        "El backend devolvió una respuesta inválida para /api/resguardo. Revisa serialización JSON en Spring Boot."
+      );
+      error.status = 500;
+      throw error;
+    }
+  }
+
   return extractList(payload).map(normalizeResguardo);
 }
 
@@ -362,7 +429,13 @@ export async function createResguardo(input) {
   };
 
   const response = await apiRequest("/resguardo", "POST", payload);
-  return extractPayload(response);
+  const created = extractPayload(response);
+  dispatchResguardosChanged({
+    type: "assigned",
+    activoId: payload.activoId,
+    usuarioId: payload.usuarioId,
+  });
+  return created;
 }
 
 export async function getResguardoByActivoId(activoId) {
@@ -392,5 +465,19 @@ export async function confirmarResguardo(formData) {
   }
 
   const payload = await apiRequest("/resguardo/confirmar", "POST", formData);
-  return extractPayload(payload);
+  const confirmed = extractPayload(payload);
+  dispatchResguardosChanged({
+    type: "confirmed",
+    resguardoId:
+      confirmed?.resguardoId ??
+      confirmed?.id_resguardo ??
+      confirmed?.id ??
+      null,
+    activoId:
+      confirmed?.activoId ??
+      confirmed?.id_activo ??
+      confirmed?.activo?.id_activo ??
+      null,
+  });
+  return confirmed;
 }

@@ -6,11 +6,24 @@ export default function NavbarMenu({
   title = "Bienes registrados",
   onMenuClick,
   notificationItems = null,
+  onNotificationsOpen,
 }) {
   const [showDropdown, setShowDropdown] = useState(false);
   const containerRef = useRef(null);
 
   const hasNotifications = Array.isArray(notificationItems) && notificationItems.length > 0;
+  const notificationCount = hasNotifications ? notificationItems.length : 0;
+
+  function formatDate(value) {
+    if (!value) return "Fecha no disponible";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return String(value);
+    return new Intl.DateTimeFormat("es-MX", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(date);
+  }
 
   useEffect(() => {
     if (!showDropdown) return;
@@ -49,10 +62,22 @@ export default function NavbarMenu({
               variant="link"
               className="inv-navbar__bell p-0"
               aria-label="Notificaciones"
-              onClick={() => setShowDropdown((value) => !value)}
+              onClick={() =>
+                setShowDropdown((value) => {
+                  const next = !value;
+                  if (next) {
+                    onNotificationsOpen?.();
+                  }
+                  return next;
+                })
+              }
             >
               <FaBell size={22} />
-              {hasNotifications ? <span className="inv-navbar__bell-badge" aria-hidden="true" /> : null}
+              {hasNotifications ? (
+                <span className="inv-navbar__bell-badge" aria-hidden="true">
+                  {notificationCount > 99 ? "99+" : notificationCount}
+                </span>
+              ) : null}
             </Button>
 
             {showDropdown ? (
@@ -68,6 +93,9 @@ export default function NavbarMenu({
                         <div className="inv-navbar__dropdown-item-info">
                           <div>Etq. bien: {item.etiqueta_bien}</div>
                           <div>Producto: {item.productoNombre}</div>
+                          <div className="inv-navbar__dropdown-item-date">
+                            Asignado: {formatDate(item.fechaAsignacion)}
+                          </div>
                         </div>
                         <Button
                           type="button"
@@ -79,13 +107,13 @@ export default function NavbarMenu({
                             setShowDropdown(false);
                           }}
                         >
-                          Subir QR
+                          Confirmar / Escanear QR
                         </Button>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="inv-navbar__dropdown-empty">No hay pendientes</div>
+                  <div className="inv-navbar__dropdown-empty">No tienes bienes pendientes por confirmar</div>
                 )}
               </div>
             ) : null}
