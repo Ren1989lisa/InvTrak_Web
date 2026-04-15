@@ -23,8 +23,9 @@ const ConfirmaResguardo = lazy(() => import("../Pages/ConfirmaResguardo"));
 const ReportarBien = lazy(() => import("../Pages/ReportarBien"));
 const InformacionReporte = lazy(() => import("../Pages/InformacionReporte"));
 const ReporteTecnico = lazy(() => import("../Pages/ReporteTecnico"));
+const ResetPassword = lazy(() => import("../Pages/ResetPassword"));
 
-const { LOGIN, FORGOT_PASSWORD } = ROUTES;
+const { LOGIN, FORGOT_PASSWORD, RESET_PASSWORD } = ROUTES;
 const {
   BIENES_REGISTRADOS,
   MIS_BIENES,
@@ -64,6 +65,8 @@ export default function AppRoutes() {
       <Routes>
         <Route path={LOGIN} element={<Login />} />
         <Route path={FORGOT_PASSWORD} element={<ForgotPassword />} />
+
+        <Route path={RESET_PASSWORD} element={<ResetPassword />} />
 
         <Route
           path={BIENES_REGISTRADOS}
@@ -227,6 +230,7 @@ export default function AppRoutes() {
         />
 
         <Route path="*" element={<Navigate to={LOGIN} replace />} />
+        
       </Routes>
     </Suspense>
   );

@@ -1,6 +1,7 @@
 export const ROUTES = {
-  LOGIN: "/",
+  LOGIN: "/login",
   FORGOT_PASSWORD: "/forgot-password",
+  RESET_PASSWORD: "/reset-password",
 };
 
 export const PROTECTED_ROUTES = {
@@ -24,7 +25,9 @@ export const PROTECTED_ROUTES = {
   PERFIL_ID: "/perfil/:id",
   PERFIL_EDITAR: "/perfil/editar",
   PERFIL_ID_EDITAR: "/perfil/:id/editar",
+  RESET_PASSWORD: "/reset-password",
 };
+
 
 export const POST_LOGIN_ROUTE = "/bienes-registrados";
 
