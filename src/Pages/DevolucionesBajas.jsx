@@ -6,6 +6,7 @@ import { BsSearch } from "react-icons/bs";
 import NavbarMenu from "../Components/NavbarMenu";
 import SidebarMenu from "../Components/SidebarMenu";
 import PrimaryButton from "../Components/PrimaryButton";
+import PaginationComponent from "../Components/PaginationComponent";
 import { useUsers } from "../context/UsersContext";
 import {
   cancelBajaSolicitud,
@@ -115,6 +116,7 @@ function SolicitudCard({
 }
 
 export default function DevolucionesBajas() {
+  const ITEMS_PER_PAGE = 12;
   const navigate = useNavigate();
   const { currentUser, logout, menuItems } = useUsers();
 
@@ -128,6 +130,8 @@ export default function DevolucionesBajas() {
   const [isLoading, setIsLoading] = useState(false);
   const [feedback, setFeedback] = useState("");
   const [processingKey, setProcessingKey] = useState("");
+  const [currentDevolucionPage, setCurrentDevolucionPage] = useState(1);
+  const [currentBajaPage, setCurrentBajaPage] = useState(1);
 
   useEffect(() => {
     let active = true;
@@ -191,6 +195,23 @@ export default function DevolucionesBajas() {
     });
   }, [devoluciones, searchDevolucion, typeDevolucion]);
 
+  useEffect(() => {
+    setCurrentDevolucionPage(1);
+  }, [searchDevolucion, typeDevolucion, devoluciones.length]);
+
+  const totalDevolucionPages = Math.max(1, Math.ceil(devolucionesFiltradas.length / ITEMS_PER_PAGE));
+
+  useEffect(() => {
+    if (currentDevolucionPage > totalDevolucionPages) {
+      setCurrentDevolucionPage(totalDevolucionPages);
+    }
+  }, [currentDevolucionPage, totalDevolucionPages]);
+
+  const devolucionesPaginadas = useMemo(() => {
+    const start = (currentDevolucionPage - 1) * ITEMS_PER_PAGE;
+    return devolucionesFiltradas.slice(start, start + ITEMS_PER_PAGE);
+  }, [devolucionesFiltradas, currentDevolucionPage]);
+
   const bajasFiltradas = useMemo(() => {
     const query = normalize(searchBaja);
     return bajas.filter((item) => {
@@ -201,6 +222,23 @@ export default function DevolucionesBajas() {
         .some((value) => normalize(value).includes(query));
     });
   }, [bajas, searchBaja, typeBaja]);
+
+  useEffect(() => {
+    setCurrentBajaPage(1);
+  }, [searchBaja, typeBaja, bajas.length]);
+
+  const totalBajaPages = Math.max(1, Math.ceil(bajasFiltradas.length / ITEMS_PER_PAGE));
+
+  useEffect(() => {
+    if (currentBajaPage > totalBajaPages) {
+      setCurrentBajaPage(totalBajaPages);
+    }
+  }, [currentBajaPage, totalBajaPages]);
+
+  const bajasPaginadas = useMemo(() => {
+    const start = (currentBajaPage - 1) * ITEMS_PER_PAGE;
+    return bajasFiltradas.slice(start, start + ITEMS_PER_PAGE);
+  }, [bajasFiltradas, currentBajaPage]);
 
   async function handleAction(tipo, item) {
     if (!item) return;
@@ -335,7 +373,7 @@ export default function DevolucionesBajas() {
               </div>
 
               <div className="inv-returns-list">
-                {devolucionesFiltradas.map((item) => (
+                {devolucionesPaginadas.map((item) => (
                   <SolicitudCard
                     key={`devolucion-${item?.resguardoId ?? item?.id}-${item?.numeroSerie ?? "serie"}`}
                     item={item}
@@ -349,6 +387,13 @@ export default function DevolucionesBajas() {
                   <p className="text-muted mb-0">No hay activos en estatus DEVOLUCION.</p>
                 ) : null}
               </div>
+
+              <PaginationComponent
+                currentPage={currentDevolucionPage}
+                totalItems={devolucionesFiltradas.length}
+                itemsPerPage={ITEMS_PER_PAGE}
+                onPageChange={setCurrentDevolucionPage}
+              />
             </section>
           </Col>
 
@@ -389,7 +434,7 @@ export default function DevolucionesBajas() {
               </div>
 
               <div className="inv-returns-list">
-                {bajasFiltradas.map((item) => (
+                {bajasPaginadas.map((item) => (
                   <SolicitudCard
                     key={`baja-${item?.resguardoId ?? item?.id}-${item?.numeroSerie ?? "serie"}`}
                     item={item}
@@ -405,6 +450,13 @@ export default function DevolucionesBajas() {
                 ))}
                 {!bajasFiltradas.length ? <p className="text-muted mb-0">No hay solicitudes de baja.</p> : null}
               </div>
+
+              <PaginationComponent
+                currentPage={currentBajaPage}
+                totalItems={bajasFiltradas.length}
+                itemsPerPage={ITEMS_PER_PAGE}
+                onPageChange={setCurrentBajaPage}
+              />
             </section>
           </Col>
         </Row>

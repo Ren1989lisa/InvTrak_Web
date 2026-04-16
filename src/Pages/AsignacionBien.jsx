@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import NavbarMenu from "../Components/NavbarMenu";
 import SidebarMenu from "../Components/SidebarMenu";
 import PrimaryButton from "../Components/PrimaryButton";
+import PaginationComponent from "../Components/PaginationComponent";
 import AssetSelectableCard from "../Components/AssetSelectableCard";
 import UserSelectableCard from "../Components/UserSelectableCard";
 import SelectedAssetCard from "../Components/SelectedAssetCard";
@@ -29,6 +30,7 @@ function normalizeId(value) {
 }
 
 export default function AsignacionBien() {
+  const ITEMS_PER_PAGE = 12;
   const navigate = useNavigate();
   const { currentUser, logout, menuItems } = useUsers();
 
@@ -48,6 +50,7 @@ export default function AsignacionBien() {
   const [isLoadingUsuarios, setIsLoadingUsuarios] = useState(false);
   const [isAssigning, setIsAssigning] = useState(false);
   const [assignedActivoIds, setAssignedActivoIds] = useState([]);
+  const [currentAssetPage, setCurrentAssetPage] = useState(1);
 
   async function fetchAssignableActivos(extraExcludedIds = []) {
     const list = await getActivosDisponibles();
@@ -149,6 +152,23 @@ export default function AsignacionBien() {
       return true;
     });
   }, [activos, assetSearch, assetTypeFilter, appliedAssetFilters]);
+
+  useEffect(() => {
+    setCurrentAssetPage(1);
+  }, [assetSearch, assetTypeFilter, appliedAssetFilters]);
+
+  const totalAssetPages = Math.max(1, Math.ceil(filteredAssets.length / ITEMS_PER_PAGE));
+
+  useEffect(() => {
+    if (currentAssetPage > totalAssetPages) {
+      setCurrentAssetPage(totalAssetPages);
+    }
+  }, [currentAssetPage, totalAssetPages]);
+
+  const paginatedAssets = useMemo(() => {
+    const start = (currentAssetPage - 1) * ITEMS_PER_PAGE;
+    return filteredAssets.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredAssets, currentAssetPage]);
 
   const filterUbicaciones = useMemo(() => {
     const values = new Map();
@@ -313,7 +333,7 @@ export default function AsignacionBien() {
               </div>
 
               <div className="inv-assign-assets-list">
-                {filteredAssets.map((asset) => (
+                {paginatedAssets.map((asset) => (
                   <AssetSelectableCard
                     key={asset.id_activo}
                     asset={asset}
@@ -325,6 +345,13 @@ export default function AsignacionBien() {
                   <p className="text-muted mb-0">No hay activos disponibles con ese filtro.</p>
                 ) : null}
               </div>
+
+              <PaginationComponent
+                currentPage={currentAssetPage}
+                totalItems={filteredAssets.length}
+                itemsPerPage={ITEMS_PER_PAGE}
+                onPageChange={setCurrentAssetPage}
+              />
             </section>
           </Col>
 

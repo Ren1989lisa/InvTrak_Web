@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from "react";
 import { Alert, Col, Form, Row } from "react-bootstrap";
 import PrimaryButton from "../../Components/PrimaryButton";
 import ProductTable from "../../Components/ProductTable";
@@ -16,6 +17,26 @@ export default function ProductTabContent({
   onDelete,
   isLoading = false,
 }) {
+  const ITEMS_PER_PAGE = 12;
+  const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, statusFilter, filteredRows.length]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredRows.length / ITEMS_PER_PAGE));
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  const paginatedRows = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredRows.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredRows, currentPage]);
+
   return (
     <>
       {successMessage ? (
@@ -71,11 +92,16 @@ export default function ProductTabContent({
 
       <div className="mt-3">
         <ProductTable
-          rows={filteredRows}
+          rows={paginatedRows}
           onEdit={onEdit}
           onDelete={onDelete}
         />
-        <PaginationComponent />
+        <PaginationComponent
+          currentPage={currentPage}
+          totalItems={filteredRows.length}
+          itemsPerPage={ITEMS_PER_PAGE}
+          onPageChange={setCurrentPage}
+        />
       </div>
     </>
   );

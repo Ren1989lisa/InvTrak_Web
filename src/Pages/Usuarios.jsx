@@ -18,6 +18,7 @@ import "../Style/sidebar.css";
 import "../Style/usuarios.css";
 
 export default function Usuarios() {
+  const ITEMS_PER_PAGE = 12;
   const navigate = useNavigate();
   const location = useLocation();
   const [openSidebar, setOpenSidebar] = useState(false);
@@ -30,6 +31,7 @@ export default function Usuarios() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   const { currentUser, logout, menuItems } = useUsers();
   const isAdmin = (currentUser?.rol ?? "").toString().toLowerCase() === "admin";
 
@@ -82,6 +84,23 @@ export default function Usuarios() {
       return matchesSearch && matchesFilter;
     });
   }, [usuarios, query, filterRol]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [query, filterRol]);
+
+  const totalPages = Math.max(1, Math.ceil(usuariosFiltrados.length / ITEMS_PER_PAGE));
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  const usuariosPaginados = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return usuariosFiltrados.slice(start, start + ITEMS_PER_PAGE);
+  }, [usuariosFiltrados, currentPage]);
 
   const handleDeleteClick = (usuario) => {
     if (Number(usuario?.id_usuario) === Number(currentUser?.id_usuario)) {
@@ -205,7 +224,7 @@ export default function Usuarios() {
 
         <div className="mt-3">
           <UsersTable
-            usuarios={usuariosFiltrados}
+            usuarios={usuariosPaginados}
             onUserSelect={(usuario) => navigate(`/perfil/${usuario.id_usuario}`)}
             onUserEdit={(usuario) => navigate(`/perfil/${usuario.id_usuario}/editar`)}
             onUserDelete={handleDeleteClick}
@@ -216,7 +235,12 @@ export default function Usuarios() {
               No hay usuarios para mostrar.
             </Alert>
           ) : null}
-          <PaginationComponent />
+          <PaginationComponent
+            currentPage={currentPage}
+            totalItems={usuariosFiltrados.length}
+            itemsPerPage={ITEMS_PER_PAGE}
+            onPageChange={setCurrentPage}
+          />
         </div>
 
         <DeleteConfirmModal

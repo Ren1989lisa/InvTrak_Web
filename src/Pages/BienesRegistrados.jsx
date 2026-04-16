@@ -68,10 +68,12 @@ function compareActivosByNewest(a, b) {
 }
 
 export default function BienesRegistrados() {
+  const ITEMS_PER_PAGE = 12;
   const [search, setSearch] = useState("");
   const [openSidebar, setOpenSidebar] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [appliedFilters, setAppliedFilters] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const [activos, setActivos] = useState(() => getStoredActivos());
   const [isLoadingActivos, setIsLoadingActivos] = useState(false);
   const [loadError, setLoadError] = useState("");
@@ -179,6 +181,23 @@ export default function BienesRegistrados() {
     });
   }, [activos, query, appliedFilters]);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [query, appliedFilters]);
+
+  const totalPages = Math.max(1, Math.ceil(activosFiltrados.length / ITEMS_PER_PAGE));
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  const activosPaginados = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return activosFiltrados.slice(start, start + ITEMS_PER_PAGE);
+  }, [activosFiltrados, currentPage]);
+
   const handleExportExcel = () => {
     setExportFeedback(null);
     try {
@@ -284,7 +303,7 @@ export default function BienesRegistrados() {
         />
 
         <Row className="g-4 mt-2">
-          {activosFiltrados.map((activo) => (
+          {activosPaginados.map((activo) => (
             <Col md={4} key={activo.id_activo}>
               <AssetCard
                 activo={activo}
@@ -300,7 +319,12 @@ export default function BienesRegistrados() {
           </Alert>
         ) : null}
 
-        <PaginationComponent />
+        <PaginationComponent
+          currentPage={currentPage}
+          totalItems={activosFiltrados.length}
+          itemsPerPage={ITEMS_PER_PAGE}
+          onPageChange={setCurrentPage}
+        />
       </Container>
     </div>
   );

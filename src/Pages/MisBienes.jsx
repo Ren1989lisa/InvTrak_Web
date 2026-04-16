@@ -5,6 +5,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import NavbarMenu from "../Components/NavbarMenu";
 import SearchBar from "../Components/SearchBar";
 import AssetCard from "../Components/AssetCard";
+import PaginationComponent from "../Components/PaginationComponent";
 import SidebarMenu from "../Components/SidebarMenu";
 import PrimaryButton from "../Components/PrimaryButton";
 import FiltersModal from "../Components/FiltersModal";
@@ -39,11 +40,13 @@ function toDate(value) {
 }
 
 export default function MisBienes() {
+  const ITEMS_PER_PAGE = 12;
   const [search, setSearch] = useState("");
   const [openSidebar, setOpenSidebar] = useState(false);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [appliedFilters, setAppliedFilters] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const location = useLocation();
   const navigate = useNavigate();
   const { currentUser, logout, menuItems } = useUsers();
@@ -115,6 +118,23 @@ export default function MisBienes() {
       return true;
     });
   }, [bienesConfirmados, query, appliedFilters]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [query, appliedFilters]);
+
+  const totalPages = Math.max(1, Math.ceil(activosFiltrados.length / ITEMS_PER_PAGE));
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  const activosPaginados = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return activosFiltrados.slice(start, start + ITEMS_PER_PAGE);
+  }, [activosFiltrados, currentPage]);
 
   const notificationItems = useMemo(() => {
     if (!isUsuario) return null;
@@ -236,13 +256,21 @@ export default function MisBienes() {
         ) : null}
 
         {!isLoading && activosFiltrados.length > 0 ? (
-          <Row className="g-4 mt-2">
-            {activosFiltrados.map((activo, index) => (
-              <Col md={4} key={`${activo.id_activo ?? "act"}-${activo.resguardo_id ?? index}`}>
-                <AssetCard activo={activo} />
-              </Col>
-            ))}
-          </Row>
+          <>
+            <Row className="g-4 mt-2">
+              {activosPaginados.map((activo, index) => (
+                <Col md={4} key={`${activo.id_activo ?? "act"}-${activo.resguardo_id ?? index}`}>
+                  <AssetCard activo={activo} />
+                </Col>
+              ))}
+            </Row>
+            <PaginationComponent
+              currentPage={currentPage}
+              totalItems={activosFiltrados.length}
+              itemsPerPage={ITEMS_PER_PAGE}
+              onPageChange={setCurrentPage}
+            />
+          </>
         ) : null}
       </Container>
     </div>

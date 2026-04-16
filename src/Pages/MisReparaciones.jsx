@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 
 import NavbarMenu from "../Components/NavbarMenu";
 import SearchBar from "../Components/SearchBar";
+import PaginationComponent from "../Components/PaginationComponent";
 import SidebarMenu from "../Components/SidebarMenu";
 import FiltersModal from "../Components/FiltersModal";
 import { useUsers } from "../context/UsersContext";
@@ -82,10 +83,12 @@ function ReparacionCard({ reporte, activo, onClick }) {
 }
 
 export default function MisReparaciones() {
+  const ITEMS_PER_PAGE = 12;
   const [search, setSearch] = useState("");
   const [openSidebar, setOpenSidebar] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [appliedFilters, setAppliedFilters] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [mantenimientos, setMantenimientos] = useState([]);
@@ -205,6 +208,23 @@ export default function MisReparaciones() {
     });
   }, [reportesConActivo, query, appliedFilters]);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [query, appliedFilters]);
+
+  const totalPages = Math.max(1, Math.ceil(filtrados.length / ITEMS_PER_PAGE));
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  const reparacionesPaginadas = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filtrados.slice(start, start + ITEMS_PER_PAGE);
+  }, [filtrados, currentPage]);
+
   const handleClick = (reporte) => {
     if (reporte?.id_reporte) {
       navigate(`/reporte/${reporte.id_reporte}`);
@@ -277,17 +297,25 @@ export default function MisReparaciones() {
         ) : null}
 
         {filtrados.length > 0 ? (
-          <Row className="g-4 mt-2">
-            {filtrados.map(({ reporte, activo }) => (
-              <Col md={4} key={reporte?.id_reporte}>
-                <ReparacionCard
-                  reporte={reporte}
-                  activo={activo}
-                  onClick={() => handleClick(reporte)}
-                />
-              </Col>
-            ))}
-          </Row>
+          <>
+            <Row className="g-4 mt-2">
+              {reparacionesPaginadas.map(({ reporte, activo }) => (
+                <Col md={4} key={reporte?.id_reporte}>
+                  <ReparacionCard
+                    reporte={reporte}
+                    activo={activo}
+                    onClick={() => handleClick(reporte)}
+                  />
+                </Col>
+              ))}
+            </Row>
+            <PaginationComponent
+              currentPage={currentPage}
+              totalItems={filtrados.length}
+              itemsPerPage={ITEMS_PER_PAGE}
+              onPageChange={setCurrentPage}
+            />
+          </>
         ) : null}
       </Container>
     </div>
