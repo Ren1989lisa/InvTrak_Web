@@ -205,34 +205,6 @@ function getEvidenceId(item) {
   );
 }
 
-function getEvidenceReporteId(item) {
-  if (!item || typeof item !== "object") return null;
-
-  return (
-    toFiniteNumber(item.id_reporte) ??
-    toFiniteNumber(item.idReporte) ??
-    toFiniteNumber(item.reporteId) ??
-    toFiniteNumber(item.id_reporte_danio) ??
-    toFiniteNumber(item.idReporteDanio) ??
-    toFiniteNumber(item.reporte?.id_reporte) ??
-    toFiniteNumber(item.reporte?.idReporte) ??
-    toFiniteNumber(item.reporte?.id)
-  );
-}
-
-function getEvidenceActivoId(item) {
-  if (!item || typeof item !== "object") return null;
-
-  return (
-    toFiniteNumber(item.id_activo) ??
-    toFiniteNumber(item.idActivo) ??
-    toFiniteNumber(item.activoId) ??
-    toFiniteNumber(item.activo?.id_activo) ??
-    toFiniteNumber(item.activo?.idActivo) ??
-    toFiniteNumber(item.activo?.id)
-  );
-}
-
 async function tryFetchEvidencias(endpoint) {
   try {
     const payload = await apiRequest(endpoint, "GET");
@@ -253,59 +225,50 @@ export async function getEvidenciaUrlsByReferencia({
 } = {}) {
   const resolvedReporteId = toFiniteNumber(reporteId);
   const resolvedActivoId = toFiniteNumber(activoId);
+
   const evidenceIds = new Set(
     (Array.isArray(evidencias) ? evidencias : [])
       .map(getEvidenceId)
       .filter((id) => Number.isFinite(id) && id > 0)
   );
 
-  const directUrls = extractEvidenceUrls(Array.isArray(evidencias) ? evidencias : []);
   const evidenciasEncontradas = [...(Array.isArray(evidencias) ? evidencias : [])];
+  const directUrls = extractEvidenceUrls(evidenciasEncontradas);
 
-  const endpoints = [];
   if (Number.isFinite(resolvedReporteId) && resolvedReporteId > 0) {
-    endpoints.push(`/evidencia/reporte/${resolvedReporteId}`);
-    endpoints.push(`/reporte/${resolvedReporteId}/evidencias`);
-    endpoints.push(`/evidencia?reporteId=${resolvedReporteId}`);
+    const fromReporte = await tryFetchEvidencias(`/evidencia/reporte/${resolvedReporteId}`);
+    if (fromReporte.length) {
+      evidenciasEncontradas.push(...fromReporte);
+    }
   }
-  if (Number.isFinite(resolvedActivoId) && resolvedActivoId > 0) {
-    endpoints.push(`/evidencia/activo/${resolvedActivoId}`);
-    endpoints.push(`/evidencia?activoId=${resolvedActivoId}`);
-  }
-  endpoints.push("/evidencia");
 
-  for (const endpoint of endpoints) {
+  if (
+    evidenciasEncontradas.length === 0 &&
+    Number.isFinite(resolvedActivoId) &&
+    resolvedActivoId > 0
+  ) {
+    const reportesDelActivo = await tryFetchEvidencias(`/reporte/activo/${resolvedActivoId}`);
+    const allEvidencias = (Array.isArray(reportesDelActivo) ? reportesDelActivo : []).flatMap(
+      (item) => (Array.isArray(item?.evidencias) ? item.evidencias : [])
+    );
+    if (allEvidencias.length) {
+      evidenciasEncontradas.push(...allEvidencias);
+    }
+  }
+
+  const remainingEvidenceIds = new Set(
+    Array.from(evidenceIds).filter(
+      (id) =>
+        !evidenciasEncontradas.some((item) => Number(getEvidenceId(item)) === Number(id))
+    )
+  );
+
+  const endpointsById = Array.from(remainingEvidenceIds).map((id) => `/evidencia/${id}`);
+
+  for (const endpoint of endpointsById) {
     const rows = await tryFetchEvidencias(endpoint);
     if (!rows.length) continue;
-
-    const filtered = rows.filter((row) => {
-      const rowEvidenceId = getEvidenceId(row);
-      const rowReporteId = getEvidenceReporteId(row);
-      const rowActivoId = getEvidenceActivoId(row);
-
-      if (Number.isFinite(rowEvidenceId) && evidenceIds.has(rowEvidenceId)) return true;
-      if (
-        Number.isFinite(resolvedReporteId) &&
-        resolvedReporteId > 0 &&
-        Number.isFinite(rowReporteId) &&
-        rowReporteId === resolvedReporteId
-      ) {
-        return true;
-      }
-      if (
-        Number.isFinite(resolvedActivoId) &&
-        resolvedActivoId > 0 &&
-        Number.isFinite(rowActivoId) &&
-        rowActivoId === resolvedActivoId
-      ) {
-        return true;
-      }
-      return false;
-    });
-
-    if (filtered.length > 0) {
-      evidenciasEncontradas.push(...filtered);
-    }
+    evidenciasEncontradas.push(...rows);
   }
 
   const mergedUrls = Array.from(
@@ -365,10 +328,24 @@ export async function getReporteById(reporteId) {
     throw error;
   }
 
-  // Backend actual no expone GET /api/reporte/{id}. Se resuelve desde la coleccion.
+  try {
+    const data = await authRequest(
+      "GET",
+      `/reporte/${resolvedId}`,
+      null,
+      "No fue posible obtener el reporte."
+    );
+    return normalizeReporte(data?.data ?? data);
+  } catch (error) {
+    const status = Number(error?.status ?? 0);
+    if (status !== 404 && status !== 500) {
+      throw error;
+    }
+  }
+
   const reportes = await getReportes();
   const found = reportes.find((item) => Number(item?.id_reporte) === resolvedId);
-  if (found) return found;
+  if (found) return normalizeReporte(found);
 
   const notFoundError = new Error("Reporte no encontrado.");
   notFoundError.status = 404;
