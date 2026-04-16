@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import ProtectedRoute from "../Components/ProtectedRoute";
 import { ROUTES, PROTECTED_ROUTES } from "../config/routes";
+import Historial from "../Pages/Historial";
 
 const Login = lazy(() => import("../Pages/Login"));
 const ForgotPassword = lazy(() => import("../Pages/ForgotPassword"));
@@ -20,7 +21,6 @@ const RegistroBien = lazy(() => import("../Pages/RegistroBien"));
 const DevolucionesBajas = lazy(() => import("../Pages/DevolucionesBajas"));
 const AsignacionBien = lazy(() => import("../Pages/AsignacionBien"));
 const AsignacionReporte = lazy(() => import("../Pages/AsignacionReporte"));
-const Historial = lazy(() => import("../Pages/Historial"));
 const ConfirmaResguardo = lazy(() => import("../Pages/ConfirmaResguardo"));
 const ReportarBien = lazy(() => import("../Pages/ReportarBien"));
 const InformacionReporte = lazy(() => import("../Pages/InformacionReporte"));

@@ -167,7 +167,7 @@ export default function BienesRegistrados() {
       if (!activos.length) {
         setExportFeedback({
           variant: "warning",
-          message: "No hay bienes registrados para exportar.",
+          message: "No hay activos registrados para exportar.",
         });
         return;
       }
@@ -197,7 +197,7 @@ export default function BienesRegistrados() {
   return (
     <div className="inv-page">
       <NavbarMenu
-        title="Bienes registrados"
+        title="Activos registrados"
         onMenuClick={() => setOpenSidebar((v) => !v)}
       />
 
@@ -278,7 +278,7 @@ export default function BienesRegistrados() {
         </Row>
         {!isLoadingActivos && activosFiltrados.length === 0 ? (
           <Alert variant="secondary" className="mt-3 mb-0">
-            No hay bienes registrados para mostrar.
+            No hay activos registrados para mostrar.
           </Alert>
         ) : null}
 

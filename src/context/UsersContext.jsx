@@ -107,6 +107,23 @@ export function UsersProvider({ children }) {
       };
     }
 
+    const localUserId = user?.id_usuario ?? user?.id ?? null;
+    const localUserName = (
+      user?.nombre ??
+      user?.nombre_completo ??
+      ""
+    )
+      .toString()
+      .trim();
+    const localUserEmail = (user?.correo ?? "").toString().trim();
+    const hasLocalProfileData = Boolean(localUserId && (localUserName || localUserEmail));
+
+    if (hasLocalProfileData) {
+      return () => {
+        active = false;
+      };
+    }
+
     async function hydrateCurrentUserProfile() {
       try {
         const rawPerfil = await getPerfilActual();
@@ -176,7 +193,7 @@ export function UsersProvider({ children }) {
     return () => {
       active = false;
     };
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user?.id_usuario, user?.id, user?.nombre, user?.nombre_completo, user?.correo]);
 
   const login = useCallback(async (correo, password) => {
     const nextUser = await authLogin(correo, password);

@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { Col, Container, Form, InputGroup, Row, Button } from "react-bootstrap";
+import { useEffect, useMemo, useState } from "react";
+import { Alert, Button, Col, Container, Form, InputGroup, Row, Spinner } from "react-bootstrap";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { BsSearch } from "react-icons/bs";
 
@@ -8,9 +8,8 @@ import SidebarMenu from "../Components/SidebarMenu";
 import HistoryFilter from "../Components/HistoryFilter";
 import TimelineContainer from "../Components/TimelineContainer";
 import { useUsers } from "../context/UsersContext";
-import { getStoredActivos } from "../activosStorage";
+import { getHistorial, getHistorialByActivo } from "../services/historialService";
 
-import historialData from "../Data/historial_activo.json";
 import "../Style/bienes-registrados.css";
 import "../Style/sidebar.css";
 import "../Style/historial.css";
@@ -26,12 +25,18 @@ function eventTitleSearch(tipo) {
     case "mantenimiento":
       return "mantenimiento";
     case "asignacion":
-      return "asignación";
+      return "asignacion";
     case "reporte":
       return "reporte";
     default:
       return "evento";
   }
+}
+
+function toEventTimestamp(value) {
+  const date = new Date(value ?? 0);
+  const time = date.getTime();
+  return Number.isFinite(time) ? time : 0;
 }
 
 export default function Historial() {
@@ -43,28 +48,13 @@ export default function Historial() {
   const [openSidebar, setOpenSidebar] = useState(false);
   const [search, setSearch] = useState("");
   const [eventFilter, setEventFilter] = useState("todo");
+  const [allEvents, setAllEvents] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [reloadKey, setReloadKey] = useState(0);
 
-  const assetIdFromState = Number(location.state?.id_activo);
-  const assetIdFromQuery = Number(searchParams.get("id_activo"));
-  const allEvents = Array.isArray(historialData) ? historialData : [];
-
-  const activos = useMemo(() => getStoredActivos(), []);
-
-  const activosById = useMemo(() => {
-    const map = {};
-    activos.forEach((a) => {
-      map[Number(a?.id_activo)] = a;
-    });
-    return map;
-  }, [activos]);
-
-  const enrichedEvents = useMemo(() => {
-    return allEvents.map((event) => {
-      const id = Number(event?.id_activo);
-      const codigo = activosById[id]?.etiqueta_bien ?? "—";
-      return { ...event, codigo_activo: codigo };
-    });
-  }, [allEvents, activosById]);
+  const assetIdFromState = Number(location.state?.id_activo ?? location.state?.idActivo);
+  const assetIdFromQuery = Number(searchParams.get("id_activo") ?? searchParams.get("activoId"));
 
   const selectedAssetId = useMemo(() => {
     if (Number.isFinite(assetIdFromState) && assetIdFromState > 0) return assetIdFromState;
@@ -72,16 +62,75 @@ export default function Historial() {
     return null;
   }, [assetIdFromState, assetIdFromQuery]);
 
+  useEffect(() => {
+    let active = true;
+
+    async function loadHistorial() {
+      setIsLoading(true);
+      setLoadError("");
+
+      try {
+        const data = selectedAssetId
+          ? await getHistorialByActivo(selectedAssetId)
+          : await getHistorial();
+
+        if (!active) return;
+        setAllEvents(Array.isArray(data) ? data : []);
+      } catch (error) {
+        if (!active) return;
+
+        const status = Number(error?.status ?? error?.response?.status ?? 0);
+        if (status === 401) {
+          logout();
+          navigate("/login", { replace: true });
+          return;
+        }
+
+        const fallbackMessage = selectedAssetId
+          ? "No fue posible cargar el historial del activo."
+          : "No fue posible cargar el historial.";
+        setLoadError(error?.message || fallbackMessage);
+        setAllEvents([]);
+      } finally {
+        if (active) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadHistorial();
+    return () => {
+      active = false;
+    };
+  }, [selectedAssetId, reloadKey, navigate, logout]);
+
+  const enrichedEvents = useMemo(() => {
+    return (Array.isArray(allEvents) ? allEvents : []).map((event) => ({
+      ...event,
+      codigo_activo: event?.codigo_activo || event?.activo?.etiqueta_bien || "—",
+    }));
+  }, [allEvents]);
+
   const orderedEvents = useMemo(() => {
     return enrichedEvents
-      .filter((event) =>
-        selectedAssetId ? Number(event?.id_activo) === Number(selectedAssetId) : true
-      )
-      .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
+      .filter((event) => {
+        if (!selectedAssetId) return true;
+
+        const eventAssetId = Number(
+          event?.id_activo ?? event?.activo?.id_activo ?? event?.activo?.idActivo
+        );
+        if (Number.isFinite(eventAssetId) && eventAssetId > 0) {
+          return eventAssetId === Number(selectedAssetId);
+        }
+
+        return true;
+      })
+      .sort((a, b) => toEventTimestamp(b?.fecha) - toEventTimestamp(a?.fecha));
   }, [enrichedEvents, selectedAssetId]);
 
   const filteredEvents = useMemo(() => {
     const query = normalize(search);
+
     return orderedEvents.filter((event) => {
       const matchesType =
         eventFilter === "todo" || normalize(event?.tipo_evento) === normalize(eventFilter);
@@ -95,7 +144,9 @@ export default function Historial() {
         event?.tecnico,
         event?.tecnico_asignado,
         event?.observacion,
+        event?.motivo,
         event?.codigo_activo,
+        event?.activo?.numero_serie,
         event?.estatus_anterior,
         event?.estatus_nuevo,
       ];
@@ -148,7 +199,7 @@ export default function Historial() {
                 type="search"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar por código, usuario o evento..."
+                placeholder="Buscar por codigo, usuario o evento..."
                 className="inv-history-search__input"
                 aria-label="Buscar en historial"
               />
@@ -159,7 +210,27 @@ export default function Historial() {
           </Col>
         </Row>
 
-        <TimelineContainer events={filteredEvents} />
+        {loadError ? (
+          <Alert variant="danger" className="d-flex justify-content-between align-items-center">
+            <span>{loadError}</span>
+            <Button
+              variant="outline-danger"
+              size="sm"
+              onClick={() => setReloadKey((value) => value + 1)}
+            >
+              Reintentar
+            </Button>
+          </Alert>
+        ) : null}
+
+        {isLoading ? (
+          <div className="inv-history__empty d-flex flex-column align-items-center gap-2">
+            <Spinner animation="border" role="status" />
+            <span>Cargando historial...</span>
+          </div>
+        ) : (
+          <TimelineContainer events={filteredEvents} />
+        )}
       </Container>
     </div>
   );

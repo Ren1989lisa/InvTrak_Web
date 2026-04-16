@@ -1,8 +1,22 @@
 import { formatHistorialDate, formatEstatusLabel, eventTitle } from "../utils/historialUtils";
 
+function resolveUsuario(event) {
+  if (typeof event?.usuario === "string") {
+    return event.usuario;
+  }
+
+  if (event?.usuario && typeof event.usuario === "object") {
+    return event.usuario.nombre_completo || event.usuario.nombre || event.usuario.correo || "—";
+  }
+
+  return event?.usuario_detalle?.nombre || event?.usuario_detalle?.correo || "—";
+}
+
 export default function TimelineEvent({ event }) {
   const tipo = event?.tipo_evento;
-  const codigo = event?.codigo_activo ?? "—";
+  const codigo = event?.codigo_activo || event?.activo?.etiqueta_bien || "—";
+  const usuario = resolveUsuario(event);
+  const observacion = event?.observacion ?? event?.motivo ?? "";
 
   return (
     <article className="inv-history-event">
@@ -23,7 +37,7 @@ export default function TimelineEvent({ event }) {
               <strong>A:</strong> {formatEstatusLabel(event?.estatus_nuevo)}
             </p>
             <p className="inv-history-event__line">
-              <strong>Usuario:</strong> {event?.usuario || "—"}
+              <strong>Usuario:</strong> {usuario || "—"}
             </p>
           </>
         ) : null}
@@ -34,10 +48,10 @@ export default function TimelineEvent({ event }) {
               <strong>Tipo:</strong> {event?.tipo_mantenimiento || "—"}
             </p>
             <p className="inv-history-event__line">
-              <strong>Diagnóstico:</strong> {event?.diagnostico || "—"}
+              <strong>Diagnostico:</strong> {event?.diagnostico || "—"}
             </p>
             <p className="inv-history-event__line">
-              <strong>Técnico:</strong> {event?.tecnico || "—"}
+              <strong>Tecnico:</strong> {event?.tecnico || "—"}
             </p>
           </>
         ) : null}
@@ -48,7 +62,7 @@ export default function TimelineEvent({ event }) {
               <strong>Reporte relacionado:</strong> {event?.reporte_relacionado || "—"}
             </p>
             <p className="inv-history-event__line">
-              <strong>Técnico asignado:</strong> {event?.tecnico_asignado || "—"}
+              <strong>Tecnico asignado:</strong> {event?.tecnico_asignado || "—"}
             </p>
             <p className="inv-history-event__line">
               <strong>Prioridad:</strong> {event?.prioridad || "—"}
@@ -62,7 +76,7 @@ export default function TimelineEvent({ event }) {
               <strong>Folio:</strong> {event?.folio_reporte || "—"}
             </p>
             <p className="inv-history-event__line">
-              <strong>Usuario:</strong> {event?.usuario || "—"}
+              <strong>Usuario:</strong> {usuario || "—"}
             </p>
             <p className="inv-history-event__line">
               <strong>Detalle:</strong> {event?.diagnostico || "—"}
@@ -70,10 +84,10 @@ export default function TimelineEvent({ event }) {
           </>
         ) : null}
 
-        {event?.observacion ? (
+        {observacion ? (
           <div className="inv-history-event__obs">
-            <span className="inv-history-event__obsLabel">Observación:</span>
-            <p className="mb-0">{event.observacion}</p>
+            <span className="inv-history-event__obsLabel">Observacion:</span>
+            <p className="mb-0">{observacion}</p>
           </div>
         ) : null}
       </div>

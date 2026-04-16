@@ -340,7 +340,7 @@ function getCreateErrorMessage(error) {
   if (/numero de serie ya esta registrado/i.test(backendMessage)) {
     return "Ya existe un activo con ese numero de serie.";
   }
-  return backendMessage || "No fue posible crear el bien.";
+  return backendMessage || "No fue posible crear el activo.";
 }
 
 function getUpdateErrorMessage(error) {
