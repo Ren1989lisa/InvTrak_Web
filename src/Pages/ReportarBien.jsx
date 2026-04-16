@@ -56,17 +56,37 @@ function getActivoId(activo) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+function isResguardadoActivo(activo) {
+  const estatus = String(activo?.estatus ?? "").trim().toUpperCase();
+  return estatus === "RESGUARDADO";
+}
+
+function isConfirmedResguardo(value) {
+  if (value === true) return true;
+  const text = String(value ?? "").trim().toLowerCase();
+  return text === "true" || text === "1" || text.includes("confirm");
+}
+
 function getCreateErrorMessage(error) {
   const status = Number(error?.status ?? 0);
   const backendMessage = String(error?.message ?? "").trim();
+  const hasGenericAxiosMessage = backendMessage.toLowerCase().includes("request failed with status code");
 
   if (status === 401) return "Sesion expirada. Inicia sesion nuevamente.";
   if (status === 403) return "No tienes permisos para crear reportes.";
   if (status === 404) return "No se encontro el activo o la prioridad seleccionada.";
-  if (status === 400) return backendMessage || "Datos invalidos. Revisa la informacion capturada.";
-  if (status === 500) return backendMessage || "No fue posible crear el reporte.";
+  if (status === 400) {
+    return hasGenericAxiosMessage
+      ? "Datos invalidos. Revisa la informacion capturada."
+      : backendMessage || "Datos invalidos. Revisa la informacion capturada.";
+  }
+  if (status === 500) {
+    return hasGenericAxiosMessage
+      ? "No fue posible crear el reporte. Revisa el backend e intenta de nuevo."
+      : backendMessage || "No fue posible crear el reporte.";
+  }
   if (status === 0) return "Error de red. Verifica tu conexion.";
-  return backendMessage || "No fue posible crear el reporte.";
+  return hasGenericAxiosMessage ? "No fue posible crear el reporte." : backendMessage || "No fue posible crear el reporte.";
 }
 
 export default function ReportarBien() {
@@ -81,7 +101,7 @@ export default function ReportarBien() {
 
   const { currentUser, logout, menuItems, defaultRoute } = useUsers();
   const {
-    bienesConfirmados,
+    resguardos: resguardosApi,
     isLoading: isLoadingMisBienes,
     error: misBienesError,
     refresh: refreshMisBienes,
@@ -98,7 +118,7 @@ export default function ReportarBien() {
   });
 
   const activos = useMemo(() => getStoredActivos(), []);
-  const resguardos = useMemo(() => getStoredResguardos(), []);
+  const resguardosLocales = useMemo(() => getStoredResguardos(), []);
 
   useEffect(() => {
     let active = true;
@@ -153,7 +173,7 @@ export default function ReportarBien() {
     if (!Number.isFinite(idUsuario)) return [];
 
     const idsDesdeResguardos = new Set(
-      resguardos
+      resguardosLocales
         .filter((resguardo) => Number(resguardo?.id_usuario ?? resguardo?.idUsuario) === idUsuario)
         .map((resguardo) => Number(resguardo?.id_activo ?? resguardo?.idActivo ?? resguardo?.activoId))
         .filter((idActivo) => Number.isFinite(idActivo))
@@ -166,19 +186,39 @@ export default function ReportarBien() {
         idsDesdeResguardos.has(idActivo);
       return assigned;
     });
-  }, [activos, resguardos, currentUser?.id_usuario, currentUser?.idUsuario, currentUser?.id]);
+  }, [activos, resguardosLocales, currentUser?.id_usuario, currentUser?.idUsuario, currentUser?.id]);
 
-  const misBienes = useMemo(() => {
-    if (Array.isArray(bienesConfirmados) && bienesConfirmados.length > 0) {
-      return bienesConfirmados;
+  const misBienesReportables = useMemo(() => {
+    const fromApi = new Map();
+
+    if (Array.isArray(resguardosApi) && resguardosApi.length > 0) {
+      resguardosApi.forEach((resguardo) => {
+        const confirmado = isConfirmedResguardo(resguardo?.confirmado);
+        const activo = resguardo?.activo;
+        if (!confirmado || !activo) return;
+        if (!isResguardadoActivo(activo)) return;
+
+        const id = getActivoId(activo);
+        const etiqueta = getEtiquetaBien(activo);
+        const key = Number.isFinite(id) ? `id-${id}` : `etq-${normalizeText(etiqueta)}`;
+        if (!key || fromApi.has(key)) return;
+        fromApi.set(key, activo);
+      });
+
+      return Array.from(fromApi.values());
     }
-    return misBienesLocal;
-  }, [bienesConfirmados, misBienesLocal]);
+
+    if (misBienesError) {
+      return misBienesLocal.filter(isResguardadoActivo);
+    }
+
+    return [];
+  }, [resguardosApi, misBienesError, misBienesLocal]);
 
   const etiquetaOptions = useMemo(() => {
     const unique = new Map();
 
-    misBienes.forEach((activo) => {
+    misBienesReportables.forEach((activo) => {
       const etiqueta = getEtiquetaBien(activo);
       if (!etiqueta) return;
       const key = normalizeText(etiqueta);
@@ -187,7 +227,7 @@ export default function ReportarBien() {
     });
 
     return Array.from(unique.values());
-  }, [misBienes]);
+  }, [misBienesReportables]);
 
   const handleFileChange = (event) => {
     const nextFiles = Array.from(event.target?.files ?? []).filter(
@@ -218,7 +258,7 @@ export default function ReportarBien() {
     setSuccessMessage("");
 
     const etiquetaSeleccionada = String(data.etiqueta ?? "").trim();
-    const activo = misBienes.find(
+    const activo = misBienesReportables.find(
       (item) => normalizeText(getEtiquetaBien(item)) === normalizeText(etiquetaSeleccionada)
     );
 
@@ -264,6 +304,7 @@ export default function ReportarBien() {
         prioridad: "MEDIA",
         descripcion: "",
       });
+      refreshMisBienes();
       window.dispatchEvent(new CustomEvent("invtrack-reportes-changed"));
     } catch (error) {
       setErrorMessage(getCreateErrorMessage(error));

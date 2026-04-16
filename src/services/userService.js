@@ -161,6 +161,22 @@ export async function getUsuarios() {
   throw lastError ?? new Error("No fue posible obtener los usuarios.");
 }
 
+export async function getTecnicos() {
+  try {
+    const data = await authGet("/usuario/tecnicos", "No fue posible obtener los tecnicos.");
+    const list = extractList(data).map(normalizeUsuario);
+    const filtered = list.filter((user) => mapRol(user?.rol) === "tecnico");
+    if (filtered.length > 0) return filtered;
+  } catch (error) {
+    if (![404, 405].includes(Number(error?.status))) {
+      throw error;
+    }
+  }
+
+  const usuarios = await getUsuarios();
+  return usuarios.filter((user) => mapRol(user?.rol) === "tecnico");
+}
+
 export async function getUsuarioById(idUsuario) {
   if (idUsuario == null || idUsuario === "") {
     const error = new Error("ID de usuario invalido.");

@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { Alert, Col, Container, Form, Row } from "react-bootstrap";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Alert, Col, Container, Form, Row, Spinner } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 
 import NavbarMenu from "../Components/NavbarMenu";
@@ -10,21 +10,61 @@ import UserSelectableCard from "../Components/UserSelectableCard";
 import SelectedReportAssetCard from "../Components/SelectedReportAssetCard";
 import FiltersModal from "../Components/FiltersModal";
 import { useUsers } from "../context/UsersContext";
-import { getStoredActivos } from "../activosStorage";
-import { getStoredReportes, assignTecnicoToReporte } from "../reportesStorage";
+import {
+  asignarReporteMantenimiento,
+  getReportesAbiertosMantenimiento,
+} from "../services/mantenimientoService";
+import { getTecnicos } from "../services/userService";
 
 import "../Style/bienes-registrados.css";
 import "../Style/sidebar.css";
 import "../Style/asignacion-bien.css";
 import "../Style/asignacion-reporte.css";
 
+const PRIORIDAD_IDS_DEFAULT = {
+  ALTA: 1,
+  MEDIA: 2,
+  BAJA: 3,
+};
+
 function normalize(value) {
   return (value ?? "").toString().trim().toLowerCase();
 }
 
+function parseDate(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function toAssignablePriorityId(reporte) {
+  const explicit = Number(reporte?.prioridad_id ?? reporte?.prioridadId);
+  if (Number.isFinite(explicit) && explicit > 0) return explicit;
+
+  const byName = String(reporte?.prioridad_nombre ?? reporte?.prioridad ?? "")
+    .trim()
+    .toUpperCase();
+  const inferred = Number(PRIORIDAD_IDS_DEFAULT[byName]);
+  if (Number.isFinite(inferred) && inferred > 0) return inferred;
+
+  return PRIORIDAD_IDS_DEFAULT.MEDIA;
+}
+
+function mapAssignError(error) {
+  const status = Number(error?.status ?? 0);
+  const message = String(error?.message ?? "").trim();
+
+  if (status === 401) return "Sesion expirada. Inicia sesion nuevamente.";
+  if (status === 403) return "No tienes permisos para asignar reportes.";
+  if (status === 404) return "No se encontro el reporte o el tecnico.";
+  if (status === 400) return message || "Datos invalidos para asignar.";
+  if (status === 500) return message || "No fue posible asignar el reporte.";
+  return message || "No fue posible completar la asignacion.";
+}
+
 export default function AsignacionReporte() {
   const navigate = useNavigate();
-  const { users, currentUser, logout, menuItems } = useUsers();
+  const { currentUser, logout, menuItems } = useUsers();
 
   const [openSidebar, setOpenSidebar] = useState(false);
   const [assetSearch, setAssetSearch] = useState("");
@@ -32,33 +72,58 @@ export default function AsignacionReporte() {
   const [showAssetFilters, setShowAssetFilters] = useState(false);
   const [appliedAssetFilters, setAppliedAssetFilters] = useState(null);
   const [tecnicoSearch, setTecnicoSearch] = useState("");
-  const [tecnicoTypeFilter, setTecnicoTypeFilter] = useState("todo");
-  const [selectedAssetId, setSelectedAssetId] = useState(null);
+  const [selectedReporteId, setSelectedReporteId] = useState(null);
   const [selectedTecnicoId, setSelectedTecnicoId] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
-  const [reportes, setReportes] = useState(() => getStoredReportes());
-  const activos = useMemo(() => getStoredActivos(), []);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [reportesAbiertos, setReportesAbiertos] = useState([]);
+  const [tecnicos, setTecnicos] = useState([]);
 
-  const reportesPendientes = useMemo(() => {
-    return reportes.filter(
-      (r) => !r?.id_tecnico_asignado || normalize(r?.estatus) === "pendiente"
-    );
-  }, [reportes]);
+  const loadData = useCallback(async () => {
+    setIsLoading(true);
+    setErrorMessage("");
+
+    try {
+      const [reportes, backendTecnicos] = await Promise.all([
+        getReportesAbiertosMantenimiento(),
+        getTecnicos(),
+      ]);
+      setReportesAbiertos(Array.isArray(reportes) ? reportes : []);
+      setTecnicos(Array.isArray(backendTecnicos) ? backendTecnicos : []);
+    } catch (error) {
+      setErrorMessage(mapAssignError(error));
+      setReportesAbiertos([]);
+      setTecnicos([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const bienesReportados = useMemo(() => {
-    const result = [];
-    const seen = new Set();
-    for (const rep of reportesPendientes) {
-      const idAct = Number(rep?.id_activo);
-      if (seen.has(idAct)) continue;
-      const activo = activos.find((a) => Number(a?.id_activo) === idAct);
-      if (!activo) continue;
-      seen.add(idAct);
-      result.push({ asset: activo, reporte: rep });
-    }
-    return result;
-  }, [activos, reportesPendientes]);
+    const sorted = [...reportesAbiertos].sort((a, b) => {
+      const dateA = parseDate(a?.fecha_reporte);
+      const dateB = parseDate(b?.fecha_reporte);
+      if (dateA && dateB) return dateB.getTime() - dateA.getTime();
+      return Number(b?.id_reporte ?? 0) - Number(a?.id_reporte ?? 0);
+    });
+
+    const uniqueByActivo = new Map();
+    sorted.forEach((reporte) => {
+      const asset = reporte?.activo;
+      const assetId = Number(asset?.id_activo ?? asset?.idActivo);
+      if (!Number.isFinite(assetId)) return;
+      if (uniqueByActivo.has(assetId)) return;
+      uniqueByActivo.set(assetId, { asset, reporte });
+    });
+
+    return Array.from(uniqueByActivo.values());
+  }, [reportesAbiertos]);
 
   const filteredAssets = useMemo(() => {
     const query = normalize(assetSearch);
@@ -79,13 +144,8 @@ export default function AsignacionReporte() {
       if (!matchesQuery || !matchesType) return false;
 
       if (appliedAssetFilters) {
-        const {
-          ubicacion: fUbicacion,
-          fechaDesde,
-          fechaHasta,
-          precioMin,
-          precioMax,
-        } = appliedAssetFilters;
+        const { ubicacion: fUbicacion, fechaDesde, fechaHasta, precioMin, precioMax } =
+          appliedAssetFilters;
         if (fUbicacion && ubicacionTexto !== normalize(fUbicacion)) return false;
         if (fechaDesde && fechaAlta && fechaAlta < new Date(fechaDesde)) return false;
         if (fechaHasta && fechaAlta && fechaAlta > new Date(fechaHasta)) return false;
@@ -96,23 +156,14 @@ export default function AsignacionReporte() {
     });
   }, [bienesReportados, assetSearch, assetTypeFilter, appliedAssetFilters]);
 
-  const tecnicos = useMemo(() => {
-    return (Array.isArray(users) ? users : []).filter(
-      (u) => normalize(u?.rol) === "tecnico"
-    );
-  }, [users]);
-
   const filteredTecnicos = useMemo(() => {
     const query = normalize(tecnicoSearch);
     return tecnicos.filter((user) => {
       const name = normalize(user?.nombre ?? user?.nombre_completo);
       const employeeNumber = normalize(user?.numero_empleado);
-      const matchesQuery = !query || name.includes(query) || employeeNumber.includes(query);
-      const matchesType =
-        tecnicoTypeFilter === "todo" || normalize(user?.rol) === normalize(tecnicoTypeFilter);
-      return matchesQuery && matchesType;
+      return !query || name.includes(query) || employeeNumber.includes(query);
     });
-  }, [tecnicos, tecnicoSearch, tecnicoTypeFilter]);
+  }, [tecnicos, tecnicoSearch]);
 
   const filterUbicaciones = useMemo(() => {
     const values = new Map();
@@ -130,60 +181,69 @@ export default function AsignacionReporte() {
 
       const key = normalize(completa);
       if (values.has(key)) return;
-      values.set(key, {
-        campus,
-        edificio,
-        aula,
-        completa,
-      });
+      values.set(key, { campus, edificio, aula, completa });
     });
     return Array.from(values.values());
   }, [bienesReportados]);
 
   const selectedItem = useMemo(() => {
     return bienesReportados.find(
-      ({ asset }) => Number(asset?.id_activo) === Number(selectedAssetId)
+      ({ reporte }) => Number(reporte?.id_reporte) === Number(selectedReporteId)
     );
-  }, [bienesReportados, selectedAssetId]);
+  }, [bienesReportados, selectedReporteId]);
 
   const selectedAsset = selectedItem?.asset ?? null;
   const selectedReporte = selectedItem?.reporte ?? null;
-
   const selectedTecnico = useMemo(
     () =>
-      (Array.isArray(users) ? users : []).find(
-        (u) => Number(u?.id_usuario) === Number(selectedTecnicoId)
-      ) ?? null,
-    [users, selectedTecnicoId]
+      tecnicos.find((user) => Number(user?.id_usuario) === Number(selectedTecnicoId)) ?? null,
+    [tecnicos, selectedTecnicoId]
   );
 
-  const handleSelectAsset = ({ asset }) => {
-    setSelectedAssetId(asset?.id_activo);
+  const handleSelectAsset = ({ reporte }) => {
+    setSelectedReporteId(reporte?.id_reporte ?? null);
+    setErrorMessage("");
+    setSuccessMessage("");
   };
 
-  const handleAssign = () => {
+  const handleAssign = async () => {
     setSuccessMessage("");
     setErrorMessage("");
 
-    if (!selectedAsset || !selectedReporte) {
+    if (!selectedReporte) {
       setErrorMessage("Selecciona un bien reportado de la lista.");
       return;
     }
 
     if (!selectedTecnico) {
-      setErrorMessage("Selecciona un técnico para asignar.");
+      setErrorMessage("Selecciona un tecnico para asignar.");
       return;
     }
 
-    assignTecnicoToReporte(selectedReporte.id_reporte, selectedTecnico.id_usuario);
-    setReportes(getStoredReportes());
-    setSelectedAssetId(null);
-    setSelectedTecnicoId(null);
-    setSuccessMessage("Reporte asignado al técnico correctamente.");
+    setIsSubmitting(true);
+    try {
+      await asignarReporteMantenimiento({
+        reporteId: selectedReporte.id_reporte,
+        tecnicoId: selectedTecnico.id_usuario,
+        prioridadId: toAssignablePriorityId(selectedReporte),
+        tipo: "CORRECTIVO",
+      });
+
+      setSelectedReporteId(null);
+      setSelectedTecnicoId(null);
+      setSuccessMessage("Reporte asignado al tecnico correctamente.");
+      await loadData();
+      window.dispatchEvent(new CustomEvent("invtrack-reportes-changed"));
+      window.dispatchEvent(new CustomEvent("invtrack-activos-changed"));
+    } catch (error) {
+      setErrorMessage(mapAssignError(error));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleCancel = () => {
-    setSelectedAssetId(null);
+    setSelectedReporteId(null);
     setSelectedTecnicoId(null);
     setErrorMessage("");
     setSuccessMessage("");
@@ -191,7 +251,7 @@ export default function AsignacionReporte() {
 
   return (
     <div className="inv-page">
-      <NavbarMenu title="Asignación del Reporte" onMenuClick={() => setOpenSidebar((v) => !v)} />
+      <NavbarMenu title="Asignacion del Reporte" onMenuClick={() => setOpenSidebar((v) => !v)} />
 
       <SidebarMenu
         open={openSidebar}
@@ -200,11 +260,8 @@ export default function AsignacionReporte() {
         items={menuItems}
         onViewProfile={() => {
           setOpenSidebar(false);
-          if (currentUser) {
-            navigate(`/perfil/${currentUser.id_usuario}`);
-          } else {
-            navigate("/perfil");
-          }
+          if (currentUser) navigate(`/perfil/${currentUser.id_usuario}`);
+          else navigate("/perfil");
         }}
         onLogout={() => {
           setOpenSidebar(false);
@@ -216,23 +273,33 @@ export default function AsignacionReporte() {
       <Container fluid className="inv-content px-3 px-md-3 py-3 inv-assign-layout">
         <PrimaryButton
           variant="light"
-          label="← Regresar"
+          label="<- Regresar"
           className="inv-assign-report__back mb-2"
           onClick={() => navigate("/bienes-registrados")}
         />
+
+        {isLoading ? (
+          <Alert variant="info" className="d-flex align-items-center gap-2 mb-3">
+            <Spinner animation="border" size="sm" />
+            Cargando bienes reportados y tecnicos...
+          </Alert>
+        ) : null}
+
+        {errorMessage ? <Alert variant="danger">{errorMessage}</Alert> : null}
+        {successMessage ? <Alert variant="success">{successMessage}</Alert> : null}
 
         <Row className="g-3">
           <Col lg={4}>
             <section className="inv-assign-panel">
               <div className="inv-assign-panel__heading">
-                <h5 className="mb-0">Bienes Disponibles</h5>
+                <h5 className="mb-0">Bienes Reportados</h5>
                 <span>{filteredAssets.length} activos</span>
               </div>
 
               <Form.Control
                 value={assetSearch}
                 onChange={(e) => setAssetSearch(e.target.value)}
-                placeholder="Monitor"
+                placeholder="Buscar por etiqueta o descripcion"
                 className="inv-assign-input mb-2"
               />
 
@@ -262,7 +329,7 @@ export default function AsignacionReporte() {
                     key={`${asset?.id_activo}-${reporte?.id_reporte}`}
                     asset={asset}
                     reporte={reporte}
-                    selected={Number(selectedAssetId) === Number(asset?.id_activo)}
+                    selected={Number(selectedReporteId) === Number(reporte?.id_reporte)}
                     onSelect={handleSelectAsset}
                   />
                 ))}
@@ -275,13 +342,10 @@ export default function AsignacionReporte() {
 
           <Col lg={8}>
             <section className="inv-assign-panel">
-              <h4 className="inv-assign-title mb-1">Detalles de Asignación</h4>
+              <h4 className="inv-assign-title mb-1">Detalles de Asignacion</h4>
               <p className="inv-assign-subtitle">
-                Complete los datos para asignar el activo seleccionado
+                Selecciona un bien reportado y un tecnico para asignarlo.
               </p>
-
-              {successMessage ? <Alert variant="success">{successMessage}</Alert> : null}
-              {errorMessage ? <Alert variant="danger">{errorMessage}</Alert> : null}
 
               <div className="mb-3">
                 <label className="inv-assign-label">Activo Seleccionado</label>
@@ -299,12 +363,12 @@ export default function AsignacionReporte() {
                 <Form.Control
                   value={tecnicoSearch}
                   onChange={(e) => setTecnicoSearch(e.target.value)}
-                  placeholder="Ingrese el nombre del técnico"
+                  placeholder="Ingresa el nombre del tecnico"
                   className="inv-assign-input"
                 />
               </div>
 
-              <label className="inv-assign-label mb-2">Usuarios encontrados</label>
+              <label className="inv-assign-label mb-2">Tecnicos encontrados</label>
               <div className="inv-assign-users-list">
                 {filteredTecnicos.map((user) => (
                   <UserSelectableCard
@@ -315,7 +379,7 @@ export default function AsignacionReporte() {
                   />
                 ))}
                 {!filteredTecnicos.length ? (
-                  <p className="text-muted mb-0">No hay técnicos con ese filtro.</p>
+                  <p className="text-muted mb-0">No hay tecnicos con ese filtro.</p>
                 ) : null}
               </div>
 
@@ -325,12 +389,14 @@ export default function AsignacionReporte() {
                   label="Cancelar"
                   className="inv-assign-btn inv-assign-btn--cancel"
                   onClick={handleCancel}
+                  disabled={isSubmitting}
                 />
                 <PrimaryButton
                   variant="primary"
-                  label="Asignar Reporte"
+                  label={isSubmitting ? "Asignando..." : "Asignar Reporte"}
                   className="inv-assign-btn inv-assign-btn--save"
                   onClick={handleAssign}
+                  disabled={isSubmitting}
                 />
               </div>
             </section>
