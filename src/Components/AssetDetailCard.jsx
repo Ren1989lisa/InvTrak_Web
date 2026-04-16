@@ -20,25 +20,28 @@ function formatCurrency(value) {
 }
 
 function getOwnerDisplay(activo) {
-  const ownerName = (activo?.propietario ?? "").toString().trim();
-  const assignmentState = (activo?.estado_asignacion ?? "").toString().trim().toLowerCase();
+  const ownerName = (
+    activo?.propietario ??
+    activo?.usuario?.nombre ??
+    activo?.resguardo?.usuario?.nombre ??
+    ""
+  )
+    .toString()
+    .trim();
+  const status = (activo?.estatus ?? "").toString().trim().toUpperCase();
 
-  if (!ownerName || assignmentState === ESTADO_RESGUARDO.PENDIENTE_ASIGNACION) {
-    return ESTADO_RESGUARDO.PENDIENTE_ASIGNACION;
+  if (status === "RESGUARDADO") {
+    return ownerName || ESTADO_RESGUARDO.PENDIENTE_ASIGNACION;
   }
 
-  if (assignmentState === ESTADO_RESGUARDO.PENDIENTE_CONFIRMACION) {
-    return ESTADO_RESGUARDO.PENDIENTE_CONFIRMACION;
-  }
-
-  if (assignmentState === ESTADO_RESGUARDO.CONFIRMADO || assignmentState === "resguardado") {
-    return ownerName;
-  }
-
-  return ESTADO_RESGUARDO.PENDIENTE_CONFIRMACION;
+  return ESTADO_RESGUARDO.PENDIENTE_ASIGNACION;
 }
 
-export default function AssetDetailCard({ activo }) {
+export default function AssetDetailCard({
+  activo,
+  showReturnButton = false,
+  onReturnRequest = null,
+}) {
   const cardRef = useRef(null);
 
   const captureCard = useCallback(async () => {
@@ -109,10 +112,22 @@ export default function AssetDetailCard({ activo }) {
       <div ref={cardRef}>
         <Card className="inv-asset-detail-card shadow-sm border-0">
           <Card.Header className="inv-asset-detail-card__header">
-            <span className="inv-asset-card__headerLabel">Etq. bien:</span>{" "}
-            <span className="inv-asset-card__headerValue">
-              {activo.etiqueta_bien}
-            </span>
+            <div className="inv-asset-detail-card__header-main">
+              <span className="inv-asset-card__headerLabel">Etq. bien:</span>{" "}
+              <span className="inv-asset-card__headerValue">
+                {activo.etiqueta_bien}
+              </span>
+            </div>
+
+            {showReturnButton ? (
+              <button
+                type="button"
+                className="inv-asset-detail-card__return-btn"
+                onClick={() => onReturnRequest?.(activo)}
+              >
+                Devolver bien
+              </button>
+            ) : null}
           </Card.Header>
 
           <Card.Body className="inv-asset-detail-card__body">

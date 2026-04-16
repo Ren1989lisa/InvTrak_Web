@@ -481,3 +481,67 @@ export async function confirmarResguardo(formData) {
   });
   return confirmed;
 }
+
+export async function deleteResguardo(resguardoId) {
+  const id = Number(resguardoId);
+  if (!Number.isFinite(id) || id <= 0) {
+    const error = new Error("El ID del resguardo es obligatorio.");
+    error.status = 400;
+    throw error;
+  }
+
+  await apiRequest(`/resguardo/${encodeURIComponent(id)}`, "DELETE");
+  dispatchResguardosChanged({
+    type: "deleted",
+    resguardoId: id,
+  });
+}
+
+export async function solicitarDevolucionPorActivo(
+  activoId,
+  observaciones = "Solicitud de devolucion desde web."
+) {
+  const targetActivoId = Number(activoId);
+  if (!Number.isFinite(targetActivoId) || targetActivoId <= 0) {
+    const error = new Error("El ID del activo es obligatorio.");
+    error.status = 400;
+    throw error;
+  }
+
+  const resguardos = await getResguardos();
+  const target = (Array.isArray(resguardos) ? resguardos : [])
+    .map(normalizeResguardo)
+    .find((item) => {
+      const itemActivoId = Number(
+        item?.activoId ?? item?.id_activo ?? item?.activo?.id_activo ?? item?.activo?.idActivo
+      );
+      const fechaDevolucion = normalizeNullableDate(item?.fechaDevolucion);
+      return itemActivoId === targetActivoId && item?.confirmado === true && !fechaDevolucion;
+    });
+
+  if (!target) {
+    const error = new Error("No se encontro un resguardo confirmado para este activo.");
+    error.status = 404;
+    throw error;
+  }
+
+  const resguardoId = target?.resguardoId ?? target?.id_resguardo;
+  if (resguardoId == null) {
+    const error = new Error("No se encontro el resguardo asociado al activo.");
+    error.status = 404;
+    throw error;
+  }
+
+  const payload = await apiRequest(`/resguardo/${encodeURIComponent(resguardoId)}`, "PUT", {
+    estado: "DEVOLUCION",
+    observaciones,
+  });
+
+  const updated = normalizeResguardo(extractPayload(payload));
+  dispatchResguardosChanged({
+    type: "return_requested",
+    resguardoId: updated?.resguardoId ?? resguardoId,
+    activoId: updated?.activoId ?? targetActivoId,
+  });
+  return updated;
+}

@@ -94,7 +94,7 @@ function buildProductSelectionFromActivo(activo) {
     marca,
     modelo,
     nombre,
-    displayText: buildChainDisplay([marca, modelo, nombre]) || nombre,
+    displayText: buildChainDisplay([nombre, marca, modelo]) || nombre,
   };
 }
 
@@ -145,9 +145,9 @@ function SelectProductModalInline({ show, onClose, onSave, initialSelection = nu
   useEffect(() => {
     if (!show) return;
 
+    setSelectedProductId(String(initialSelection?.id_producto ?? ""));
     setSelectedBrandId(String(initialSelection?.id_marca ?? ""));
     setSelectedModelId(String(initialSelection?.id_modelo ?? ""));
-    setSelectedProductId(String(initialSelection?.id_producto ?? ""));
     setCatalog([]);
     setError("");
     loadCatalog();
@@ -159,32 +159,32 @@ function SelectProductModalInline({ show, onClose, onSave, initialSelection = nu
     initialSelection?.id_producto,
   ]);
 
-  const brandOptions = useMemo(() => uniqueById(catalog, "id_marca", "marca"), [catalog]);
+  const productOptions = useMemo(() => uniqueById(catalog, "id_producto", "nombre"), [catalog]);
+
+  const brandOptions = useMemo(() => {
+    const productId = Number(selectedProductId);
+    if (!productId) return [];
+    return uniqueById(
+      catalog.filter((item) => Number(item?.id_producto) === productId),
+      "id_marca",
+      "marca"
+    );
+  }, [catalog, selectedProductId]);
 
   const modelOptions = useMemo(() => {
+    const productId = Number(selectedProductId);
     const brandId = Number(selectedBrandId);
-    if (!brandId) return [];
-    return uniqueById(
-      catalog.filter((item) => Number(item?.id_marca) === brandId),
-      "id_modelo",
-      "modelo"
-    );
-  }, [catalog, selectedBrandId]);
-
-  const productOptions = useMemo(() => {
-    const brandId = Number(selectedBrandId);
-    const modelId = Number(selectedModelId);
-    if (!brandId || !modelId) return [];
+    if (!productId || !brandId) return [];
     return uniqueById(
       catalog.filter(
         (item) =>
-          Number(item?.id_marca) === brandId &&
-          Number(item?.id_modelo) === modelId
+          Number(item?.id_producto) === productId &&
+          Number(item?.id_marca) === brandId
       ),
-      "id_producto",
-      "nombre"
+      "id_modelo",
+      "modelo"
     );
-  }, [catalog, selectedBrandId, selectedModelId]);
+  }, [catalog, selectedProductId, selectedBrandId]);
 
   const selectedBrand = brandOptions.find((item) => Number(item.value) === Number(selectedBrandId));
   const selectedModel = modelOptions.find((item) => Number(item.value) === Number(selectedModelId));
@@ -196,8 +196,8 @@ function SelectProductModalInline({ show, onClose, onSave, initialSelection = nu
     event.preventDefault();
     setError("");
 
-    if (!selectedBrand || !selectedModel || !selectedProduct) {
-      setError("Debes seleccionar marca, modelo y producto.");
+    if (!selectedProduct || !selectedBrand || !selectedModel) {
+      setError("Debes seleccionar producto, marca y modelo.");
       return;
     }
 
@@ -220,7 +220,7 @@ function SelectProductModalInline({ show, onClose, onSave, initialSelection = nu
       marca: matchedItem.marca,
       modelo: matchedItem.modelo,
       nombre: matchedItem.nombre,
-      displayText: buildChainDisplay([matchedItem.marca, matchedItem.modelo, matchedItem.nombre]),
+      displayText: buildChainDisplay([matchedItem.nombre, matchedItem.marca, matchedItem.modelo]),
     });
   };
 
@@ -246,18 +246,40 @@ function SelectProductModalInline({ show, onClose, onSave, initialSelection = nu
           ) : null}
 
           <Form.Group className="mb-3">
+            <Form.Label className="inv-select-modal__label">Producto</Form.Label>
+            <Form.Select
+              value={selectedProductId}
+              onChange={(event) => {
+                setSelectedProductId(event.target.value);
+                setSelectedBrandId("");
+                setSelectedModelId("");
+              }}
+              className="inv-select-modal__control"
+              disabled={isLoading}
+            >
+              <option value="">{isLoading ? "Cargando productos..." : "Seleccione el producto"}</option>
+              {productOptions.map((item) => (
+                <option key={item.value} value={item.value}>
+                  {item.label}
+                </option>
+              ))}
+            </Form.Select>
+          </Form.Group>
+
+          <Form.Group className="mb-3">
             <Form.Label className="inv-select-modal__label">Marca</Form.Label>
             <Form.Select
               value={selectedBrandId}
               onChange={(event) => {
                 setSelectedBrandId(event.target.value);
                 setSelectedModelId("");
-                setSelectedProductId("");
               }}
               className="inv-select-modal__control"
-              disabled={isLoading}
+              disabled={!selectedProductId || isLoading}
             >
-              <option value="">{isLoading ? "Cargando marcas..." : "Seleccione la marca"}</option>
+              <option value="">
+                {isLoading ? "Cargando marcas..." : "Seleccione la marca"}
+              </option>
               {brandOptions.map((item) => (
                 <option key={item.value} value={item.value}>
                   {item.label}
@@ -270,10 +292,7 @@ function SelectProductModalInline({ show, onClose, onSave, initialSelection = nu
             <Form.Label className="inv-select-modal__label">Modelo</Form.Label>
             <Form.Select
               value={selectedModelId}
-              onChange={(event) => {
-                setSelectedModelId(event.target.value);
-                setSelectedProductId("");
-              }}
+              onChange={(event) => setSelectedModelId(event.target.value)}
               className="inv-select-modal__control"
               disabled={!selectedBrandId || isLoading}
             >
@@ -281,25 +300,6 @@ function SelectProductModalInline({ show, onClose, onSave, initialSelection = nu
                 {isLoading ? "Cargando modelos..." : "Seleccione el modelo"}
               </option>
               {modelOptions.map((item) => (
-                <option key={item.value} value={item.value}>
-                  {item.label}
-                </option>
-              ))}
-            </Form.Select>
-          </Form.Group>
-
-          <Form.Group className="mb-3">
-            <Form.Label className="inv-select-modal__label">Producto</Form.Label>
-            <Form.Select
-              value={selectedProductId}
-              onChange={(event) => setSelectedProductId(event.target.value)}
-              className="inv-select-modal__control"
-              disabled={!selectedModelId || isLoading}
-            >
-              <option value="">
-                {isLoading ? "Cargando productos..." : "Seleccione el producto"}
-              </option>
-              {productOptions.map((item) => (
                 <option key={item.value} value={item.value}>
                   {item.label}
                 </option>

@@ -35,6 +35,34 @@ function buildExportRows(activos) {
   });
 }
 
+function toNumericId(activo) {
+  const raw = activo?.id_activo ?? activo?.idActivo ?? activo?.id;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function toTimestamp(value) {
+  if (!value) return null;
+  const timestamp = new Date(value).getTime();
+  return Number.isFinite(timestamp) ? timestamp : null;
+}
+
+function compareActivosByNewest(a, b) {
+  const idA = toNumericId(a);
+  const idB = toNumericId(b);
+  if (idA != null && idB != null && idA !== idB) {
+    return idB - idA;
+  }
+
+  const fechaA = toTimestamp(a?.fecha_alta ?? a?.fechaAlta);
+  const fechaB = toTimestamp(b?.fecha_alta ?? b?.fechaAlta);
+  if (fechaA != null && fechaB != null && fechaA !== fechaB) {
+    return fechaB - fechaA;
+  }
+
+  return String(b?.etiqueta_bien ?? "").localeCompare(String(a?.etiqueta_bien ?? ""));
+}
+
 export default function BienesRegistrados() {
   const [search, setSearch] = useState("");
   const [openSidebar, setOpenSidebar] = useState(false);
@@ -101,7 +129,9 @@ export default function BienesRegistrados() {
   }, [activos]);
 
   const activosFiltrados = useMemo(() => {
-    return activos.filter((a) => {
+    const activosOrdenados = [...(Array.isArray(activos) ? activos : [])].sort(compareActivosByNewest);
+
+    return activosOrdenados.filter((a) => {
       const codigo = (a?.etiqueta_bien ?? "").toString().toLowerCase();
       const productoCompleto = (a?.producto?.completo ?? "").toString().toLowerCase();
       const tipoActivo = (a?.producto?.tipo_activo ?? a?.tipo_activo ?? "")

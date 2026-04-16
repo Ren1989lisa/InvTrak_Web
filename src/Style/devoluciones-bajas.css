@@ -1,0 +1,149 @@
+.inv-returns-layout {
+  max-width: 1440px;
+}
+
+.inv-returns-back {
+  color: #2d6596;
+  font-weight: 700;
+  text-decoration: none;
+  margin-bottom: 0.4rem;
+  padding-left: 0;
+}
+
+.inv-returns-panel {
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid #dbe8f3;
+  box-shadow: 0 4px 18px rgba(19, 47, 77, 0.12);
+  padding: 14px;
+}
+
+.inv-returns-panel__title {
+  color: #12395f;
+  font-weight: 800;
+  margin-bottom: 12px;
+}
+
+.inv-returns-search .form-control,
+.inv-returns-search .input-group-text {
+  border: 1px solid #b8d7ee;
+  background: #f5fbff;
+}
+
+.inv-returns-search .form-control {
+  border-left: 0;
+}
+
+.inv-returns-search .input-group-text {
+  color: #5f8db3;
+}
+
+.inv-returns-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.inv-returns-filterBtn {
+  min-width: 90px;
+  border-radius: 8px;
+  font-weight: 700;
+  background: #eef7ff;
+}
+
+.inv-returns-select {
+  border-radius: 8px;
+  border: 1px solid #b8d7ee;
+  min-height: 38px;
+  max-width: 170px;
+}
+
+.inv-returns-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 520px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.inv-return-card {
+  border: 1px solid #b8d7ee;
+  border-radius: 11px;
+  background: #eaf6ff;
+  padding: 9px;
+}
+
+.inv-return-card__top {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 7px;
+}
+
+.inv-return-card__tag {
+  background: linear-gradient(90deg, #245788 0%, #4f8bc5 100%);
+  color: #fff;
+  border-radius: 7px;
+  font-size: 0.76rem;
+  padding: 2px 8px;
+  font-weight: 700;
+}
+
+.inv-return-card__folio {
+  background: #7ec2ef;
+  color: #ffffff;
+  border-radius: 6px;
+  font-size: 0.73rem;
+  padding: 2px 8px;
+  font-weight: 700;
+}
+
+.inv-return-card__body p {
+  margin: 0 0 2px;
+  color: #173853;
+  font-size: 0.86rem;
+}
+
+.inv-return-card__footer {
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.inv-return-card__cost {
+  color: #0f3f66;
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+
+.inv-return-card__action {
+  border: 0;
+  border-radius: 999px;
+  font-size: 0.73rem;
+  font-weight: 700;
+  padding: 5px 10px;
+  line-height: 1.1;
+  color: #7e2c2c;
+  background: #f2b2b9;
+}
+
+.inv-return-card__action:hover {
+  filter: brightness(0.98);
+}
+
+.inv-return-card__action--devolucion {
+  background: #efb2ba;
+}
+
+.inv-return-card__action--baja {
+  background: #eda7b1;
+}
+
+@media (max-width: 991px) {
+  .inv-returns-list {
+    max-height: none;
+  }
+}

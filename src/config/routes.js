@@ -15,6 +15,7 @@ export const PROTECTED_ROUTES = {
   CATALOGOS: "/catalogos",
   REGISTRO_BIEN: "/registro-bien",
   REGISTRO_BIEN_EDITAR: "/registro-bien/:id/editar",
+  DEVOLUCIONES_BAJAS: "/devoluciones-bajas",
   ASIGNAR_BIEN: "/asignar-bien",
   ASIGNAR_REPORTE: "/asignar-reporte",
   HISTORIAL: "/historial",

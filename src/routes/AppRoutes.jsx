@@ -17,6 +17,7 @@ const RegistrarUsuario = lazy(() => import("../Pages/RegistrarUsuario"));
 const EditarPerfil = lazy(() => import("../Pages/EditarPerfil"));
 const Catalogos = lazy(() => import("../Pages/Catalogos"));
 const RegistroBien = lazy(() => import("../Pages/RegistroBien"));
+const DevolucionesBajas = lazy(() => import("../Pages/DevolucionesBajas"));
 const AsignacionBien = lazy(() => import("../Pages/AsignacionBien"));
 const AsignacionReporte = lazy(() => import("../Pages/AsignacionReporte"));
 const Historial = lazy(() => import("../Pages/Historial"));
@@ -36,6 +37,7 @@ const {
   CATALOGOS,
   REGISTRO_BIEN,
   REGISTRO_BIEN_EDITAR,
+  DEVOLUCIONES_BAJAS,
   ASIGNAR_BIEN,
   ASIGNAR_REPORTE,
   HISTORIAL,
@@ -138,6 +140,14 @@ export default function AppRoutes() {
           element={
             <ProtectedRoute requiredRole="admin">
               <RegistroBien />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={DEVOLUCIONES_BAJAS}
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <DevolucionesBajas />
             </ProtectedRoute>
           }
         />

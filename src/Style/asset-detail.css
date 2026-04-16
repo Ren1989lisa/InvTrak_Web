@@ -30,6 +30,30 @@
   color: #fff;
   background: linear-gradient(90deg, #2c5e91 0%, #6ea3d8 100%);
   font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.inv-asset-detail-card__header-main {
+  min-width: 0;
+}
+
+.inv-asset-detail-card__return-btn {
+  border: 0;
+  border-radius: 8px;
+  background: #d58993;
+  color: #6f1b2a;
+  font-weight: 700;
+  font-size: 0.74rem;
+  padding: 5px 12px;
+  line-height: 1.1;
+  flex-shrink: 0;
+}
+
+.inv-asset-detail-card__return-btn:hover {
+  filter: brightness(0.97);
 }
 
 .inv-asset-detail-card__body {

@@ -58,6 +58,15 @@ function Icon({ name }) {
           />
         </svg>
       );
+    case "returns":
+      return (
+        <svg {...common} aria-hidden="true">
+          <path
+            fill="currentColor"
+            d="M4 6h12v2H4V6zm0 5h12v2H4v-2zm0 5h8v2H4v-2zm13 3-4-4h3V9h2v6h3l-4 4z"
+          />
+        </svg>
+      );
     default:
       return (
         <svg {...common} aria-hidden="true">
