@@ -15,7 +15,6 @@ export const usuarioSchema = z.object({
   fecha_nacimiento: z.string().min(1, "La fecha de nacimiento es obligatoria"),
   curp: z.string().length(18, "La CURP debe tener exactamente 18 caracteres"),
   rol: z.string().min(1, "El rol es obligatorio"),
-  numero_empleado: z.string().min(1, "El numero de empleado es obligatorio"),
   area: z.string().min(1, "El area es obligatoria"),
 });
 

@@ -212,11 +212,8 @@ export async function createUsuario(input) {
     correo: input?.correo ?? "",
     fechaNacimiento: input?.fecha_nacimiento ?? input?.fechaNacimiento ?? "",
     curp: input?.curp ?? "",
-    numeroEmpleado: input?.numero_empleado ?? input?.numeroEmpleado ?? "",
     area: input?.area ?? "",
     rolId,
-    rol: mapFrontendRolToBackend(input?.rol),
-    password: input?.password ?? input?.numero_empleado ?? input?.numeroEmpleado ?? "",
   };
 
   const endpoints = ["/usuario", "/usuarios"];
