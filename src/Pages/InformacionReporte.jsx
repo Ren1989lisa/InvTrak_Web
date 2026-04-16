@@ -8,7 +8,7 @@ import SidebarMenu from "../Components/SidebarMenu";
 import { useUsers } from "../context/UsersContext";
 import { getEstadoDisplay } from "../config/estatusActivo";
 import { ESTATUS_REPORTE_DANIO } from "../config/databaseEnums";
-import { getReporteById } from "../services/reporteService";
+import { getEvidenciaUrlsByReferencia, getReporteById } from "../services/reporteService";
 import { getMantenimientosByTecnico } from "../services/mantenimientoService";
 import "../Style/bienes-registrados.css";
 import "../Style/sidebar.css";
@@ -61,8 +61,10 @@ export default function InformacionReporte() {
   const navigate = useNavigate();
   const [openSidebar, setOpenSidebar] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingEvidencias, setIsLoadingEvidencias] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [reporte, setReporte] = useState(null);
+  const [fotosEvidencia, setFotosEvidencia] = useState([]);
   const { currentUser, logout, menuItems } = useUsers();
 
   const idReporte = Number(id);
@@ -165,10 +167,48 @@ export default function InformacionReporte() {
     return Number.isFinite(currentUserId) && currentUserId === tecnicoIdAsignado;
   }, [reporte, currentUser?.rol, currentUser?.id_usuario, currentUser?.idUsuario, currentUser?.id]);
 
-  const fotosEvidencia = useMemo(
-    () => (Array.isArray(reporte?.fotos_evidencia) ? reporte.fotos_evidencia : []),
-    [reporte]
-  );
+  useEffect(() => {
+    let active = true;
+
+    async function loadEvidencias() {
+      if (!reporte) {
+        if (active) {
+          setFotosEvidencia([]);
+          setIsLoadingEvidencias(false);
+        }
+        return;
+      }
+
+      const fotosDirectas = Array.isArray(reporte?.fotos_evidencia) ? reporte.fotos_evidencia : [];
+      if (active) {
+        setFotosEvidencia(fotosDirectas);
+        setIsLoadingEvidencias(true);
+      }
+
+      try {
+        const urls = await getEvidenciaUrlsByReferencia({
+          reporteId: reporte?.id_reporte ?? reporte?.idReporte,
+          activoId: reporte?.id_activo ?? reporte?.activo?.id_activo ?? reporte?.activo?.idActivo,
+          evidencias: reporte?.evidencias ?? [],
+        });
+
+        if (!active) return;
+
+        const merged = Array.from(new Set([...(fotosDirectas ?? []), ...(urls ?? [])]));
+        setFotosEvidencia(merged);
+      } catch {
+        // No bloquea la vista si el endpoint de evidencias no esta disponible.
+      } finally {
+        if (active) setIsLoadingEvidencias(false);
+      }
+    }
+
+    loadEvidencias();
+
+    return () => {
+      active = false;
+    };
+  }, [reporte]);
 
   const producto = activo?.producto ?? {};
   const ubicacion = activo?.ubicacion ?? {};
@@ -252,6 +292,11 @@ export default function InformacionReporte() {
                 </Carousel.Item>
               ))}
             </Carousel>
+          ) : isLoadingEvidencias ? (
+            <div className="inv-reporte-info-photo-empty">
+              <Spinner animation="border" size="sm" />
+              <span>Cargando evidencias...</span>
+            </div>
           ) : (
             <div className="inv-reporte-info-photo-empty">
               <BsImage className="inv-reporte-info-photo-icon" />

@@ -497,6 +497,59 @@ export async function deleteResguardo(resguardoId) {
   });
 }
 
+export async function updateResguardoEstado(resguardoId, estado, observaciones = "") {
+  const id = Number(resguardoId);
+  const normalizedEstado = normalizeText(estado).toUpperCase();
+
+  if (!Number.isFinite(id) || id <= 0) {
+    const error = new Error("El ID del resguardo es obligatorio.");
+    error.status = 400;
+    throw error;
+  }
+
+  if (!normalizedEstado) {
+    const error = new Error("El estado del resguardo es obligatorio.");
+    error.status = 400;
+    throw error;
+  }
+
+  const payload = await apiRequest(`/resguardo/${encodeURIComponent(id)}`, "PUT", {
+    estado: normalizedEstado,
+    observaciones: observaciones ?? "",
+  });
+
+  const updated = normalizeResguardo(extractPayload(payload));
+  dispatchResguardosChanged({
+    type: "updated_status",
+    resguardoId: updated?.resguardoId ?? id,
+    activoId: updated?.activoId ?? null,
+    estado: normalizedEstado,
+  });
+
+  return updated;
+}
+
+export async function cancelBajaSolicitud(resguardoId) {
+  const id = Number(resguardoId);
+  if (!Number.isFinite(id) || id <= 0) {
+    const error = new Error("El ID del resguardo es obligatorio.");
+    error.status = 400;
+    throw error;
+  }
+
+  const payload = await apiRequest(`/resguardo/${encodeURIComponent(id)}/cancelar-baja`, "PUT");
+  const updated = normalizeResguardo(extractPayload(payload));
+
+  dispatchResguardosChanged({
+    type: "cancel_low_request",
+    resguardoId: updated?.resguardoId ?? id,
+    activoId: updated?.activoId ?? null,
+    estado: "MANTENIMIENTO",
+  });
+
+  return updated;
+}
+
 export async function solicitarDevolucionPorActivo(
   activoId,
   observaciones = "Solicitud de devolucion desde web."

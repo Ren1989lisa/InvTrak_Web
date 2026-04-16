@@ -55,19 +55,21 @@ export default function ProductRow({ row, onEdit, onDelete }) {
         <div className="inv-product-row__actions">
           <button
             type="button"
-            className="inv-product-row__editBtn"
+            className="inv-action-icon-btn"
+            aria-label={`Editar producto ${row.nombre}`}
+            title="Editar"
             onClick={() => onEdit?.(row)}
           >
             <PencilIcon />
-            Editar
           </button>
           <button
             type="button"
-            className="inv-product-row__deleteBtn"
+            className="inv-action-icon-btn"
+            aria-label={`Eliminar producto ${row.nombre}`}
+            title="Eliminar"
             onClick={() => onDelete?.(row)}
           >
             <TrashIcon />
-            Eliminar
           </button>
         </div>
       </td>

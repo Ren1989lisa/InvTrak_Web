@@ -105,6 +105,22 @@ function normalizeReporte(raw) {
   };
 }
 
+function toFiniteNumber(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function extractCollection(payload) {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.data)) return payload.data;
+  if (Array.isArray(payload?.content)) return payload.content;
+  if (Array.isArray(payload?.items)) return payload.items;
+  if (Array.isArray(payload?.result)) return payload.result;
+  if (Array.isArray(payload?.evidencias)) return payload.evidencias;
+  if (payload && typeof payload === "object") return [payload];
+  return [];
+}
+
 function toAbsoluteEvidenceUrl(value) {
   const rawValue = String(value ?? "").trim();
   if (!rawValue) return "";
@@ -137,14 +153,28 @@ function extractEvidenceUrls(evidencias = []) {
     const candidates = [
       item.url,
       item.urlArchivo,
+      item.urlEvidencia,
+      item.url_evidencia,
       item.ruta,
       item.rutaArchivo,
+      item.rutaEvidencia,
+      item.ruta_evidencia,
       item.path,
       item.uri,
       item.archivo,
       item.archivoUrl,
+      item.evidencia,
       item.imagen,
       item.imagenUrl,
+      item.urlFoto,
+      item.fotoUrl,
+      item.mediaUrl,
+      item.archivo?.url,
+      item.archivo?.ruta,
+      item.archivo?.path,
+      item.evidencia?.url,
+      item.evidencia?.ruta,
+      item.evidencia?.path,
     ];
 
     const firstValid = candidates.find((candidate) => String(candidate ?? "").trim());
@@ -155,6 +185,137 @@ function extractEvidenceUrls(evidencias = []) {
   });
 
   return Array.from(new Set(urls));
+}
+
+function getEvidenceId(item) {
+  if (item === null || item === undefined) return null;
+  if (typeof item === "number") return toFiniteNumber(item);
+  if (typeof item === "string") {
+    const maybeId = toFiniteNumber(item);
+    return maybeId;
+  }
+
+  if (typeof item !== "object") return null;
+
+  return (
+    toFiniteNumber(item.id_evidencia) ??
+    toFiniteNumber(item.idEvidencia) ??
+    toFiniteNumber(item.evidenciaId) ??
+    toFiniteNumber(item.id)
+  );
+}
+
+function getEvidenceReporteId(item) {
+  if (!item || typeof item !== "object") return null;
+
+  return (
+    toFiniteNumber(item.id_reporte) ??
+    toFiniteNumber(item.idReporte) ??
+    toFiniteNumber(item.reporteId) ??
+    toFiniteNumber(item.id_reporte_danio) ??
+    toFiniteNumber(item.idReporteDanio) ??
+    toFiniteNumber(item.reporte?.id_reporte) ??
+    toFiniteNumber(item.reporte?.idReporte) ??
+    toFiniteNumber(item.reporte?.id)
+  );
+}
+
+function getEvidenceActivoId(item) {
+  if (!item || typeof item !== "object") return null;
+
+  return (
+    toFiniteNumber(item.id_activo) ??
+    toFiniteNumber(item.idActivo) ??
+    toFiniteNumber(item.activoId) ??
+    toFiniteNumber(item.activo?.id_activo) ??
+    toFiniteNumber(item.activo?.idActivo) ??
+    toFiniteNumber(item.activo?.id)
+  );
+}
+
+async function tryFetchEvidencias(endpoint) {
+  try {
+    const payload = await apiRequest(endpoint, "GET");
+    return extractCollection(payload);
+  } catch (error) {
+    const status = Number(error?.status ?? 0);
+    if (status === 401 || status === 403) {
+      throw error;
+    }
+    return [];
+  }
+}
+
+export async function getEvidenciaUrlsByReferencia({
+  reporteId,
+  activoId,
+  evidencias = [],
+} = {}) {
+  const resolvedReporteId = toFiniteNumber(reporteId);
+  const resolvedActivoId = toFiniteNumber(activoId);
+  const evidenceIds = new Set(
+    (Array.isArray(evidencias) ? evidencias : [])
+      .map(getEvidenceId)
+      .filter((id) => Number.isFinite(id) && id > 0)
+  );
+
+  const directUrls = extractEvidenceUrls(Array.isArray(evidencias) ? evidencias : []);
+  const evidenciasEncontradas = [...(Array.isArray(evidencias) ? evidencias : [])];
+
+  const endpoints = [];
+  if (Number.isFinite(resolvedReporteId) && resolvedReporteId > 0) {
+    endpoints.push(`/evidencia/reporte/${resolvedReporteId}`);
+    endpoints.push(`/reporte/${resolvedReporteId}/evidencias`);
+    endpoints.push(`/evidencia?reporteId=${resolvedReporteId}`);
+  }
+  if (Number.isFinite(resolvedActivoId) && resolvedActivoId > 0) {
+    endpoints.push(`/evidencia/activo/${resolvedActivoId}`);
+    endpoints.push(`/evidencia?activoId=${resolvedActivoId}`);
+  }
+  endpoints.push("/evidencia");
+
+  for (const endpoint of endpoints) {
+    const rows = await tryFetchEvidencias(endpoint);
+    if (!rows.length) continue;
+
+    const filtered = rows.filter((row) => {
+      const rowEvidenceId = getEvidenceId(row);
+      const rowReporteId = getEvidenceReporteId(row);
+      const rowActivoId = getEvidenceActivoId(row);
+
+      if (Number.isFinite(rowEvidenceId) && evidenceIds.has(rowEvidenceId)) return true;
+      if (
+        Number.isFinite(resolvedReporteId) &&
+        resolvedReporteId > 0 &&
+        Number.isFinite(rowReporteId) &&
+        rowReporteId === resolvedReporteId
+      ) {
+        return true;
+      }
+      if (
+        Number.isFinite(resolvedActivoId) &&
+        resolvedActivoId > 0 &&
+        Number.isFinite(rowActivoId) &&
+        rowActivoId === resolvedActivoId
+      ) {
+        return true;
+      }
+      return false;
+    });
+
+    if (filtered.length > 0) {
+      evidenciasEncontradas.push(...filtered);
+    }
+  }
+
+  const mergedUrls = Array.from(
+    new Set([
+      ...directUrls,
+      ...extractEvidenceUrls(evidenciasEncontradas),
+    ])
+  );
+
+  return mergedUrls;
 }
 
 /**

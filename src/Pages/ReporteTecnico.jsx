@@ -14,6 +14,7 @@ import {
   atenderMantenimiento,
   cerrarMantenimiento,
   getMantenimientosByTecnico,
+  solicitarBajaMantenimiento,
 } from "../services/mantenimientoService";
 import { ESTATUS_ACTIVO } from "../config/estatusActivo";
 import { ESTATUS_REPORTE_DANIO } from "../config/databaseEnums";
@@ -28,6 +29,7 @@ export default function ReporteTecnico() {
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [diagnostico, setDiagnostico] = useState("");
   const [accionesRealizadas, setAccionesRealizadas] = useState("");
   const [archivos, setArchivos] = useState([]);
@@ -281,6 +283,7 @@ export default function ReporteTecnico() {
   };
 
   const handleSubmit = async () => {
+    if (isSubmitting) return;
     setErrorMessage("");
     setSuccessMessage("");
 
@@ -303,6 +306,7 @@ export default function ReporteTecnico() {
     }
 
     try {
+      setIsSubmitting(true);
       const mantenimientoId = await resolveMantenimientoId();
       const fotosBase64 = await Promise.all(archivos.map((item) => fileToBase64(item.file)));
       const archivosAdjuntos = archivos.map((item) => item.file).filter(Boolean);
@@ -369,6 +373,67 @@ export default function ReporteTecnico() {
       setTimeout(() => navigate("/mis-reparaciones"), 1200);
     } catch (error) {
       setErrorMessage(mapSubmitError(error));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSolicitarBaja = async () => {
+    if (isSubmitting) return;
+    setErrorMessage("");
+    setSuccessMessage("");
+
+    try {
+      setIsSubmitting(true);
+      const mantenimientoId = await resolveMantenimientoId();
+      const observaciones = [diagnostico.trim(), accionesRealizadas.trim()]
+        .filter(Boolean)
+        .join(" | ");
+
+      const mantenimientoActualizado = await solicitarBajaMantenimiento({
+        mantenimientoId,
+        observaciones,
+      });
+
+      setMantenimientoAsignado((prev) =>
+        prev
+          ? {
+              ...prev,
+              estatus: mantenimientoActualizado?.estatus ?? "IRREPARABLE",
+            }
+          : prev
+      );
+
+      setReporte((prev) =>
+        prev
+          ? {
+              ...prev,
+              estatus: mantenimientoActualizado?.estatus ?? "IRREPARABLE",
+              activo: prev?.activo
+                ? { ...prev.activo, estatus: ESTATUS_ACTIVO.SOLICITUD_DE_BAJA }
+                : prev?.activo,
+            }
+          : prev
+      );
+
+      window.dispatchEvent(new CustomEvent("invtrack-reportes-changed"));
+      window.dispatchEvent(new CustomEvent("invtrack-mantenimientos-changed"));
+      window.dispatchEvent(new CustomEvent("invtrack-activos-changed"));
+      setSuccessMessage("Solicitud de baja enviada correctamente.");
+      setTimeout(() => navigate("/mis-reparaciones"), 1000);
+    } catch (error) {
+      const status = Number(error?.status ?? 0);
+      if (status === 401) {
+        setErrorMessage("Sesion expirada. Inicia sesion nuevamente.");
+      } else if (status === 403) {
+        setErrorMessage("No tienes permisos para solicitar baja en este mantenimiento.");
+      } else if (status === 404) {
+        setErrorMessage("No se encontro el mantenimiento asociado al reporte.");
+      } else {
+        setErrorMessage(error?.message || "No fue posible solicitar la baja.");
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -528,7 +593,10 @@ export default function ReporteTecnico() {
               <Button variant="secondary" onClick={() => navigate(-1)}>
                 Cancelar
               </Button>
-              <Button variant="primary" onClick={handleSubmit}>
+              <Button variant="danger" onClick={handleSolicitarBaja} disabled={isSubmitting}>
+                {isSubmitting ? "Enviando..." : "Solicitar baja"}
+              </Button>
+              <Button variant="primary" onClick={handleSubmit} disabled={isSubmitting}>
                 Subir reparacion
               </Button>
             </div>

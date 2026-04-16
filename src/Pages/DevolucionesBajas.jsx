@@ -7,7 +7,12 @@ import NavbarMenu from "../Components/NavbarMenu";
 import SidebarMenu from "../Components/SidebarMenu";
 import PrimaryButton from "../Components/PrimaryButton";
 import { useUsers } from "../context/UsersContext";
-import { deleteResguardo, getResguardos } from "../services/resguardoService";
+import {
+  cancelBajaSolicitud,
+  deleteResguardo,
+  getResguardos,
+  updateResguardoEstado,
+} from "../services/resguardoService";
 
 import "../Style/bienes-registrados.css";
 import "../Style/sidebar.css";
@@ -53,10 +58,14 @@ function toSolicitudItem(resguardo, index) {
 
 function SolicitudCard({
   item,
-  actionLabel,
-  onAction,
-  actionClassName = "",
-  actionDisabled = false,
+  primaryActionLabel,
+  onPrimaryAction,
+  primaryActionClassName = "",
+  primaryActionDisabled = false,
+  secondaryActionLabel = "",
+  onSecondaryAction,
+  secondaryActionClassName = "",
+  secondaryActionDisabled = false,
 }) {
   return (
     <article className="inv-return-card">
@@ -79,14 +88,27 @@ function SolicitudCard({
 
       <div className="inv-return-card__footer">
         <span className="inv-return-card__cost">{formatCurrency(item?.costo)}</span>
-        <button
-          type="button"
-          className={`inv-return-card__action ${actionClassName}`.trim()}
-          onClick={() => onAction?.(item)}
-          disabled={actionDisabled}
-        >
-          {actionLabel}
-        </button>
+        <div className="inv-return-card__actions">
+          {secondaryActionLabel ? (
+            <button
+              type="button"
+              className={`inv-return-card__action ${secondaryActionClassName}`.trim()}
+              onClick={() => onSecondaryAction?.(item)}
+              disabled={secondaryActionDisabled}
+            >
+              {secondaryActionLabel}
+            </button>
+          ) : null}
+
+          <button
+            type="button"
+            className={`inv-return-card__action ${primaryActionClassName}`.trim()}
+            onClick={() => onPrimaryAction?.(item)}
+            disabled={primaryActionDisabled}
+          >
+            {primaryActionLabel}
+          </button>
+        </div>
       </div>
     </article>
   );
@@ -117,26 +139,14 @@ export default function DevolucionesBajas() {
         if (!active) return;
 
         const normalized = (Array.isArray(resguardos) ? resguardos : []).map(toSolicitudItem);
-        if (!normalized.length) {
-          setDevoluciones([]);
-          setBajas([]);
-          return;
-        }
 
         const devolucionesData = normalized
-          .filter(
-            (item) =>
-              item.estatus === "DEVOLUCION" &&
-              item.confirmado === true &&
-              !item.fechaDevolucion
-          )
+          .filter((item) => item.estatus === "DEVOLUCION" && item.confirmado === true && !item.fechaDevolucion)
           .slice(0, 8);
+
         const bajasData = normalized
           .filter(
-            (item) =>
-              (item.estatus === "SOLICITUD_DE_BAJA" || item.estatus === "BAJA") &&
-              item.confirmado === true &&
-              !item.fechaDevolucion
+            (item) => item.estatus === "SOLICITUD_DE_BAJA" && item.confirmado === true && !item.fechaDevolucion
           )
           .slice(0, 8);
 
@@ -176,7 +186,6 @@ export default function DevolucionesBajas() {
       const matchesType = typeDevolucion === "todo" || normalize(item?.tipo) === typeDevolucion;
       if (!matchesType) return false;
       if (!query) return true;
-
       return [item?.etiqueta, item?.numeroSerie, item?.ubicacion, item?.descripcion, item?.tipo]
         .some((value) => normalize(value).includes(query));
     });
@@ -188,49 +197,62 @@ export default function DevolucionesBajas() {
       const matchesType = typeBaja === "todo" || normalize(item?.tipo) === typeBaja;
       if (!matchesType) return false;
       if (!query) return true;
-
       return [item?.etiqueta, item?.numeroSerie, item?.ubicacion, item?.descripcion, item?.tipo]
         .some((value) => normalize(value).includes(query));
     });
   }, [bajas, searchBaja, typeBaja]);
 
-  async function handleAceptar(tipo, item) {
+  async function handleAction(tipo, item) {
     if (!item) return;
 
-    if (tipo !== "devolucion") {
-      setFeedback(`Solicitud de baja registrada para ${item?.etiqueta}.`);
-      return;
-    }
-
     setFeedback("");
-    const key = `${tipo}-${item?.resguardoId ?? item?.id}`;
+    const keyPrefix = tipo === "cancelar-baja" ? "baja" : tipo;
+    const key = `${keyPrefix}-${item?.resguardoId ?? item?.id}`;
     setProcessingKey(key);
 
     try {
       if (!item?.resguardoId) {
-        throw new Error("No se encontro el resguardo asociado a esta devolucion.");
+        throw new Error("No se encontro el resguardo asociado a esta solicitud.");
       }
 
-      await deleteResguardo(item.resguardoId);
-
-      setDevoluciones((prev) =>
-        prev.filter((current) => Number(current?.resguardoId) !== Number(item?.resguardoId))
-      );
-      setFeedback(`Devolucion aceptada para ${item?.etiqueta}. El activo ahora esta DISPONIBLE.`);
+      if (tipo === "devolucion") {
+        await deleteResguardo(item.resguardoId);
+        setDevoluciones((prev) =>
+          prev.filter((current) => Number(current?.resguardoId) !== Number(item?.resguardoId))
+        );
+        setFeedback(`Devolucion aceptada para ${item?.etiqueta}. El activo ahora esta DISPONIBLE.`);
+      } else if (tipo === "baja") {
+        await updateResguardoEstado(item.resguardoId, "BAJA", "Baja aceptada por administrador.");
+        await deleteResguardo(item.resguardoId);
+        setBajas((prev) =>
+          prev.filter((current) => Number(current?.resguardoId) !== Number(item?.resguardoId))
+        );
+        setFeedback(`Baja aceptada para ${item?.etiqueta}. El activo ahora esta en BAJA.`);
+      } else if (tipo === "cancelar-baja") {
+        await cancelBajaSolicitud(item.resguardoId);
+        setBajas((prev) =>
+          prev.filter((current) => Number(current?.resguardoId) !== Number(item?.resguardoId))
+        );
+        setFeedback(
+          `Solicitud de baja cancelada para ${item?.etiqueta}. El activo vuelve a MANTENIMIENTO con su tecnico asignado.`
+        );
+      } else {
+        throw new Error("Operacion no valida.");
+      }
     } catch (error) {
       if (error?.status === 401) {
         navigate("/login", { replace: true });
         return;
       }
       if (error?.status === 403) {
-        setFeedback("No tienes permisos para aceptar devoluciones.");
+        setFeedback("No tienes permisos para aceptar esta solicitud.");
         return;
       }
       if (error?.status === 404) {
         setFeedback("El resguardo ya no existe o no fue encontrado.");
         return;
       }
-      setFeedback(error?.message || "No fue posible aceptar la devolucion.");
+      setFeedback(error?.message || "No fue posible procesar la solicitud.");
     } finally {
       setProcessingKey("");
     }
@@ -247,11 +269,8 @@ export default function DevolucionesBajas() {
         items={menuItems}
         onViewProfile={() => {
           setOpenSidebar(false);
-          if (currentUser) {
-            navigate(`/perfil/${currentUser.id_usuario}`);
-          } else {
-            navigate("/perfil");
-          }
+          if (currentUser) navigate(`/perfil/${currentUser.id_usuario}`);
+          else navigate("/perfil");
         }}
         onLogout={() => {
           setOpenSidebar(false);
@@ -261,18 +280,19 @@ export default function DevolucionesBajas() {
       />
 
       <Container fluid className="inv-content px-3 px-md-4 py-3 inv-returns-layout">
-        <Button
-          type="button"
-          variant="link"
-          className="inv-returns-back"
-          onClick={() => navigate(-1)}
-        >
-          ← Regresar
+        <Button type="button" variant="link" className="inv-returns-back" onClick={() => navigate(-1)}>
+          {"<- Regresar"}
         </Button>
 
         {isLoading ? <Alert variant="info">Cargando solicitudes...</Alert> : null}
         {feedback ? (
-          <Alert variant={feedback.toLowerCase().includes("no fue posible") || feedback.toLowerCase().includes("no tienes permisos") ? "danger" : "success"}>
+          <Alert
+            variant={
+              feedback.toLowerCase().includes("no fue posible") || feedback.toLowerCase().includes("no tienes permisos")
+                ? "danger"
+                : "success"
+            }
+          >
             {feedback}
           </Alert>
         ) : null}
@@ -319,10 +339,10 @@ export default function DevolucionesBajas() {
                   <SolicitudCard
                     key={`devolucion-${item?.resguardoId ?? item?.id}-${item?.numeroSerie ?? "serie"}`}
                     item={item}
-                    actionLabel="Aceptar devolucion"
-                    actionClassName="inv-return-card__action--devolucion"
-                    actionDisabled={processingKey === `devolucion-${item?.resguardoId ?? item?.id}`}
-                    onAction={(value) => handleAceptar("devolucion", value)}
+                    primaryActionLabel="Aceptar devolucion"
+                    primaryActionClassName="inv-return-card__action--devolucion"
+                    primaryActionDisabled={processingKey === `devolucion-${item?.resguardoId ?? item?.id}`}
+                    onPrimaryAction={(value) => handleAction("devolucion", value)}
                   />
                 ))}
                 {!devolucionesFiltradas.length ? (
@@ -373,14 +393,17 @@ export default function DevolucionesBajas() {
                   <SolicitudCard
                     key={`baja-${item?.resguardoId ?? item?.id}-${item?.numeroSerie ?? "serie"}`}
                     item={item}
-                    actionLabel="Aceptar baja"
-                    actionClassName="inv-return-card__action--baja"
-                    onAction={(value) => handleAceptar("baja", value)}
+                    primaryActionLabel="Aceptar baja"
+                    primaryActionClassName="inv-return-card__action--baja"
+                    primaryActionDisabled={processingKey === `baja-${item?.resguardoId ?? item?.id}`}
+                    onPrimaryAction={(value) => handleAction("baja", value)}
+                    secondaryActionLabel="Cancelar"
+                    secondaryActionClassName="inv-return-card__action--cancel-baja"
+                    secondaryActionDisabled={processingKey === `baja-${item?.resguardoId ?? item?.id}`}
+                    onSecondaryAction={(value) => handleAction("cancelar-baja", value)}
                   />
                 ))}
-                {!bajasFiltradas.length ? (
-                  <p className="text-muted mb-0">No hay solicitudes de baja.</p>
-                ) : null}
+                {!bajasFiltradas.length ? <p className="text-muted mb-0">No hay solicitudes de baja.</p> : null}
               </div>
             </section>
           </Col>

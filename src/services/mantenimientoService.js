@@ -174,6 +174,27 @@ export async function cerrarMantenimiento({
   return normalizeMantenimiento(payload?.data ?? payload);
 }
 
+export async function solicitarBajaMantenimiento({
+  mantenimientoId,
+  observaciones = "",
+}) {
+  const parsedMantenimientoId = toNumberOrNull(mantenimientoId);
+  const normalizedObservaciones = String(observaciones ?? "").trim();
+
+  if (!parsedMantenimientoId || parsedMantenimientoId <= 0) {
+    const error = new Error("No se encontro el mantenimiento asignado.");
+    error.status = 400;
+    throw error;
+  }
+
+  const payload = await apiRequest("/mantenimiento/solicitar-baja", "PUT", {
+    mantenimientoId: parsedMantenimientoId,
+    observaciones: normalizedObservaciones,
+  });
+
+  return normalizeMantenimiento(payload?.data ?? payload);
+}
+
 export async function asignarReporteMantenimiento({
   reporteId,
   tecnicoId,

@@ -1,7 +1,7 @@
 import { Card, Table } from "react-bootstrap";
 import LocationRow from "./LocationRow";
 
-export default function LocationTable({ rows, onDelete }) {
+export default function LocationTable({ rows, onEdit, onDelete }) {
   return (
     <Card className="inv-catalog-table-card shadow-sm border-0">
       <Card.Body className="p-0">
@@ -17,7 +17,12 @@ export default function LocationTable({ rows, onDelete }) {
           <tbody>
             {rows.length ? (
               rows.map((row) => (
-                <LocationRow key={row.id_ubicacion} row={row} onDelete={onDelete} />
+                <LocationRow
+                  key={row.id_ubicacion}
+                  row={row}
+                  onEdit={onEdit}
+                  onDelete={onDelete}
+                />
               ))
             ) : (
               <tr>

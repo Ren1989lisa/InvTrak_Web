@@ -32,6 +32,19 @@ function getBackendErrorMessage(data, fallbackMessage) {
 }
 
 function mapRol(value) {
+  if (typeof value === "number") {
+    if (value === 1) return "admin";
+    if (value === 2) return "tecnico";
+    if (value === 3) return "usuario";
+  }
+
+  const objectRoleId = Number(value?.idRol ?? value?.id_rol ?? value?.id);
+  if (Number.isFinite(objectRoleId)) {
+    if (objectRoleId === 1) return "admin";
+    if (objectRoleId === 2) return "tecnico";
+    if (objectRoleId === 3) return "usuario";
+  }
+
   const rawRole =
     value && typeof value === "object"
       ? value?.nombre ?? value?.name ?? value?.authority ?? value?.rol ?? value?.role
@@ -58,8 +71,8 @@ function mapFrontendRolToBackend(value) {
 function mapFrontendRolToId(value) {
   const role = (value ?? "").toString().trim().toLowerCase();
   if (role === "admin") return 1;
-  if (role === "usuario") return 2;
-  if (role === "tecnico") return 3;
+  if (role === "tecnico") return 2;
+  if (role === "usuario") return 3;
   return null;
 }
 

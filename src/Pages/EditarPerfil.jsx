@@ -25,9 +25,8 @@ import "../Style/profile.css";
 import "../Style/editar-perfil.css";
 
 const ROL_OPTIONS = [
-  { value: "usuario", label: "usuario" },
   { value: "tecnico", label: "tecnico" },
-  { value: "admin", label: "admin" },
+  { value: "usuario", label: "usuario" },
 ];
 
 function getPerfilRoute(usuario) {

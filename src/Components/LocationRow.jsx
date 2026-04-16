@@ -1,3 +1,24 @@
+function PencilIcon() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <path
+        d="M15.232 5.232a2.5 2.5 0 1 1 3.536 3.536L9.2 18.336l-4.2.664.664-4.2 9.568-9.568Z"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 function TrashIcon() {
   return (
     <svg
@@ -19,7 +40,7 @@ function TrashIcon() {
   );
 }
 
-export default function LocationRow({ row, onDelete }) {
+export default function LocationRow({ row, onEdit, onDelete }) {
   return (
     <tr>
       <td>{row.campus}</td>
@@ -29,11 +50,21 @@ export default function LocationRow({ row, onDelete }) {
         <div className="inv-product-row__actions">
           <button
             type="button"
-            className="inv-product-row__deleteBtn"
+            className="inv-action-icon-btn"
+            aria-label={`Editar ubicacion ${row.campus} ${row.edificio} ${row.aula}`}
+            title="Editar"
+            onClick={() => onEdit?.(row)}
+          >
+            <PencilIcon />
+          </button>
+          <button
+            type="button"
+            className="inv-action-icon-btn"
+            aria-label={`Eliminar ubicacion ${row.campus} ${row.edificio} ${row.aula}`}
+            title="Eliminar"
             onClick={() => onDelete?.(row)}
           >
             <TrashIcon />
-            Eliminar
           </button>
         </div>
       </td>

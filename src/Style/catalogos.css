@@ -96,40 +96,36 @@
   background: #fce1e4;
 }
 
-.inv-product-row__editBtn {
-  border: 0;
-  background: transparent;
-  color: #255e89;
-  font-weight: 600;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 0;
-}
-
-.inv-product-row__editBtn:hover {
-  color: #17486b;
-}
-
 .inv-product-row__actions {
   display: inline-flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
-.inv-product-row__deleteBtn {
-  border: 0;
-  background: transparent;
-  color: #b74753;
-  font-weight: 600;
+.inv-action-icon-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  border: 1px solid #c3d7e8;
+  background: #edf5fc;
+  color: #2c70a3;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
   padding: 0;
+  transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
 }
 
-.inv-product-row__deleteBtn:hover {
-  color: #983843;
+.inv-action-icon-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.inv-action-icon-btn:hover,
+.inv-action-icon-btn:focus {
+  background: #dfeffd;
+  border-color: #8fb8d8;
+  color: #1f5f90;
 }
 
 .inv-add-product-modal .modal-content {

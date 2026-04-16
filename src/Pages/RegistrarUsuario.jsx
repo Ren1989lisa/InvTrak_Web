@@ -23,9 +23,8 @@ const INITIAL_VALUES = {
 };
 
 const ROL_OPTIONS = [
-  { value: "usuario", label: "usuario" },
   { value: "tecnico", label: "tecnico" },
-  { value: "admin", label: "admin" },
+  { value: "usuario", label: "usuario" },
 ];
 
 export default function RegistrarUsuario() {
@@ -83,15 +82,6 @@ export default function RegistrarUsuario() {
     if (correoDuplicado) {
       setError("El correo ya está registrado.");
       return;
-    }
-
-    if (data.rol === "admin") {
-      const alreadyAdmin = usersList.some((u) => (u?.rol ?? "") === "admin");
-      if (alreadyAdmin) {
-        setError("Solo puede existir un usuario con rol admin.");
-        setIsSubmitting(false);
-        return;
-      }
     }
 
     try {
