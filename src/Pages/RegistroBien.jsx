@@ -548,7 +548,7 @@ export default function RegistroBien() {
         { id_activo: Date.now(), numero_serie: numeroSerie },
       ]);
       clearForm();
-      setSuccessMessage("Bien creado correctamente");
+      setSuccessMessage("Activo creado correctamente");
     } catch (error) {
       setErrorMessage(isEditMode ? getUpdateErrorMessage(error) : getCreateErrorMessage(error));
     } finally {

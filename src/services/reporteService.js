@@ -1,4 +1,5 @@
 import { API_BASE_URL } from "../api/apiClient";
+import { apiRequest } from "./api";
 
 function getStoredToken() {
   return (
@@ -65,6 +66,15 @@ function normalizeReporte(raw) {
 
   const activo = raw.activo ?? {};
   const prioridad = raw.prioridad ?? {};
+  const prioridadNombre = (
+    prioridad.nombre ??
+    prioridad.prioridad ??
+    raw.prioridad ??
+    "MEDIA"
+  )
+    .toString()
+    .trim()
+    .toUpperCase();
 
   return {
     id_reporte: raw.id_reporte ?? raw.idReporte ?? null,
@@ -73,8 +83,9 @@ function normalizeReporte(raw) {
     descripcion: raw.descripcion ?? "",
     fecha_reporte: raw.fecha_reporte ?? raw.fechaReporte ?? null,
     fecha_resolucion: raw.fecha_resolucion ?? raw.fechaResolucion ?? null,
-    estatus: raw.estatus ?? "PENDIENTE",
-    prioridad: prioridad.nombre ?? prioridad.prioridad ?? "MEDIA",
+    estatus: raw.estatus ?? "ABIERTO",
+    prioridad: prioridadNombre,
+    prioridad_id: prioridad.id_prioridad ?? prioridad.idPrioridad ?? null,
     id_activo: activo.idActivo ?? activo.id_activo ?? null,
     activo: {
       id_activo: activo.idActivo ?? activo.id_activo ?? null,
@@ -82,6 +93,7 @@ function normalizeReporte(raw) {
       numero_serie: activo.numeroSerie ?? activo.numero_serie ?? "",
       descripcion: activo.descripcion ?? "",
     },
+    evidencias: Array.isArray(raw?.evidencias) ? raw.evidencias : [],
   };
 }
 
@@ -122,4 +134,89 @@ export async function getReportesByActivo(activoId) {
 
   const list = Array.isArray(data) ? data : (data?.data ?? data?.reportes ?? []);
   return list.map(normalizeReporte);
+}
+
+/**
+ * Obtiene prioridades reales desde backend (/api/prioridad)
+ * Retorna un mapa por nombre (ALTA/MEDIA/BAJA) con su id.
+ */
+export async function getPrioridadesMap() {
+  const data = await authRequest(
+    "GET",
+    "/prioridad",
+    null,
+    "No fue posible obtener las prioridades."
+  );
+
+  const list = Array.isArray(data) ? data : (data?.data ?? data?.prioridades ?? []);
+  const map = {};
+
+  list.forEach((item) => {
+    const nombre = String(item?.nombre ?? "").trim().toUpperCase();
+    const id = Number(item?.id_prioridad ?? item?.idPrioridad ?? item?.id);
+    if (!nombre || !Number.isFinite(id) || id <= 0) return;
+    map[nombre] = id;
+  });
+
+  return map;
+}
+
+/**
+ * Crea un reporte de danio con evidencias
+ * Backend espera multipart/form-data con:
+ * - datos: JSON { activoId, tipoFalla, descripcion, prioridadId }
+ * - archivos: List<MultipartFile>
+ */
+export async function createReporte({ activoId, tipoFalla, descripcion, prioridadId, archivos }) {
+  const resolvedActivoId = Number(activoId);
+  const resolvedPrioridadId = Number(prioridadId);
+  const normalizedTipoFalla = String(tipoFalla ?? "").trim();
+  const normalizedDescripcion = String(descripcion ?? "").trim();
+  const evidenceFiles = Array.isArray(archivos) ? archivos.filter(Boolean) : [];
+
+  if (!Number.isFinite(resolvedActivoId) || resolvedActivoId <= 0) {
+    const error = new Error("El activo es obligatorio.");
+    error.status = 400;
+    throw error;
+  }
+
+  if (!normalizedTipoFalla) {
+    const error = new Error("El tipo de falla es obligatorio.");
+    error.status = 400;
+    throw error;
+  }
+
+  if (!normalizedDescripcion) {
+    const error = new Error("La descripcion es obligatoria.");
+    error.status = 400;
+    throw error;
+  }
+
+  if (!Number.isFinite(resolvedPrioridadId) || resolvedPrioridadId <= 0) {
+    const error = new Error("La prioridad es obligatoria.");
+    error.status = 400;
+    throw error;
+  }
+
+  if (!evidenceFiles.length) {
+    const error = new Error("Debes subir al menos una evidencia.");
+    error.status = 400;
+    throw error;
+  }
+
+  const dto = {
+    activoId: resolvedActivoId,
+    tipoFalla: normalizedTipoFalla,
+    descripcion: normalizedDescripcion,
+    prioridadId: resolvedPrioridadId,
+  };
+
+  const formData = new FormData();
+  formData.append("datos", new Blob([JSON.stringify(dto)], { type: "application/json" }));
+  evidenceFiles.forEach((file) => {
+    formData.append("archivos", file);
+  });
+
+  const data = await apiRequest("/reporte", "POST", formData);
+  return normalizeReporte(data?.data ?? data);
 }

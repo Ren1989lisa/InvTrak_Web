@@ -32,8 +32,9 @@ export const editarPerfilSchema = z.object({
 
 export const reportarBienSchema = z.object({
   etiqueta: z.string().min(1, "La etiqueta del bien es obligatoria"),
-  estatus: z.string().optional(),
-  descripcion: z.string().optional(),
+  tipoFalla: z.string().min(1, "El tipo de falla es obligatorio"),
+  prioridad: z.string().min(1, "La prioridad es obligatoria"),
+  descripcion: z.string().trim().min(1, "La descripcion es obligatoria"),
 });
 
 export const registroBienSchema = z.object({
