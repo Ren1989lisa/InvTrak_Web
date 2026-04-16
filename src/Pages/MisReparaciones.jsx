@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { Alert, Card, Col, Container, Row } from "react-bootstrap";
+import { useEffect, useMemo, useState } from "react";
+import { Alert, Card, Col, Container, Row, Spinner } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 
 import NavbarMenu from "../Components/NavbarMenu";
@@ -7,8 +7,10 @@ import SearchBar from "../Components/SearchBar";
 import SidebarMenu from "../Components/SidebarMenu";
 import FiltersModal from "../Components/FiltersModal";
 import { useUsers } from "../context/UsersContext";
-import { getStoredReportes } from "../reportesStorage";
-import { getStoredActivos } from "../activosStorage";
+import {
+  getMantenimientosByTecnico,
+  isMantenimientoActivo,
+} from "../services/mantenimientoService";
 import "../Style/bienes-registrados.css";
 import "../Style/sidebar.css";
 
@@ -84,29 +86,69 @@ export default function MisReparaciones() {
   const [openSidebar, setOpenSidebar] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [appliedFilters, setAppliedFilters] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [mantenimientos, setMantenimientos] = useState([]);
   const navigate = useNavigate();
   const { currentUser, logout, menuItems } = useUsers();
 
-  const reportes = useMemo(() => getStoredReportes(), []);
-  const activos = useMemo(() => getStoredActivos(), []);
   const query = search.trim().toLowerCase();
 
-  const activosMap = useMemo(
-    () => new Map(activos.map((a) => [Number(a?.id_activo), a])),
-    [activos]
-  );
+  useEffect(() => {
+    let active = true;
 
-  const misReportes = useMemo(() => {
-    const idTecnico = Number(currentUser?.id_usuario);
-    return reportes.filter((r) => Number(r?.id_tecnico_asignado) === idTecnico);
-  }, [reportes, currentUser?.id_usuario]);
+    async function loadMantenimientos() {
+      const tecnicoId = Number(currentUser?.id_usuario ?? currentUser?.idUsuario ?? currentUser?.id);
+      if (!Number.isFinite(tecnicoId) || tecnicoId <= 0) {
+        if (!active) return;
+        setMantenimientos([]);
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
+      setErrorMessage("");
+
+      try {
+        const list = await getMantenimientosByTecnico(tecnicoId);
+        if (!active) return;
+        setMantenimientos(Array.isArray(list) ? list : []);
+      } catch (error) {
+        if (!active) return;
+        setMantenimientos([]);
+        setErrorMessage(error?.message || "No fue posible cargar tus reparaciones.");
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    }
+
+    loadMantenimientos();
+    return () => {
+      active = false;
+    };
+  }, [currentUser?.id_usuario, currentUser?.idUsuario, currentUser?.id]);
 
   const reportesConActivo = useMemo(() => {
-    return misReportes.map((r) => ({
-      reporte: r,
-      activo: activosMap.get(Number(r?.id_activo)),
-    }));
-  }, [misReportes, activosMap]);
+    return mantenimientos
+      .map((mantenimiento) => {
+        if (!isMantenimientoActivo(mantenimiento?.estatus)) return null;
+
+        const reporte = mantenimiento?.reporte ?? {};
+        const activo = reporte?.activo ?? null;
+        if (!activo) return null;
+
+        return {
+          reporte: {
+            ...reporte,
+            id_reporte: reporte?.id_reporte ?? reporte?.idReporte ?? reporte?.id,
+            prioridad: mantenimiento?.prioridad_nombre ?? "MEDIA",
+            estatus: mantenimiento?.estatus ?? reporte?.estatus,
+          },
+          activo,
+        };
+      })
+      .filter(Boolean);
+  }, [mantenimientos]);
 
   const ubicaciones = useMemo(() => {
     const values = new Map();
@@ -209,13 +251,26 @@ export default function MisReparaciones() {
           ubicaciones={ubicaciones}
         />
 
-        {misReportes.length === 0 ? (
-          <Alert variant="info" className="mt-3">
-            No tienes reportes asignados para reparar. El administrador te asignara mantenimientos cuando haya reportes pendientes.
+        {isLoading ? (
+          <Alert variant="info" className="mt-3 d-flex align-items-center gap-2">
+            <Spinner animation="border" size="sm" />
+            Cargando reparaciones...
           </Alert>
         ) : null}
 
-        {misReportes.length > 0 && filtrados.length === 0 ? (
+        {errorMessage ? (
+          <Alert variant="danger" className="mt-3">
+            {errorMessage}
+          </Alert>
+        ) : null}
+
+        {!isLoading && !errorMessage && reportesConActivo.length === 0 ? (
+          <Alert variant="info" className="mt-3">
+            No tienes bienes asignados para reparar.
+          </Alert>
+        ) : null}
+
+        {!isLoading && !errorMessage && reportesConActivo.length > 0 && filtrados.length === 0 ? (
           <Alert variant="info" className="mt-3">
             No hay reparaciones que coincidan con los filtros.
           </Alert>

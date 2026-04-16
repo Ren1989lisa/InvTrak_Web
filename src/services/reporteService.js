@@ -1,5 +1,6 @@
 import { API_BASE_URL } from "../api/apiClient";
 import { apiRequest } from "./api";
+import { normalizeActivo } from "../utils/entityFields";
 
 function getStoredToken() {
   return (
@@ -64,8 +65,9 @@ async function authRequest(method, endpoint, body, defaultMessage) {
 function normalizeReporte(raw) {
   if (!raw || typeof raw !== "object") return raw;
 
-  const activo = raw.activo ?? {};
+  const activo = normalizeActivo(raw.activo ?? {});
   const prioridad = raw.prioridad ?? {};
+  const tecnico = raw.tecnico ?? raw.usuarioTecnico ?? {};
   const prioridadNombre = (
     prioridad.nombre ??
     prioridad.prioridad ??
@@ -75,6 +77,8 @@ function normalizeReporte(raw) {
     .toString()
     .trim()
     .toUpperCase();
+  const evidencias = Array.isArray(raw?.evidencias) ? raw.evidencias : [];
+  const fotosEvidencia = extractEvidenceUrls(evidencias);
 
   return {
     id_reporte: raw.id_reporte ?? raw.idReporte ?? null,
@@ -86,15 +90,71 @@ function normalizeReporte(raw) {
     estatus: raw.estatus ?? "ABIERTO",
     prioridad: prioridadNombre,
     prioridad_id: prioridad.id_prioridad ?? prioridad.idPrioridad ?? null,
-    id_activo: activo.idActivo ?? activo.id_activo ?? null,
-    activo: {
-      id_activo: activo.idActivo ?? activo.id_activo ?? null,
-      etiqueta_bien: activo.etiquetaBien ?? activo.etiqueta_bien ?? "",
-      numero_serie: activo.numeroSerie ?? activo.numero_serie ?? "",
-      descripcion: activo.descripcion ?? "",
-    },
-    evidencias: Array.isArray(raw?.evidencias) ? raw.evidencias : [],
+    id_activo: activo.id_activo ?? activo.idActivo ?? null,
+    id_tecnico_asignado:
+      raw.id_tecnico_asignado ??
+      raw.idTecnicoAsignado ??
+      tecnico.id_usuario ??
+      tecnico.idUsuario ??
+      tecnico.id ??
+      null,
+    tecnico,
+    activo,
+    evidencias,
+    fotos_evidencia: fotosEvidencia,
   };
+}
+
+function toAbsoluteEvidenceUrl(value) {
+  const rawValue = String(value ?? "").trim();
+  if (!rawValue) return "";
+
+  if (/^data:/i.test(rawValue) || /^blob:/i.test(rawValue) || /^https?:\/\//i.test(rawValue)) {
+    return rawValue;
+  }
+
+  const apiOrigin = API_BASE_URL.replace(/\/api$/i, "");
+  if (rawValue.startsWith("/")) {
+    return `${apiOrigin}${rawValue}`;
+  }
+
+  return `${apiOrigin}/${rawValue}`;
+}
+
+function extractEvidenceUrls(evidencias = []) {
+  if (!Array.isArray(evidencias)) return [];
+
+  const urls = [];
+  evidencias.forEach((item) => {
+    if (!item) return;
+
+    if (typeof item === "string") {
+      const resolved = toAbsoluteEvidenceUrl(item);
+      if (resolved) urls.push(resolved);
+      return;
+    }
+
+    const candidates = [
+      item.url,
+      item.urlArchivo,
+      item.ruta,
+      item.rutaArchivo,
+      item.path,
+      item.uri,
+      item.archivo,
+      item.archivoUrl,
+      item.imagen,
+      item.imagenUrl,
+    ];
+
+    const firstValid = candidates.find((candidate) => String(candidate ?? "").trim());
+    if (!firstValid) return;
+
+    const resolved = toAbsoluteEvidenceUrl(firstValid);
+    if (resolved) urls.push(resolved);
+  });
+
+  return Array.from(new Set(urls));
 }
 
 /**
@@ -134,6 +194,24 @@ export async function getReportesByActivo(activoId) {
 
   const list = Array.isArray(data) ? data : (data?.data ?? data?.reportes ?? []);
   return list.map(normalizeReporte);
+}
+
+export async function getReporteById(reporteId) {
+  const resolvedId = Number(reporteId);
+  if (!Number.isFinite(resolvedId) || resolvedId <= 0) {
+    const error = new Error("El ID del reporte es obligatorio.");
+    error.status = 400;
+    throw error;
+  }
+
+  // Backend actual no expone GET /api/reporte/{id}. Se resuelve desde la coleccion.
+  const reportes = await getReportes();
+  const found = reportes.find((item) => Number(item?.id_reporte) === resolvedId);
+  if (found) return found;
+
+  const notFoundError = new Error("Reporte no encontrado.");
+  notFoundError.status = 404;
+  throw notFoundError;
 }
 
 /**

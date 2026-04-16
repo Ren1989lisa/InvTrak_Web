@@ -1,27 +1,25 @@
-import { useMemo, useState, useRef } from "react";
-import { Alert, Button, Card, Col, Container, Row } from "react-bootstrap";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Alert, Button, Card, Col, Container, Row, Spinner } from "react-bootstrap";
 import { useNavigate, useParams } from "react-router-dom";
 import { BsCloudUpload } from "react-icons/bs";
 
 import NavbarMenu from "../Components/NavbarMenu";
 import SidebarMenu from "../Components/SidebarMenu";
 import FormInput from "../Components/FormInput";
-import FormSelect from "../Components/FormSelect";
 import { useUsers } from "../context/UsersContext";
-import { getStoredReportes, updateReporteTecnico } from "../reportesStorage";
+import { updateReporteEstatus, updateReporteTecnico } from "../reportesStorage";
 import { getStoredActivos, saveActivos } from "../activosStorage";
+import { getReporteById } from "../services/reporteService";
+import {
+  atenderMantenimiento,
+  cerrarMantenimiento,
+  getMantenimientosByTecnico,
+} from "../services/mantenimientoService";
 import { ESTATUS_ACTIVO } from "../config/estatusActivo";
-import { ESTATUS_MANTENIMIENTO } from "../config/databaseEnums";
+import { ESTATUS_REPORTE_DANIO } from "../config/databaseEnums";
 import "../Style/bienes-registrados.css";
 import "../Style/sidebar.css";
 import "../Style/reporte-tecnico.css";
-
-const ESTATUS_FINAL_OPTIONS = [
-  { value: ESTATUS_MANTENIMIENTO.PENDIENTE, label: "Pendiente" },
-  { value: ESTATUS_MANTENIMIENTO.EN_PROCESO, label: "En proceso" },
-  { value: ESTATUS_MANTENIMIENTO.EN_MANTENIMIENTO, label: "En mantenimiento" },
-  { value: ESTATUS_MANTENIMIENTO.RESUELTO, label: "Resuelto" },
-];
 
 export default function ReporteTecnico() {
   const { id } = useParams();
@@ -29,80 +27,200 @@ export default function ReporteTecnico() {
   const [openSidebar, setOpenSidebar] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
-  const [estatusFinal, setEstatusFinal] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
   const [diagnostico, setDiagnostico] = useState("");
   const [accionesRealizadas, setAccionesRealizadas] = useState("");
   const [archivos, setArchivos] = useState([]);
+  const [reporte, setReporte] = useState(null);
+  const [mantenimientoAsignado, setMantenimientoAsignado] = useState(null);
   const fileInputRef = useRef(null);
+  const archivosRef = useRef([]);
 
   const { currentUser, logout, menuItems } = useUsers();
-
-  const reportes = useMemo(() => getStoredReportes(), []);
-  const activos = useMemo(() => getStoredActivos(), []);
   const idReporte = Number(id);
 
-  const reporte = useMemo(
-    () => reportes.find((r) => Number(r?.id_reporte) === idReporte),
-    [reportes, idReporte]
-  );
+  useEffect(() => {
+    let active = true;
 
-  const activo = useMemo(
-    () => activos.find((a) => Number(a?.id_activo) === Number(reporte?.id_activo)),
-    [activos, reporte]
-  );
+    async function loadReporteForTecnico() {
+      if (!Number.isFinite(idReporte) || idReporte <= 0) {
+        if (!active) return;
+        setReporte(null);
+        setErrorMessage("ID de reporte no valido.");
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
+      setErrorMessage("");
+      setMantenimientoAsignado(null);
+
+      try {
+        const data = await getReporteById(idReporte);
+        if (!active) return;
+
+        const tecnicoId = Number(
+          currentUser?.id_usuario ?? currentUser?.idUsuario ?? currentUser?.id
+        );
+        const role = String(currentUser?.rol ?? "").trim().toLowerCase();
+
+        setReporte(data ?? null);
+
+        if (role === "tecnico" && Number.isFinite(tecnicoId) && tecnicoId > 0) {
+          try {
+            const mantenimientos = await getMantenimientosByTecnico(tecnicoId);
+            if (!active) return;
+
+            const found = (Array.isArray(mantenimientos) ? mantenimientos : []).find(
+              (item) =>
+                Number(item?.reporte?.id_reporte ?? item?.reporte?.idReporte) === Number(idReporte)
+            );
+
+            if (found) {
+              setMantenimientoAsignado(found);
+              if (found?.reporte) {
+                setReporte((prev) => ({
+                  ...(prev ?? {}),
+                  id_tecnico_asignado: tecnicoId,
+                  estatus: found?.estatus ?? prev?.estatus,
+                  activo: found?.reporte?.activo ?? prev?.activo ?? null,
+                }));
+              }
+            }
+          } catch {
+            // Si falla este fallback, el tecnico puede seguir viendo el reporte.
+          }
+        }
+      } catch (error) {
+        const tecnicoId = Number(
+          currentUser?.id_usuario ?? currentUser?.idUsuario ?? currentUser?.id
+        );
+        const role = String(currentUser?.rol ?? "").trim().toLowerCase();
+
+        if (role === "tecnico" && Number.isFinite(tecnicoId) && tecnicoId > 0) {
+          try {
+            const mantenimientos = await getMantenimientosByTecnico(tecnicoId);
+            if (!active) return;
+
+            const found = (Array.isArray(mantenimientos) ? mantenimientos : []).find(
+              (item) =>
+                Number(item?.reporte?.id_reporte ?? item?.reporte?.idReporte) === Number(idReporte)
+            );
+
+            if (found?.reporte) {
+              setMantenimientoAsignado(found);
+              setReporte({
+                ...found.reporte,
+                id_mantenimiento: found?.id_mantenimiento ?? found?.idMantenimiento ?? found?.id,
+                id_tecnico_asignado: tecnicoId,
+                estatus: found?.estatus ?? found?.reporte?.estatus,
+                activo: found?.reporte?.activo ?? null,
+              });
+              return;
+            }
+          } catch {
+            // Si tambien falla, mostramos el error original.
+          }
+        }
+
+        if (!active) return;
+        setReporte(null);
+        setErrorMessage(error?.message || "No fue posible cargar el reporte.");
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    }
+
+    loadReporteForTecnico();
+    return () => {
+      active = false;
+    };
+  }, [idReporte, currentUser?.rol, currentUser?.id_usuario, currentUser?.idUsuario, currentUser?.id]);
+
+  useEffect(() => {
+    archivosRef.current = archivos;
+  }, [archivos]);
+
+  useEffect(() => {
+    return () => {
+      archivosRef.current.forEach((item) => {
+        if (item?.url) URL.revokeObjectURL(item.url);
+      });
+    };
+  }, []);
+
+  useEffect(() => {
+    setDiagnostico(String(reporte?.diagnostico ?? "").trim());
+    setAccionesRealizadas(String(reporte?.acciones_realizadas ?? "").trim());
+  }, [reporte]);
+
+  const activo = useMemo(() => reporte?.activo ?? null, [reporte]);
 
   const etiquetaBien = useMemo(
     () => activo?.etiqueta_bien ?? reporte?.folio ?? "",
     [activo, reporte]
   );
 
-  const isTecnicoAsignado = useMemo(
-    () => Number(reporte?.id_tecnico_asignado) === Number(currentUser?.id_usuario),
-    [reporte, currentUser]
-  );
+  const isTecnicoAsignado = useMemo(() => {
+    const role = String(currentUser?.rol ?? "").trim().toLowerCase();
+    if (role !== "tecnico") return false;
 
-  const handleFileChange = (e) => {
-    const files = Array.from(e.target?.files ?? []);
+    const currentUserId = Number(
+      currentUser?.id_usuario ?? currentUser?.idUsuario ?? currentUser?.id
+    );
+    const tecnicoIdAsignado = Number(
+      reporte?.id_tecnico_asignado ??
+        reporte?.tecnico?.id_usuario ??
+        reporte?.tecnico?.idUsuario ??
+        reporte?.tecnico?.id
+    );
+
+    if (!Number.isFinite(tecnicoIdAsignado) || tecnicoIdAsignado <= 0) {
+      return true;
+    }
+
+    return Number.isFinite(currentUserId) && currentUserId === tecnicoIdAsignado;
+  }, [reporte, currentUser?.rol, currentUser?.id_usuario, currentUser?.idUsuario, currentUser?.id]);
+
+  const handleFileChange = (event) => {
+    const files = Array.from(event.target?.files ?? []);
     if (files.length === 0) return;
-    const newPreviews = files.map((f) => {
-      const url = URL.createObjectURL(f);
-      return { file: f, url };
+    const newPreviews = files.map((file) => {
+      const url = URL.createObjectURL(file);
+      return { file, url };
     });
-    setArchivos((prev) => {
-      prev.forEach((p) => URL.revokeObjectURL(p.url));
-      return [...prev, ...newPreviews];
-    });
+    setArchivos((prev) => [...prev, ...newPreviews]);
     setErrorMessage("");
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const handleRemoveArchivo = (idx) => {
+  const handleRemoveArchivo = (index) => {
     setArchivos((prev) => {
-      const next = prev.filter((_, i) => i !== idx);
-      const removed = prev[idx];
+      const next = prev.filter((_, currentIndex) => currentIndex !== index);
+      const removed = prev[index];
       if (removed?.url) URL.revokeObjectURL(removed.url);
       return next;
     });
   };
 
-  const handleDrop = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const files = Array.from(e.dataTransfer?.files ?? []).filter(
-      (f) => f.type.startsWith("image/") || f.type.startsWith("video/")
+  const handleDrop = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const files = Array.from(event.dataTransfer?.files ?? []).filter(
+      (file) => file.type.startsWith("image/") || file.type.startsWith("video/")
     );
     if (files.length === 0) return;
-    const newPreviews = files.map((f) => ({
-      file: f,
-      url: URL.createObjectURL(f),
+    const newPreviews = files.map((file) => ({
+      file,
+      url: URL.createObjectURL(file),
     }));
     setArchivos((prev) => [...prev, ...newPreviews]);
     setErrorMessage("");
   };
 
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleDragOver = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
   };
 
   const fileToBase64 = (file) =>
@@ -113,44 +231,165 @@ export default function ReporteTecnico() {
       reader.readAsDataURL(file);
     });
 
+  const mapSubmitError = (error) => {
+    const status = Number(error?.status ?? 0);
+    if (status === 401) return "Sesion expirada. Inicia sesion nuevamente.";
+    if (status === 403) return "No tienes permisos para cerrar esta reparacion.";
+    if (status === 404) return "No se encontro el mantenimiento del reporte.";
+    if (status === 400) return error?.message || "Datos invalidos para guardar la reparacion.";
+    if (status === 500) return "No fue posible guardar la reparacion. Intenta nuevamente.";
+    return error?.message || "No fue posible guardar la reparacion.";
+  };
+
+  const resolveMantenimientoId = async () => {
+    const candidateId = Number(
+      mantenimientoAsignado?.id_mantenimiento ??
+        mantenimientoAsignado?.idMantenimiento ??
+        mantenimientoAsignado?.id ??
+        reporte?.id_mantenimiento ??
+        reporte?.idMantenimiento
+    );
+
+    if (Number.isFinite(candidateId) && candidateId > 0) {
+      return candidateId;
+    }
+
+    const tecnicoId = Number(
+      currentUser?.id_usuario ?? currentUser?.idUsuario ?? currentUser?.id
+    );
+
+    if (!Number.isFinite(tecnicoId) || tecnicoId <= 0) {
+      const error = new Error("No se encontro la sesion del tecnico.");
+      error.status = 401;
+      throw error;
+    }
+
+    const mantenimientos = await getMantenimientosByTecnico(tecnicoId);
+    const found = (Array.isArray(mantenimientos) ? mantenimientos : []).find(
+      (item) => Number(item?.reporte?.id_reporte ?? item?.reporte?.idReporte) === Number(idReporte)
+    );
+
+    const foundId = Number(found?.id_mantenimiento ?? found?.idMantenimiento ?? found?.id);
+    if (!Number.isFinite(foundId) || foundId <= 0) {
+      const error = new Error("No se encontro mantenimiento asignado para este reporte.");
+      error.status = 404;
+      throw error;
+    }
+
+    setMantenimientoAsignado(found);
+    return foundId;
+  };
+
   const handleSubmit = async () => {
     setErrorMessage("");
     setSuccessMessage("");
 
-    if (!estatusFinal?.trim()) {
-      setErrorMessage("Selecciona el estatus final.");
+    const diagnosticoLimpio = diagnostico.trim();
+    const accionesLimpias = accionesRealizadas.trim();
+
+    if (!diagnosticoLimpio) {
+      setErrorMessage("El diagnostico es obligatorio.");
       return;
     }
 
-    const fotosBase64 = await Promise.all(archivos.map((a) => fileToBase64(a.file)));
-    updateReporteTecnico(idReporte, {
-      estatus: estatusFinal,
-      diagnostico: diagnostico.trim(),
-      acciones_realizadas: accionesRealizadas.trim(),
-      fotos_trabajo: fotosBase64,
-    });
-
-    const idActivo = Number(reporte?.id_activo);
-    if (idActivo) {
-      const todosActivos = getStoredActivos();
-      const normalizar = (s) => String(s ?? "").trim().toUpperCase();
-      const actualizados = todosActivos.map((a) =>
-        Number(a?.id_activo) === idActivo &&
-        normalizar(a?.estatus) === ESTATUS_ACTIVO.MANTENIMIENTO
-          ? { ...a, estatus: ESTATUS_ACTIVO.RESGUARDADO }
-          : a
-      );
-      saveActivos(actualizados);
+    if (!accionesLimpias) {
+      setErrorMessage("Las acciones realizadas son obligatorias.");
+      return;
     }
 
-    setSuccessMessage("Reporte técnico guardado correctamente.");
-    setTimeout(() => navigate(`/reporte/${idReporte}`), 1200);
+    if (archivos.length === 0) {
+      setErrorMessage("Debes subir al menos una evidencia para completar la reparacion.");
+      return;
+    }
+
+    try {
+      const mantenimientoId = await resolveMantenimientoId();
+      const fotosBase64 = await Promise.all(archivos.map((item) => fileToBase64(item.file)));
+      const archivosAdjuntos = archivos.map((item) => item.file).filter(Boolean);
+
+      await atenderMantenimiento({
+        mantenimientoId,
+        diagnostico: diagnosticoLimpio,
+        accionesRealizadas: accionesLimpias,
+        piezasUtilizadas: "",
+        fotos: archivosAdjuntos,
+      });
+
+      const mantenimientoCerrado = await cerrarMantenimiento({
+        mantenimientoId,
+        estatusFinal: "REPARADO",
+        observaciones: accionesLimpias || diagnosticoLimpio,
+      });
+
+      // Mantiene compatibilidad con el flujo local existente.
+      updateReporteTecnico(idReporte, {
+        diagnostico: diagnosticoLimpio,
+        acciones_realizadas: accionesLimpias,
+        fotos_trabajo: fotosBase64,
+      });
+      updateReporteEstatus(idReporte, ESTATUS_REPORTE_DANIO.RESUELTO);
+
+      const idActivo = Number(reporte?.id_activo ?? reporte?.activo?.id_activo);
+      if (idActivo) {
+        const todosActivos = getStoredActivos();
+        const actualizados = todosActivos.map((item) =>
+          Number(item?.id_activo) === idActivo
+            ? { ...item, estatus: ESTATUS_ACTIVO.RESGUARDADO }
+            : item
+        );
+        saveActivos(actualizados);
+      }
+
+      setMantenimientoAsignado((prev) =>
+        prev
+          ? {
+              ...prev,
+              estatus: mantenimientoCerrado?.estatus ?? "REPARADO",
+            }
+          : prev
+      );
+
+      setReporte((prev) =>
+        prev
+          ? {
+              ...prev,
+              estatus: mantenimientoCerrado?.estatus ?? "REPARADO",
+              activo: prev?.activo
+                ? { ...prev.activo, estatus: ESTATUS_ACTIVO.RESGUARDADO }
+                : prev?.activo,
+            }
+          : prev
+      );
+
+      window.dispatchEvent(new CustomEvent("invtrack-reportes-changed"));
+      window.dispatchEvent(new CustomEvent("invtrack-mantenimientos-changed"));
+      window.dispatchEvent(new CustomEvent("invtrack-activos-changed"));
+
+      setSuccessMessage("Reparacion guardada correctamente.");
+      setTimeout(() => navigate("/mis-reparaciones"), 1200);
+    } catch (error) {
+      setErrorMessage(mapSubmitError(error));
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="inv-page">
+        <Container fluid className="inv-content px-3 px-md-4 py-3">
+          <Alert variant="info" className="d-flex align-items-center gap-2">
+            <Spinner animation="border" size="sm" />
+            Cargando reporte...
+          </Alert>
+        </Container>
+      </div>
+    );
+  }
 
   if (!reporte) {
     return (
       <div className="inv-page">
         <Container fluid className="inv-content px-3 px-md-4 py-3">
+          {errorMessage ? <Alert variant="danger">{errorMessage}</Alert> : null}
           <p className="text-muted">Reporte no encontrado.</p>
           <Button variant="primary" onClick={() => navigate("/mis-reparaciones")}>
             Volver
@@ -175,10 +414,7 @@ export default function ReporteTecnico() {
 
   return (
     <div className="inv-page inv-reporte-tecnico-page">
-      <NavbarMenu
-        title="Reporte Técnico"
-        onMenuClick={() => setOpenSidebar((v) => !v)}
-      />
+      <NavbarMenu title="Reporte Tecnico" onMenuClick={() => setOpenSidebar((value) => !value)} />
 
       <SidebarMenu
         open={openSidebar}
@@ -204,56 +440,39 @@ export default function ReporteTecnico() {
           className="inv-reporte-tecnico-back"
           onClick={() => navigate(-1)}
         >
-          ← Regresar
+          {"<- Regresar"}
         </Button>
 
-        {errorMessage && (
+        {errorMessage ? (
           <Alert variant="danger" className="mt-2" dismissible onClose={() => setErrorMessage("")}>
             {errorMessage}
           </Alert>
-        )}
-        {successMessage && (
-          <Alert variant="success" className="mt-2">{successMessage}</Alert>
-        )}
+        ) : null}
+        {successMessage ? <Alert variant="success" className="mt-2">{successMessage}</Alert> : null}
 
         <Card className="inv-reporte-tecnico-card shadow-sm border-0">
           <Card.Body className="inv-reporte-tecnico-card__body">
             <Row>
-              <Col xs={12} md={6}>
-                <FormInput
-                  label="Etiqueta del bien"
-                  name="etiqueta"
-                  value={etiquetaBien}
-                  disabled
-                />
-              </Col>
-              <Col xs={12} md={6}>
-                <FormSelect
-                  label="Estatus Final"
-                  name="estatusFinal"
-                  value={estatusFinal}
-                  onChange={(e) => setEstatusFinal(e.target.value)}
-                  options={ESTATUS_FINAL_OPTIONS}
-                  placeholder="Selecciona final"
-                />
+              <Col xs={12}>
+                <FormInput label="Etiqueta del bien" name="etiqueta" value={etiquetaBien} disabled />
               </Col>
             </Row>
 
             <FormInput
-              label="Diagnóstico"
+              label="Diagnostico"
               name="diagnostico"
               value={diagnostico}
-              onChange={(e) => setDiagnostico(e.target.value)}
+              onChange={(event) => setDiagnostico(event.target.value)}
               as="textarea"
               rows={4}
-              placeholder="Describe los detalles del Diagnóstico"
+              placeholder="Describe los detalles del Diagnostico"
             />
 
             <FormInput
               label="Acciones realizadas"
               name="accionesRealizadas"
               value={accionesRealizadas}
-              onChange={(e) => setAccionesRealizadas(e.target.value)}
+              onChange={(event) => setAccionesRealizadas(event.target.value)}
               as="textarea"
               rows={4}
               placeholder="Describe las Acciones realizadas"
@@ -261,7 +480,7 @@ export default function ReporteTecnico() {
 
             <div className="inv-reporte-tecnico-upload mb-3">
               <label className="form-label inv-reporte-tecnico-upload__label">
-                Subir Imágenes o videos
+                Subir Imagenes o videos
               </label>
               <div
                 className="inv-reporte-tecnico-upload-zone"
@@ -278,41 +497,39 @@ export default function ReporteTecnico() {
                   onChange={handleFileChange}
                 />
                 <BsCloudUpload className="inv-reporte-tecnico-upload-icon" />
-                <span>Arrastra o selecciona una Imagen o video</span>
+                <span>Arrastra o selecciona una imagen o video</span>
               </div>
-              {archivos.length > 0 && (
+
+              {archivos.length > 0 ? (
                 <div className="inv-reporte-tecnico-thumbnails">
-                  {archivos.map((item, idx) => (
+                  {archivos.map((item, index) => (
                     <div
-                      key={idx}
+                      key={`${item.url}-${index}`}
                       className="inv-reporte-tecnico-thumb"
-                      onClick={() => handleRemoveArchivo(idx)}
+                      onClick={() => handleRemoveArchivo(index)}
                     >
                       {item.file?.type?.startsWith("video/") ? (
                         <video src={item.url} className="inv-reporte-tecnico-thumb-media" muted />
                       ) : (
                         <img
                           src={item.url}
-                          alt={`Preview ${idx + 1}`}
+                          alt={`Preview ${index + 1}`}
                           className="inv-reporte-tecnico-thumb-media"
                         />
                       )}
-                      <span className="inv-reporte-tecnico-thumb-remove">×</span>
+                      <span className="inv-reporte-tecnico-thumb-remove">x</span>
                     </div>
                   ))}
                 </div>
-              )}
+              ) : null}
             </div>
 
             <div className="inv-reporte-tecnico-actions">
-              <Button
-                variant="secondary"
-                onClick={() => navigate(-1)}
-              >
+              <Button variant="secondary" onClick={() => navigate(-1)}>
                 Cancelar
               </Button>
               <Button variant="primary" onClick={handleSubmit}>
-                Guardar
+                Subir reparacion
               </Button>
             </div>
           </Card.Body>

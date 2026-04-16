@@ -1,16 +1,15 @@
-import { useMemo, useState } from "react";
-import { Button, Card, Carousel, Col, Container, Row } from "react-bootstrap";
+import { useEffect, useMemo, useState } from "react";
+import { Alert, Button, Card, Carousel, Container, Spinner } from "react-bootstrap";
 import { useNavigate, useParams } from "react-router-dom";
-import { BsInfoCircle } from "react-icons/bs";
-import { BsImage } from "react-icons/bs";
+import { BsImage, BsInfoCircle } from "react-icons/bs";
 
 import NavbarMenu from "../Components/NavbarMenu";
 import SidebarMenu from "../Components/SidebarMenu";
 import { useUsers } from "../context/UsersContext";
-import { getStoredReportes } from "../reportesStorage";
-import { getStoredActivos } from "../activosStorage";
 import { getEstadoDisplay } from "../config/estatusActivo";
 import { ESTATUS_REPORTE_DANIO } from "../config/databaseEnums";
+import { getReporteById } from "../services/reporteService";
+import { getMantenimientosByTecnico } from "../services/mantenimientoService";
 import "../Style/bienes-registrados.css";
 import "../Style/sidebar.css";
 import "../Style/informacion-reporte.css";
@@ -24,40 +23,147 @@ const ESTADOS_OPCIONES = [
 
 function getEstadoLabel(estatus) {
   const opt = ESTADOS_OPCIONES.find((o) => o.value === estatus);
-  return opt ? opt.label : (estatus || "Pendiente");
+  return opt ? opt.label : estatus || "Pendiente";
 }
 
 function formatFecha(fecha) {
   if (!fecha) return "-";
   const d = new Date(fecha);
-  return `${String(d.getDate()).padStart(2, "0")}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getFullYear()).slice(-2)}`;
+  if (Number.isNaN(d.getTime())) return "-";
+  return `${String(d.getDate()).padStart(2, "0")}-${String(d.getMonth() + 1).padStart(
+    2,
+    "0"
+  )}-${String(d.getFullYear()).slice(-2)}`;
+}
+
+function resolveProductoDisplay(activo) {
+  const producto = activo?.producto ?? {};
+  const candidates = [
+    producto?.codigo,
+    producto?.clave,
+    producto?.nombre,
+    producto?.completo,
+    producto?.tipo_activo,
+    activo?.tipo_activo,
+    activo?.etiqueta_bien,
+  ];
+
+  for (const candidate of candidates) {
+    const value = String(candidate ?? "").trim();
+    if (value) return value;
+  }
+
+  return "-";
 }
 
 export default function InformacionReporte() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [openSidebar, setOpenSidebar] = useState(false);
-
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [reporte, setReporte] = useState(null);
   const { currentUser, logout, menuItems } = useUsers();
 
-  const reportes = useMemo(() => getStoredReportes(), []);
-  const activos = useMemo(() => getStoredActivos(), []);
   const idReporte = Number(id);
 
-  const reporte = useMemo(
-    () => reportes.find((r) => Number(r?.id_reporte) === idReporte),
-    [reportes, idReporte]
-  );
+  useEffect(() => {
+    let active = true;
 
-  const activo = useMemo(
-    () => activos.find((a) => Number(a?.id_activo) === Number(reporte?.id_activo)),
-    [activos, reporte]
-  );
+    async function loadReporte() {
+      if (!Number.isFinite(idReporte) || idReporte <= 0) {
+        if (!active) return;
+        setIsLoading(false);
+        setReporte(null);
+        setErrorMessage("ID de reporte no valido.");
+        return;
+      }
 
-  const isTecnicoAsignado = useMemo(
-    () => Number(reporte?.id_tecnico_asignado) === Number(currentUser?.id_usuario),
-    [reporte, currentUser]
-  );
+      setIsLoading(true);
+      setErrorMessage("");
+
+      try {
+        const data = await getReporteById(idReporte);
+        if (!active) return;
+        setReporte(data ?? null);
+      } catch (error) {
+        const role = String(currentUser?.rol ?? "").trim().toLowerCase();
+        const tecnicoId = Number(
+          currentUser?.id_usuario ?? currentUser?.idUsuario ?? currentUser?.id
+        );
+
+        // Fallback tecnico: cargar reporte desde mantenimientos asignados.
+        if (role === "tecnico" && Number.isFinite(tecnicoId) && tecnicoId > 0) {
+          try {
+            const mantenimientos = await getMantenimientosByTecnico(tecnicoId);
+            if (!active) return;
+
+            const found = (Array.isArray(mantenimientos) ? mantenimientos : []).find(
+              (item) =>
+                Number(item?.reporte?.id_reporte ?? item?.reporte?.idReporte) === Number(idReporte)
+            );
+
+            if (found?.reporte) {
+              const reporteFromMantenimiento = {
+                ...found.reporte,
+                id_tecnico_asignado: tecnicoId,
+                prioridad: found?.prioridad_nombre ?? found?.reporte?.prioridad ?? "MEDIA",
+                prioridad_nombre:
+                  found?.prioridad_nombre ?? found?.reporte?.prioridad_nombre ?? "MEDIA",
+                estatus: found?.estatus ?? found?.reporte?.estatus,
+                activo: found?.reporte?.activo ?? null,
+                fotos_evidencia: Array.isArray(found?.reporte?.fotos_evidencia)
+                  ? found.reporte.fotos_evidencia
+                  : [],
+              };
+
+              setReporte(reporteFromMantenimiento);
+              setErrorMessage("");
+              return;
+            }
+          } catch {
+            // Si tambien falla este fallback, mostramos el error original.
+          }
+        }
+
+        if (!active) return;
+        setReporte(null);
+        setErrorMessage(error?.message || "No fue posible cargar el reporte.");
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    }
+
+    loadReporte();
+
+    return () => {
+      active = false;
+    };
+  }, [idReporte, currentUser?.rol, currentUser?.id_usuario, currentUser?.idUsuario, currentUser?.id]);
+
+  const activo = useMemo(() => reporte?.activo ?? null, [reporte]);
+
+  const isTecnicoAsignado = useMemo(() => {
+    const role = String(currentUser?.rol ?? "").trim().toLowerCase();
+    if (role !== "tecnico") return false;
+
+    const currentUserId = Number(
+      currentUser?.id_usuario ?? currentUser?.idUsuario ?? currentUser?.id
+    );
+    const tecnicoIdAsignado = Number(
+      reporte?.id_tecnico_asignado ??
+        reporte?.tecnico?.id_usuario ??
+        reporte?.tecnico?.idUsuario ??
+        reporte?.tecnico?.id
+    );
+
+    if (!Number.isFinite(tecnicoIdAsignado) || tecnicoIdAsignado <= 0) {
+      // Fallback para respuestas del backend que no incluyan tecnico asignado.
+      return true;
+    }
+
+    return Number.isFinite(currentUserId) && currentUserId === tecnicoIdAsignado;
+  }, [reporte, currentUser?.rol, currentUser?.id_usuario, currentUser?.idUsuario, currentUser?.id]);
 
   const fotosEvidencia = useMemo(
     () => (Array.isArray(reporte?.fotos_evidencia) ? reporte.fotos_evidencia : []),
@@ -66,21 +172,29 @@ export default function InformacionReporte() {
 
   const producto = activo?.producto ?? {};
   const ubicacion = activo?.ubicacion ?? {};
-  const ubicacionStr = [ubicacion?.campus, ubicacion?.edificio, ubicacion?.aula]
-    .filter(Boolean)
-    .join("") || "-";
-  const tituloActivo = [
-    producto?.tipo_activo ?? activo?.tipo_activo,
-    producto?.marca ?? activo?.marca,
-    producto?.modelo ?? activo?.modelo,
-  ]
-    .filter(Boolean)
-    .join(" ") || activo?.etiqueta_bien || "Activo";
+  const ubicacionStr =
+    [ubicacion?.campus, ubicacion?.edificio, ubicacion?.aula].filter(Boolean).join("") || "-";
+  const tituloActivo = activo?.etiqueta_bien || reporte?.folio || "Activo";
+  const productoDisplay = resolveProductoDisplay(activo);
+
+  if (isLoading) {
+    return (
+      <div className="inv-page">
+        <Container fluid className="inv-content px-3 px-md-4 py-3">
+          <Alert variant="info" className="d-flex align-items-center gap-2">
+            <Spinner animation="border" size="sm" />
+            Cargando reporte...
+          </Alert>
+        </Container>
+      </div>
+    );
+  }
 
   if (!reporte) {
     return (
       <div className="inv-page">
         <Container fluid className="inv-content px-3 px-md-4 py-3">
+          {errorMessage ? <Alert variant="danger">{errorMessage}</Alert> : null}
           <p className="text-muted">Reporte no encontrado.</p>
           <Button variant="primary" onClick={() => navigate("/mis-reparaciones")}>
             Volver
@@ -92,10 +206,7 @@ export default function InformacionReporte() {
 
   return (
     <div className="inv-page inv-reporte-info-page">
-      <NavbarMenu
-        title="INFORMACION DE REPORTE"
-        onMenuClick={() => setOpenSidebar((v) => !v)}
-      />
+      <NavbarMenu title="INFORMACION DE REPORTE" onMenuClick={() => setOpenSidebar((v) => !v)} />
 
       <SidebarMenu
         open={openSidebar}
@@ -121,8 +232,14 @@ export default function InformacionReporte() {
           className="inv-reporte-info-back"
           onClick={() => navigate(-1)}
         >
-          ← Regresar
+          {"<- Regresar"}
         </Button>
+
+        {errorMessage ? (
+          <Alert variant="warning" className="mt-2 mb-2">
+            {errorMessage}
+          </Alert>
+        ) : null}
 
         <h2 className="inv-reporte-info-title">{tituloActivo}</h2>
 
@@ -130,12 +247,8 @@ export default function InformacionReporte() {
           {fotosEvidencia.length > 0 ? (
             <Carousel indicators controls className="inv-reporte-carousel">
               {fotosEvidencia.map((src, idx) => (
-                <Carousel.Item key={idx}>
-                  <img
-                    src={src}
-                    alt={`Evidencia ${idx + 1}`}
-                    className="inv-reporte-carousel-img"
-                  />
+                <Carousel.Item key={`${src}-${idx}`}>
+                  <img src={src} alt={`Evidencia ${idx + 1}`} className="inv-reporte-carousel-img" />
                 </Carousel.Item>
               ))}
             </Carousel>
@@ -160,13 +273,17 @@ export default function InformacionReporte() {
               <span className="inv-reporte-info-value">{getEstadoDisplay(activo) ?? "DISPONIBLE"}</span>
             </div>
             <div className="inv-reporte-info-row">
+              <span className="inv-reporte-info-label">Producto</span>
+              <span className="inv-reporte-info-value">{productoDisplay}</span>
+            </div>
+            <div className="inv-reporte-info-row">
               <span className="inv-reporte-info-label">Tipo de Activo</span>
               <span className="inv-reporte-info-value">
                 {producto?.tipo_activo ?? activo?.tipo_activo ?? "-"}
               </span>
             </div>
             <div className="inv-reporte-info-row">
-              <span className="inv-reporte-info-label">Descripción</span>
+              <span className="inv-reporte-info-label">Descripcion</span>
               <span className="inv-reporte-info-value">{reporte?.descripcion ?? "-"}</span>
             </div>
             <div className="inv-reporte-info-row">
@@ -174,19 +291,17 @@ export default function InformacionReporte() {
               <span className="inv-reporte-info-value">{formatFecha(activo?.fecha_alta)}</span>
             </div>
             <div className="inv-reporte-info-row">
-              <span className="inv-reporte-info-label">Ubicación</span>
+              <span className="inv-reporte-info-label">Ubicacion</span>
               <span className="inv-reporte-info-value">{ubicacionStr}</span>
             </div>
             <div className="inv-reporte-info-row">
               <span className="inv-reporte-info-label">Estado</span>
-              <span className="inv-reporte-info-value">
-                {getEstadoLabel(reporte?.estatus)}
-              </span>
+              <span className="inv-reporte-info-value">{getEstadoLabel(reporte?.estatus)}</span>
             </div>
           </Card.Body>
         </Card>
 
-        {isTecnicoAsignado && (
+        {isTecnicoAsignado ? (
           <div className="inv-reporte-info-actions">
             <Button
               variant="primary"
@@ -194,10 +309,10 @@ export default function InformacionReporte() {
               onClick={() => navigate(`/reporte/${idReporte}/reporte-tecnico`)}
             >
               <BsInfoCircle className="me-2" />
-              Cambiar estado de reporte
+              Subir reparacion
             </Button>
           </div>
-        )}
+        ) : null}
       </Container>
     </div>
   );
