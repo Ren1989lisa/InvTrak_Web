@@ -115,13 +115,29 @@ export default function AsignacionReporte() {
   }, [tecnicos, tecnicoSearch, tecnicoTypeFilter]);
 
   const filterUbicaciones = useMemo(() => {
-    const values = new Set();
+    const values = new Map();
     bienesReportados.forEach(({ asset }) => {
-      const u = asset?.ubicacion;
-      const text = [u?.campus, u?.edificio, u?.aula].filter(Boolean).join(" ");
-      if (text) values.add(text);
+      const campus = String(asset?.ubicacion?.campus ?? "").trim();
+      const edificio = String(asset?.ubicacion?.edificio ?? "").trim();
+      const aula = String(asset?.ubicacion?.aula ?? "").trim();
+      const completa = String(
+        asset?.ubicacion?.completa ?? [campus, edificio, aula].filter(Boolean).join(" ")
+      )
+        .trim()
+        .replace(/\s+/g, " ");
+
+      if (!completa) return;
+
+      const key = normalize(completa);
+      if (values.has(key)) return;
+      values.set(key, {
+        campus,
+        edificio,
+        aula,
+        completa,
+      });
     });
-    return Array.from(values);
+    return Array.from(values.values());
   }, [bienesReportados]);
 
   const selectedItem = useMemo(() => {

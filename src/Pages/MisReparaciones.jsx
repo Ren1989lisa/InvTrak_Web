@@ -5,16 +5,28 @@ import { useNavigate } from "react-router-dom";
 import NavbarMenu from "../Components/NavbarMenu";
 import SearchBar from "../Components/SearchBar";
 import SidebarMenu from "../Components/SidebarMenu";
+import FiltersModal from "../Components/FiltersModal";
 import { useUsers } from "../context/UsersContext";
 import { getStoredReportes } from "../reportesStorage";
 import { getStoredActivos } from "../activosStorage";
 import "../Style/bienes-registrados.css";
 import "../Style/sidebar.css";
 
+function normalize(value) {
+  return (value ?? "").toString().trim().toLowerCase();
+}
+
+function parseDate(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
 function ReparacionCard({ reporte, activo, onClick }) {
   const producto = activo?.producto ?? {};
-  const prioridad = (reporte?.prioridad ?? "").toString().toLowerCase();
-  const prioridadColor = prioridad === "alta" ? "danger" : prioridad === "media" ? "warning" : "secondary";
+  const prioridad = normalize(reporte?.prioridad);
+  const prioridadColor =
+    prioridad === "alta" ? "danger" : prioridad === "media" ? "warning" : "secondary";
 
   return (
     <Card
@@ -70,6 +82,8 @@ function ReparacionCard({ reporte, activo, onClick }) {
 export default function MisReparaciones() {
   const [search, setSearch] = useState("");
   const [openSidebar, setOpenSidebar] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [appliedFilters, setAppliedFilters] = useState(null);
   const navigate = useNavigate();
   const { currentUser, logout, menuItems } = useUsers();
 
@@ -84,9 +98,7 @@ export default function MisReparaciones() {
 
   const misReportes = useMemo(() => {
     const idTecnico = Number(currentUser?.id_usuario);
-    return reportes.filter(
-      (r) => Number(r?.id_tecnico_asignado) === idTecnico
-    );
+    return reportes.filter((r) => Number(r?.id_tecnico_asignado) === idTecnico);
   }, [reportes, currentUser?.id_usuario]);
 
   const reportesConActivo = useMemo(() => {
@@ -96,15 +108,60 @@ export default function MisReparaciones() {
     }));
   }, [misReportes, activosMap]);
 
-  const filtrados = useMemo(() => {
-    if (!query) return reportesConActivo;
-    return reportesConActivo.filter(({ reporte, activo }) => {
-      const desc = (reporte?.descripcion ?? "").toLowerCase();
-      const codigo = (activo?.etiqueta_bien ?? "").toLowerCase();
-      const folio = (reporte?.folio ?? "").toLowerCase();
-      return desc.includes(query) || codigo.includes(query) || folio.includes(query);
+  const ubicaciones = useMemo(() => {
+    const values = new Map();
+
+    reportesConActivo.forEach(({ activo }) => {
+      const campus = String(activo?.ubicacion?.campus ?? "").trim();
+      const edificio = String(activo?.ubicacion?.edificio ?? "").trim();
+      const aula = String(activo?.ubicacion?.aula ?? "").trim();
+      const completa = String(
+        activo?.ubicacion?.completa ?? [campus, edificio, aula].filter(Boolean).join(" ")
+      )
+        .trim()
+        .replace(/\s+/g, " ");
+
+      if (!completa) return;
+
+      const key = normalize(completa);
+      if (values.has(key)) return;
+      values.set(key, {
+        campus,
+        edificio,
+        aula,
+        completa,
+      });
     });
-  }, [reportesConActivo, query]);
+
+    return Array.from(values.values());
+  }, [reportesConActivo]);
+
+  const filtrados = useMemo(() => {
+    return reportesConActivo.filter(({ reporte, activo }) => {
+      const desc = normalize(reporte?.descripcion);
+      const codigo = normalize(activo?.etiqueta_bien);
+      const folio = normalize(reporte?.folio);
+      const ubicacion = normalize(activo?.ubicacion?.completa);
+      const fecha = parseDate(reporte?.fecha_reporte ?? reporte?.fechaReporte);
+      const costo = Number(activo?.costo ?? 0);
+
+      const matchesSearch = !query || desc.includes(query) || codigo.includes(query) || folio.includes(query);
+      if (!matchesSearch) return false;
+
+      if (appliedFilters) {
+        const { ubicacion: fUbicacion, fechaDesde, fechaHasta, precioMin, precioMax } =
+          appliedFilters;
+
+        if (fUbicacion && normalize(activo?.ubicacion?.completa) !== normalize(fUbicacion)) return false;
+        if (fechaDesde && fecha && fecha < new Date(fechaDesde)) return false;
+        if (fechaHasta && fecha && fecha > new Date(fechaHasta)) return false;
+        if (precioMin != null && Number.isFinite(precioMin) && costo < precioMin) return false;
+        if (precioMax != null && Number.isFinite(precioMax) && costo > precioMax) return false;
+      }
+
+      return true;
+    });
+  }, [reportesConActivo, query, appliedFilters]);
 
   const handleClick = (reporte) => {
     if (reporte?.id_reporte) {
@@ -114,10 +171,7 @@ export default function MisReparaciones() {
 
   return (
     <div className="inv-page">
-      <NavbarMenu
-        title="Mis reparaciones"
-        onMenuClick={() => setOpenSidebar((v) => !v)}
-      />
+      <NavbarMenu title="Mis reparaciones" onMenuClick={() => setOpenSidebar((v) => !v)} />
 
       <SidebarMenu
         open={openSidebar}
@@ -143,14 +197,31 @@ export default function MisReparaciones() {
         <SearchBar
           value={search}
           onChange={setSearch}
-          placeholder="Buscar por folio, descripción o código"
+          onFilters={() => setShowFilters(true)}
+          placeholder="Buscar por folio, descripcion o codigo"
+        />
+
+        <FiltersModal
+          show={showFilters}
+          onHide={() => setShowFilters(false)}
+          onApply={setAppliedFilters}
+          onClear={() => setAppliedFilters(null)}
+          ubicaciones={ubicaciones}
         />
 
         {misReportes.length === 0 ? (
           <Alert variant="info" className="mt-3">
-            No tienes reportes asignados para reparar. El administrador te asignará mantenimientos cuando haya reportes pendientes.
+            No tienes reportes asignados para reparar. El administrador te asignara mantenimientos cuando haya reportes pendientes.
           </Alert>
-        ) : (
+        ) : null}
+
+        {misReportes.length > 0 && filtrados.length === 0 ? (
+          <Alert variant="info" className="mt-3">
+            No hay reparaciones que coincidan con los filtros.
+          </Alert>
+        ) : null}
+
+        {filtrados.length > 0 ? (
           <Row className="g-4 mt-2">
             {filtrados.map(({ reporte, activo }) => (
               <Col md={4} key={reporte?.id_reporte}>
@@ -162,7 +233,7 @@ export default function MisReparaciones() {
               </Col>
             ))}
           </Row>
-        )}
+        ) : null}
       </Container>
     </div>
   );

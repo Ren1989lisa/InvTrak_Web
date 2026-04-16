@@ -7,6 +7,7 @@ import SearchBar from "../Components/SearchBar";
 import AssetCard from "../Components/AssetCard";
 import SidebarMenu from "../Components/SidebarMenu";
 import PrimaryButton from "../Components/PrimaryButton";
+import FiltersModal from "../Components/FiltersModal";
 import { useUsers } from "../context/UsersContext";
 import { usePendientesResguardo } from "../hooks/usePendientesResguardo";
 import "../Style/bienes-registrados.css";
@@ -31,44 +32,89 @@ function isUserRole(roleValue) {
   return candidates.includes("usuario") || candidates.includes("role_user");
 }
 
+function toDate(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
 export default function MisBienes() {
   const [search, setSearch] = useState("");
   const [openSidebar, setOpenSidebar] = useState(false);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [appliedFilters, setAppliedFilters] = useState(null);
   const location = useLocation();
   const navigate = useNavigate();
   const { currentUser, logout, menuItems } = useUsers();
-  const {
-    pendientesResguardo,
-    bienesConfirmados,
-    isLoading,
-    error,
-    refresh,
-  } = usePendientesResguardo(currentUser);
+  const { pendientesResguardo, bienesConfirmados, isLoading, error, refresh } =
+    usePendientesResguardo(currentUser);
 
   const query = search.trim().toLowerCase();
   const isUsuario = isUserRole(currentUser?.rol ?? currentUser?.roles);
+
+  const ubicaciones = useMemo(() => {
+    const values = new Map();
+
+    bienesConfirmados.forEach((activo) => {
+      const campus = String(activo?.ubicacion?.campus ?? "").trim();
+      const edificio = String(activo?.ubicacion?.edificio ?? "").trim();
+      const aula = String(activo?.ubicacion?.aula ?? "").trim();
+      const completa = String(
+        activo?.ubicacion?.completa ?? [campus, edificio, aula].filter(Boolean).join(" ")
+      )
+        .trim()
+        .replace(/\s+/g, " ");
+
+      if (!completa) return;
+
+      const key = normalize(completa);
+      if (values.has(key)) return;
+      values.set(key, {
+        campus,
+        edificio,
+        aula,
+        completa,
+      });
+    });
+
+    return Array.from(values.values());
+  }, [bienesConfirmados]);
 
   const activosFiltrados = useMemo(() => {
     return bienesConfirmados.filter((activo) => {
       const codigo = normalize(activo?.etiqueta_bien);
       const tipo = normalize(
-        activo?.producto?.completo ??
-          activo?.producto?.tipo_activo ??
-          activo?.tipo_activo
+        activo?.producto?.completo ?? activo?.producto?.tipo_activo ?? activo?.tipo_activo
       );
       const descripcion = normalize(activo?.descripcion);
       const ubicacion = normalize(activo?.ubicacion?.completa);
+      const fecha = toDate(activo?.fecha_asignacion ?? activo?.fecha_alta ?? activo?.fechaAlta);
+      const costo = Number(activo?.costo ?? 0);
 
-      if (!query) return true;
-      return (
+      const matchesSearch =
+        !query ||
         codigo.includes(query) ||
         tipo.includes(query) ||
         descripcion.includes(query) ||
-        ubicacion.includes(query)
-      );
+        ubicacion.includes(query);
+
+      if (!matchesSearch) return false;
+
+      if (appliedFilters) {
+        const { ubicacion: fUbicacion, fechaDesde, fechaHasta, precioMin, precioMax } =
+          appliedFilters;
+
+        if (fUbicacion && normalize(activo?.ubicacion?.completa) !== normalize(fUbicacion)) return false;
+        if (fechaDesde && fecha && fecha < new Date(fechaDesde)) return false;
+        if (fechaHasta && fecha && fecha > new Date(fechaHasta)) return false;
+        if (precioMin != null && Number.isFinite(precioMin) && costo < precioMin) return false;
+        if (precioMax != null && Number.isFinite(precioMax) && costo > precioMax) return false;
+      }
+
+      return true;
     });
-  }, [bienesConfirmados, query]);
+  }, [bienesConfirmados, query, appliedFilters]);
 
   const notificationItems = useMemo(() => {
     if (!isUsuario) return null;
@@ -143,11 +189,7 @@ export default function MisBienes() {
             onClose={refresh}
           >
             <span>{error}</span>
-            <PrimaryButton
-              variant="outline-danger"
-              label="Reintentar"
-              onClick={refresh}
-            />
+            <PrimaryButton variant="outline-danger" label="Reintentar" onClick={refresh} />
           </Alert>
         ) : null}
 
@@ -167,13 +209,22 @@ export default function MisBienes() {
         <SearchBar
           value={search}
           onChange={setSearch}
-          placeholder="Buscar por código, producto, descripción o ubicación"
+          onFilters={() => setShowFilters(true)}
+          placeholder="Buscar por codigo, producto, descripcion o ubicacion"
+        />
+
+        <FiltersModal
+          show={showFilters}
+          onHide={() => setShowFilters(false)}
+          onApply={setAppliedFilters}
+          onClear={() => setAppliedFilters(null)}
+          ubicaciones={ubicaciones}
         />
 
         {!isLoading && bienesConfirmados.length === 0 ? (
           <Alert variant="info" className="mt-3">
             {pendientesResguardo.length > 0
-              ? "Tienes bienes pendientes por confirmar. Usa la notificación para subir el QR y completar el resguardo."
+              ? "Tienes bienes pendientes por confirmar. Usa la notificacion para subir el QR y completar el resguardo."
               : "No tienes bienes confirmados. Si te asignaron un activo, confirma el resguardo desde las notificaciones."}
           </Alert>
         ) : null}

@@ -16,6 +16,10 @@ import "../Style/bienes-registrados.css";
 import "../Style/sidebar.css";
 import "../Style/asignacion-bien.css";
 
+function normalize(value) {
+  return (value ?? "").toString().trim().toLowerCase();
+}
+
 function buildExportRows(activos) {
   return (Array.isArray(activos) ? activos : []).map((activo) => {
     const producto = activo?.producto ?? {};
@@ -117,15 +121,24 @@ export default function BienesRegistrados() {
   }, [location.pathname, location.state, navigate]);
 
   const ubicaciones = useMemo(() => {
-    const values = new Set();
+    const values = new Map();
     activos.forEach((a) => {
-      const text = a?.ubicacion?.completa ??
-        [a?.ubicacion?.campus, a?.ubicacion?.edificio, a?.ubicacion?.aula]
-          .filter(Boolean)
-          .join(" ");
-      if (text) values.add(text);
+      const campus = String(a?.ubicacion?.campus ?? "").trim();
+      const edificio = String(a?.ubicacion?.edificio ?? "").trim();
+      const aula = String(a?.ubicacion?.aula ?? "").trim();
+      const completa = String(
+        a?.ubicacion?.completa ?? [campus, edificio, aula].filter(Boolean).join(" ")
+      )
+        .trim()
+        .replace(/\s+/g, " ");
+
+      if (!completa) return;
+
+      const key = completa.toLowerCase();
+      if (values.has(key)) return;
+      values.set(key, { campus, edificio, aula, completa });
     });
-    return Array.from(values);
+    return Array.from(values.values());
   }, [activos]);
 
   const activosFiltrados = useMemo(() => {
@@ -150,7 +163,12 @@ export default function BienesRegistrados() {
         const { ubicacion: fUbicacion, fechaDesde, fechaHasta, precioMin, precioMax } =
           appliedFilters;
 
-        if (fUbicacion && ubicacionTexto !== fUbicacion) return false;
+        if (
+          fUbicacion &&
+          normalize(ubicacionTexto) !== normalize(fUbicacion)
+        ) {
+          return false;
+        }
         if (fechaDesde && fechaAlta && fechaAlta < new Date(fechaDesde)) return false;
         if (fechaHasta && fechaAlta && fechaAlta > new Date(fechaHasta)) return false;
         if (precioMin != null && Number.isFinite(precioMin) && costo < precioMin) return false;

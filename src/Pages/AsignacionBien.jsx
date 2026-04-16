@@ -151,13 +151,29 @@ export default function AsignacionBien() {
   }, [activos, assetSearch, assetTypeFilter, appliedAssetFilters]);
 
   const filterUbicaciones = useMemo(() => {
-    const values = new Set();
+    const values = new Map();
     activos.forEach((a) => {
-      const u = a?.ubicacion;
-      const text = [u?.campus, u?.edificio, u?.aula].filter(Boolean).join(" ");
-      if (text) values.add(text);
+      const campus = String(a?.ubicacion?.campus ?? "").trim();
+      const edificio = String(a?.ubicacion?.edificio ?? "").trim();
+      const aula = String(a?.ubicacion?.aula ?? "").trim();
+      const completa = String(
+        a?.ubicacion?.completa ?? [campus, edificio, aula].filter(Boolean).join(" ")
+      )
+        .trim()
+        .replace(/\s+/g, " ");
+
+      if (!completa) return;
+
+      const key = normalize(completa);
+      if (values.has(key)) return;
+      values.set(key, {
+        campus,
+        edificio,
+        aula,
+        completa,
+      });
     });
-    return Array.from(values);
+    return Array.from(values.values());
   }, [activos]);
 
   const filteredUsers = useMemo(() => {
