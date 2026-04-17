@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Col, Container, Row, Button, Alert } from "react-bootstrap";
 import { useLocation, useNavigate } from "react-router-dom";
-
 import NavbarMenu from "../Components/NavbarMenu";
 import SidebarMenu from "../Components/SidebarMenu";
 import SearchBar from "../Components/SearchBar";
@@ -12,6 +11,7 @@ import PaginationComponent from "../Components/PaginationComponent";
 import DeleteConfirmModal from "../Components/DeleteConfirmModal";
 import { useUsers } from "../context/UsersContext";
 import { getUsuarios, deleteUsuario } from "../services/userService";
+import { exportToExcel, todayDateString } from "../utils/exportUtils";
 
 import "../Style/bienes-registrados.css";
 import "../Style/sidebar.css";
@@ -139,6 +139,25 @@ export default function Usuarios() {
     }
   };
 
+  const handleExportExcel = () => {
+    if (!usuariosFiltrados.length) {
+      setErrorMsg("No hay usuarios para exportar.");
+      return;
+    }
+    const rows = usuariosFiltrados.map((u) => ({
+      id_usuario: u.id_usuario ?? "",
+      nombre: u.nombre ?? u.nombre_completo ?? "",
+      correo: u.correo ?? "",
+      rol: u.rol ?? "",
+      area: u.area ?? u.departamento ?? "",
+      numero_empleado: u.numero_empleado ?? "",
+      curp: u.curp ?? "",
+    }));
+    const fileName = `usuarios_${todayDateString()}.xls`;
+    exportToExcel(rows, "Usuarios", fileName);
+    setSuccessMsg(`Archivo "${fileName}" exportado correctamente.`);
+  };
+
   const handleCancelDelete = () => {
     if (!isDeleting) {
       setShowDeleteModal(false);
@@ -194,6 +213,15 @@ export default function Usuarios() {
 
           <Col xs="auto">
             <FilterDropdown value={filterRol} onSelect={setFilterRol} />
+          </Col>
+
+          <Col xs="auto">
+            <PrimaryButton
+              variant="light"
+              label="Exportar a Excel"
+              className="inv-users-exportBtn"
+              onClick={handleExportExcel}
+            />
           </Col>
 
           <Col xs="auto">

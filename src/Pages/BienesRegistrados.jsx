@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Alert, Container, Row, Col } from "react-bootstrap";
 import { useLocation, useNavigate } from "react-router-dom";
-import * as XLSX from "xlsx";
-
 import NavbarMenu from "../Components/NavbarMenu";
 import SearchBar from "../Components/SearchBar";
 import AssetCard from "../Components/AssetCard";
@@ -12,6 +10,7 @@ import SidebarMenu from "../Components/SidebarMenu";
 import { useUsers } from "../context/UsersContext";
 import { getStoredActivos, saveActivos } from "../activosStorage";
 import { getActivos } from "../services/activoService";
+import { exportToExcel, todayDateString } from "../utils/exportUtils";
 import "../Style/bienes-registrados.css";
 import "../Style/sidebar.css";
 import "../Style/asignacion-bien.css";
@@ -222,32 +221,15 @@ export default function BienesRegistrados() {
     setExportFeedback(null);
     try {
       if (!activos.length) {
-        setExportFeedback({
-          variant: "warning",
-          message: "No hay activos registrados para exportar.",
-        });
+        setExportFeedback({ variant: "warning", message: "No hay activos registrados para exportar." });
         return;
       }
-
       const rows = buildExportRows(activos);
-      const worksheet = XLSX.utils.json_to_sheet(rows);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Bienes");
-
-      const now = new Date();
-      const datePart = `${now.getFullYear()}-${`${now.getMonth() + 1}`.padStart(2, "0")}-${`${now.getDate()}`.padStart(2, "0")}`;
-      const fileName = `bienes_registrados_${datePart}.xlsx`;
-      XLSX.writeFile(workbook, fileName);
-
-      setExportFeedback({
-        variant: "success",
-        message: `Archivo exportado correctamente: ${fileName}`,
-      });
+      const fileName = `bienes_registrados_${todayDateString()}.xls`;
+      exportToExcel(rows, "Bienes", fileName);
+      setExportFeedback({ variant: "success", message: `Archivo exportado correctamente: ${fileName}` });
     } catch {
-      setExportFeedback({
-        variant: "danger",
-        message: "No fue posible generar el archivo Excel.",
-      });
+      setExportFeedback({ variant: "danger", message: "No fue posible generar el archivo Excel." });
     }
   };
 

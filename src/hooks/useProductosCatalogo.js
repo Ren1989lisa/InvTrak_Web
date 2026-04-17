@@ -29,8 +29,8 @@ export function useProductosCatalogo() {
     .map((p) => (p?.nombre ?? "").toString().trim())
     .filter(Boolean)
     .reduce((acc, nombre) => {
-      if (!acc.find((o) => o.value.toLowerCase() === nombre.toLowerCase())) {
-        acc.push({ value: nombre, label: nombre });
+      if (!acc.includes(nombre.toLowerCase())) {
+        acc.push(nombre);
       }
       return acc;
     }, []);

@@ -368,8 +368,8 @@ export default function DevolucionesBajas() {
                 >
                   <option value="todo">Tipo: Todo</option>
                   {tipoOptions.map((op) => (
-                    <option key={op.value} value={op.value.toLowerCase()}>
-                      {op.label}
+                    <option key={op} value={op.toLowerCase()}>
+                      {op}
                     </option>
                   ))}
                 </Form.Select>
@@ -430,8 +430,8 @@ export default function DevolucionesBajas() {
                 >
                   <option value="todo">Tipo: Todo</option>
                   {tipoOptions.map((op) => (
-                    <option key={op.value} value={op.value.toLowerCase()}>
-                      {op.label}
+                    <option key={op} value={op.toLowerCase()}>
+                      {op}
                     </option>
                   ))}
                 </Form.Select>
