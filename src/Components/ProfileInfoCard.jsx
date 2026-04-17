@@ -19,15 +19,8 @@ export default function ProfileInfoCard({ usuario }) {
           </Col>
           <Col xs={12} md={6} className="inv-profile-card__col">
             <ProfileField label="Rol" value={usuario.rol} />
-            <ProfileField
-              label="Número de empleado"
-              value={usuario.numero_empleado}
-            />
-            <ProfileField label="Contraseña" value={usuario.password} />
-            <ProfileField
-              label="Área / Departamento"
-              value={usuario.area ?? usuario.departamento}
-            />
+            <ProfileField label="Número de empleado" value={usuario.numero_empleado} />
+            <ProfileField label="Área / Departamento" value={usuario.area ?? usuario.departamento} />
           </Col>
         </Row>
       </Card.Body>

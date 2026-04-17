@@ -9,9 +9,10 @@ import PaginationComponent from "../Components/PaginationComponent";
 import AssetSelectableCard from "../Components/AssetSelectableCard";
 import UserSelectableCard from "../Components/UserSelectableCard";
 import SelectedAssetCard from "../Components/SelectedAssetCard";
-import UserSearchBar from "../Components/UserSearchBar";
+import SearchBar from "../Components/SearchBar";
 import FiltersModal from "../Components/FiltersModal";
 import { useUsers } from "../context/UsersContext";
+import { useProductosCatalogo } from "../hooks/useProductosCatalogo";
 import { getActivosDisponibles } from "../services/activosService";
 import { getUsuarios } from "../services/userService";
 import { createResguardo } from "../services/resguardoService";
@@ -33,6 +34,7 @@ export default function AsignacionBien() {
   const ITEMS_PER_PAGE = 12;
   const navigate = useNavigate();
   const { currentUser, logout, menuItems } = useUsers();
+  const { tipoOptions } = useProductosCatalogo();
 
   const [openSidebar, setOpenSidebar] = useState(false);
   const [assetSearch, setAssetSearch] = useState("");
@@ -140,9 +142,14 @@ export default function AsignacionBien() {
       if (!matchesQuery || !matchesType) return false;
 
       if (appliedAssetFilters) {
-        const { ubicacion: fUbicacion, fechaDesde, fechaHasta, precioMin, precioMax } = appliedAssetFilters;
+        const { ubicacion: fUbicacion, estatus: fEstatus, producto: fProducto, fechaDesde, fechaHasta, precioMin, precioMax } = appliedAssetFilters;
 
         if (fUbicacion && ubicacionTexto !== normalize(fUbicacion)) return false;
+        if (fEstatus && normalize(asset?.estatus ?? "") !== normalize(fEstatus)) return false;
+        if (fProducto) {
+          const nombreProd = normalize(asset?.producto?.nombre ?? asset?.producto?.tipo_activo ?? asset?.tipo_activo ?? "");
+          if (!nombreProd.includes(normalize(fProducto))) return false;
+        }
         if (fechaDesde && fechaAlta && fechaAlta < new Date(fechaDesde)) return false;
         if (fechaHasta && fechaAlta && fechaAlta > new Date(fechaHasta)) return false;
         if (precioMin != null && Number.isFinite(precioMin) && costo < precioMin) return false;
@@ -195,6 +202,18 @@ export default function AsignacionBien() {
     });
     return Array.from(values.values());
   }, [activos]);
+
+  const filterEstatusOptions = useMemo(() => {
+    const unique = new Map();
+    activos.forEach((a) => {
+      const val = (a?.estatus ?? "").toString().trim();
+      if (!val || unique.has(val)) return;
+      unique.set(val, { value: val, label: val });
+    });
+    return Array.from(unique.values());
+  }, [activos]);
+
+  const filterProductoOptions = tipoOptions;
 
   const filteredUsers = useMemo(() => {
     const query = normalize(userSearch);
@@ -325,10 +344,11 @@ export default function AsignacionBien() {
                   onChange={(e) => setAssetTypeFilter(e.target.value)}
                 >
                   <option value="todo">Tipo: Todo</option>
-                  <option value="laptop">Laptop</option>
-                  <option value="monitor">Monitor</option>
-                  <option value="proyector">Proyector</option>
-                  <option value="switch">Switch</option>
+                  {tipoOptions.map((tipo) => (
+                    <option key={tipo} value={tipo.toLowerCase()}>
+                      {tipo}
+                    </option>
+                  ))}
                 </Form.Select>
               </div>
 
@@ -376,10 +396,11 @@ export default function AsignacionBien() {
 
               <div className="mb-2">
                 <label className="inv-assign-label">Buscar usuario</label>
-                <UserSearchBar
+                <SearchBar
                   value={userSearch}
                   onChange={setUserSearch}
                   placeholder="Buscar por nombre o numero de empleado"
+                  showActions={false}
                 />
               </div>
 
@@ -425,6 +446,8 @@ export default function AsignacionBien() {
         onApply={setAppliedAssetFilters}
         onClear={() => setAppliedAssetFilters(null)}
         ubicaciones={filterUbicaciones}
+        estatusOptions={filterEstatusOptions}
+        productoOptions={filterProductoOptions}
       />
     </div>
   );

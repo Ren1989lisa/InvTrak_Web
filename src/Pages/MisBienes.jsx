@@ -84,6 +84,26 @@ export default function MisBienes() {
     return Array.from(values.values());
   }, [bienesConfirmados]);
 
+  const estatusOptions = useMemo(() => {
+    const unique = new Map();
+    bienesConfirmados.forEach((a) => {
+      const val = (a?.estatus ?? "").toString().trim();
+      if (!val || unique.has(val)) return;
+      unique.set(val, { value: val, label: val });
+    });
+    return Array.from(unique.values());
+  }, [bienesConfirmados]);
+
+  const productoOptions = useMemo(() => {
+    const unique = new Map();
+    bienesConfirmados.forEach((a) => {
+      const val = (a?.producto?.nombre ?? a?.producto?.tipo_activo ?? a?.tipo_activo ?? "").toString().trim();
+      if (!val || unique.has(val.toLowerCase())) return;
+      unique.set(val.toLowerCase(), { value: val, label: val });
+    });
+    return Array.from(unique.values());
+  }, [bienesConfirmados]);
+
   const activosFiltrados = useMemo(() => {
     return bienesConfirmados.filter((activo) => {
       const codigo = normalize(activo?.etiqueta_bien);
@@ -105,10 +125,15 @@ export default function MisBienes() {
       if (!matchesSearch) return false;
 
       if (appliedFilters) {
-        const { ubicacion: fUbicacion, fechaDesde, fechaHasta, precioMin, precioMax } =
+        const { ubicacion: fUbicacion, estatus: fEstatus, producto: fProducto, fechaDesde, fechaHasta, precioMin, precioMax } =
           appliedFilters;
 
         if (fUbicacion && normalize(activo?.ubicacion?.completa) !== normalize(fUbicacion)) return false;
+        if (fEstatus && normalize(activo?.estatus ?? "") !== normalize(fEstatus)) return false;
+        if (fProducto) {
+          const nombreProd = normalize(activo?.producto?.nombre ?? activo?.producto?.tipo_activo ?? activo?.tipo_activo ?? "");
+          if (!nombreProd.includes(normalize(fProducto))) return false;
+        }
         if (fechaDesde && fecha && fecha < new Date(fechaDesde)) return false;
         if (fechaHasta && fecha && fecha > new Date(fechaHasta)) return false;
         if (precioMin != null && Number.isFinite(precioMin) && costo < precioMin) return false;
@@ -239,6 +264,8 @@ export default function MisBienes() {
           onApply={setAppliedFilters}
           onClear={() => setAppliedFilters(null)}
           ubicaciones={ubicaciones}
+          estatusOptions={estatusOptions}
+          productoOptions={productoOptions}
         />
 
         {!isLoading && bienesConfirmados.length === 0 ? (

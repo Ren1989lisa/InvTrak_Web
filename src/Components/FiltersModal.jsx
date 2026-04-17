@@ -89,12 +89,16 @@ export default function FiltersModal({
   onApply,
   onClear,
   ubicaciones = [],
+  estatusOptions = [],
+  productoOptions = [],
 }) {
   const [ubicacion, setUbicacion] = useState("");
   const [fechaDesde, setFechaDesde] = useState("");
   const [fechaHasta, setFechaHasta] = useState("");
   const [precioMin, setPrecioMin] = useState("");
   const [precioMax, setPrecioMax] = useState("");
+  const [estatus, setEstatus] = useState("");
+  const [producto, setProducto] = useState("");
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [selectedCampus, setSelectedCampus] = useState("");
   const [selectedEdificio, setSelectedEdificio] = useState("");
@@ -164,6 +168,8 @@ export default function FiltersModal({
   function handleApply() {
     const filters = {
       ubicacion,
+      estatus: estatus || null,
+      producto: producto || null,
       fechaDesde: fechaDesde || null,
       fechaHasta: fechaHasta || null,
       precioMin: precioMin ? Number(precioMin) : null,
@@ -175,6 +181,8 @@ export default function FiltersModal({
 
   function handleClear() {
     setUbicacion("");
+    setEstatus("");
+    setProducto("");
     setFechaDesde("");
     setFechaHasta("");
     setPrecioMin("");
@@ -294,6 +302,50 @@ export default function FiltersModal({
             </div>
 
             <hr />
+
+            {productoOptions.length > 0 ? (
+              <>
+                <div className="filters-section">
+                  <h5 className="filters-section__label">Producto</h5>
+                  <div className="filters-section__content">
+                    <Form.Select
+                      value={producto}
+                      onChange={(event) => setProducto(event.target.value)}
+                    >
+                      <option value="">Todos los productos</option>
+                      {productoOptions.map((op) => (
+                        <option key={op.value} value={op.value}>
+                          {op.label}
+                        </option>
+                      ))}
+                    </Form.Select>
+                  </div>
+                </div>
+                <hr />
+              </>
+            ) : null}
+
+            {estatusOptions.length > 0 ? (
+              <>
+                <div className="filters-section">
+                  <h5 className="filters-section__label">Estado</h5>
+                  <div className="filters-section__content">
+                    <Form.Select
+                      value={estatus}
+                      onChange={(event) => setEstatus(event.target.value)}
+                    >
+                      <option value="">Todos los estados</option>
+                      {estatusOptions.map((op) => (
+                        <option key={op.value} value={op.value}>
+                          {op.label}
+                        </option>
+                      ))}
+                    </Form.Select>
+                  </div>
+                </div>
+                <hr />
+              </>
+            ) : null}
 
             <div className="filters-section">
               <h5 className="filters-section__label">Ubicacion</h5>

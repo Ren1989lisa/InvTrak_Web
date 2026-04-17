@@ -1,29 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import { Card } from "react-bootstrap";
 import { getEstadoDisplay } from "../config/estatusActivo";
+import { formatCurrency, formatDate } from "../utils/format";
 import "../Style/bienes-registrados.css";
-
-
-function formatCurrency(value) {
-  const number = typeof value === "number" ? value : Number(value);
-  if (Number.isNaN(number)) return "$0";
-  return new Intl.NumberFormat("es-MX", {
-    style: "currency",
-    currency: "MXN",
-    maximumFractionDigits: 2,
-  }).format(number);
-}
-
-function formatDate(value) {
-  if (!value) return "";
-  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}/.test(value)) {
-    const date = new Date(value + (value.length === 10 ? "T00:00:00" : ""));
-    if (!Number.isNaN(date.getTime())) {
-      return date.toLocaleDateString("es-MX", { day: "2-digit", month: "2-digit", year: "numeric" });
-    }
-  }
-  return String(value);
-}
 
 export default function AssetCard({ activo, canEdit = false, onEdit = null }) {
   const navigate = useNavigate();

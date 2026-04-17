@@ -7,17 +7,8 @@ import QRSection from "./QRSection";
 import ActionButtons from "./ActionButtons";
 import { getEstadoDisplay } from "../config/estatusActivo";
 import { ESTADO_RESGUARDO } from "../config/databaseEnums";
+import { formatCurrency } from "../utils/format";
 import "../Style/bienes-registrados.css";
-
-function formatCurrency(value) {
-  const number = typeof value === "number" ? value : Number(value);
-  if (Number.isNaN(number)) return "$0";
-  return new Intl.NumberFormat("es-MX", {
-    style: "currency",
-    currency: "MXN",
-    maximumFractionDigits: 2,
-  }).format(number);
-}
 
 function getOwnerDisplay(activo) {
   const ownerName = (

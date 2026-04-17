@@ -8,6 +8,7 @@ import SidebarMenu from "../Components/SidebarMenu";
 import PrimaryButton from "../Components/PrimaryButton";
 import PaginationComponent from "../Components/PaginationComponent";
 import { useUsers } from "../context/UsersContext";
+import { useProductosCatalogo } from "../hooks/useProductosCatalogo";
 import {
   cancelBajaSolicitud,
   deleteResguardo,
@@ -119,6 +120,7 @@ export default function DevolucionesBajas() {
   const ITEMS_PER_PAGE = 12;
   const navigate = useNavigate();
   const { currentUser, logout, menuItems } = useUsers();
+  const { tipoOptions } = useProductosCatalogo();
 
   const [openSidebar, setOpenSidebar] = useState(false);
   const [searchDevolucion, setSearchDevolucion] = useState("");
@@ -364,9 +366,10 @@ export default function DevolucionesBajas() {
                   value={typeDevolucion}
                   onChange={(event) => setTypeDevolucion(event.target.value)}
                 >
-                  {devolucionTypes.map((type) => (
-                    <option key={type} value={type}>
-                      {type === "todo" ? "Tipo: Todo" : `Tipo: ${type}`}
+                  <option value="todo">Tipo: Todo</option>
+                  {tipoOptions.map((op) => (
+                    <option key={op.value} value={op.value.toLowerCase()}>
+                      {op.label}
                     </option>
                   ))}
                 </Form.Select>
@@ -425,9 +428,10 @@ export default function DevolucionesBajas() {
                   value={typeBaja}
                   onChange={(event) => setTypeBaja(event.target.value)}
                 >
-                  {bajaTypes.map((type) => (
-                    <option key={type} value={type}>
-                      {type === "todo" ? "Tipo: Todo" : `Tipo: ${type}`}
+                  <option value="todo">Tipo: Todo</option>
+                  {tipoOptions.map((op) => (
+                    <option key={op.value} value={op.value.toLowerCase()}>
+                      {op.label}
                     </option>
                   ))}
                 </Form.Select>

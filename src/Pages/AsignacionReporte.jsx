@@ -10,6 +10,7 @@ import UserSelectableCard from "../Components/UserSelectableCard";
 import SelectedReportAssetCard from "../Components/SelectedReportAssetCard";
 import FiltersModal from "../Components/FiltersModal";
 import { useUsers } from "../context/UsersContext";
+import { useProductosCatalogo } from "../hooks/useProductosCatalogo";
 import {
   asignarReporteMantenimiento,
   getReportesAbiertosMantenimiento,
@@ -65,6 +66,7 @@ function mapAssignError(error) {
 export default function AsignacionReporte() {
   const navigate = useNavigate();
   const { currentUser, logout, menuItems } = useUsers();
+  const { tipoOptions } = useProductosCatalogo();
 
   const [openSidebar, setOpenSidebar] = useState(false);
   const [assetSearch, setAssetSearch] = useState("");
@@ -144,9 +146,13 @@ export default function AsignacionReporte() {
       if (!matchesQuery || !matchesType) return false;
 
       if (appliedAssetFilters) {
-        const { ubicacion: fUbicacion, fechaDesde, fechaHasta, precioMin, precioMax } =
+        const { ubicacion: fUbicacion, producto: fProducto, fechaDesde, fechaHasta, precioMin, precioMax } =
           appliedAssetFilters;
         if (fUbicacion && ubicacionTexto !== normalize(fUbicacion)) return false;
+        if (fProducto) {
+          const nombreProd = normalize(asset?.producto?.nombre ?? asset?.producto?.tipo_activo ?? asset?.tipo_activo ?? "");
+          if (!nombreProd.includes(normalize(fProducto))) return false;
+        }
         if (fechaDesde && fechaAlta && fechaAlta < new Date(fechaDesde)) return false;
         if (fechaHasta && fechaAlta && fechaAlta > new Date(fechaHasta)) return false;
         if (precioMin != null && Number.isFinite(precioMin) && costo < precioMin) return false;
@@ -316,10 +322,11 @@ export default function AsignacionReporte() {
                   onChange={(e) => setAssetTypeFilter(e.target.value)}
                 >
                   <option value="todo">Tipo: Todo</option>
-                  <option value="laptop">Laptop</option>
-                  <option value="monitor">Monitor</option>
-                  <option value="mouse">Mouse</option>
-                  <option value="teclado">Teclado</option>
+                  {tipoOptions.map((op) => (
+                    <option key={op.value} value={op.value.toLowerCase()}>
+                      {op.label}
+                    </option>
+                  ))}
                 </Form.Select>
               </div>
 
@@ -410,6 +417,7 @@ export default function AsignacionReporte() {
         onApply={setAppliedAssetFilters}
         onClear={() => setAppliedAssetFilters(null)}
         ubicaciones={filterUbicaciones}
+        productoOptions={tipoOptions}
       />
     </div>
   );

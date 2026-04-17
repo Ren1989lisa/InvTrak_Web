@@ -1,12 +1,4 @@
-function formatCurrency(value) {
-  const number = typeof value === "number" ? value : Number(value);
-  if (Number.isNaN(number)) return "$0";
-  return new Intl.NumberFormat("es-MX", {
-    style: "currency",
-    currency: "MXN",
-    maximumFractionDigits: 2,
-  }).format(number);
-}
+import { formatCurrency } from "../utils/format";
 
 export default function AssetSelectableCard({ asset, selected = false, onSelect }) {
   const producto = asset?.producto ?? {};

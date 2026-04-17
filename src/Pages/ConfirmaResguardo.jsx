@@ -9,20 +9,11 @@ import { useUsers } from "../context/UsersContext";
 import { decodeQRFromFile } from "../utils/decodeQRFromFile";
 import { confirmarResguardo, getResguardoByActivoId } from "../services/resguardoService";
 import { getEstadoDisplay } from "../config/estatusActivo";
+import { formatCurrency } from "../utils/format";
 import "../Style/bienes-registrados.css";
 import "../Style/asset-detail.css";
 import "../Style/sidebar.css";
 import "../Style/confirmar-resguardo.css";
-
-function formatCurrency(value) {
-  const n = typeof value === "number" ? value : Number(value);
-  if (Number.isNaN(n)) return "$0";
-  return new Intl.NumberFormat("es-MX", {
-    style: "currency",
-    currency: "MXN",
-    maximumFractionDigits: 2,
-  }).format(n);
-}
 
 const CHECKLIST_ITEMS = [
   { key: "enciende", label: "Enciende" },

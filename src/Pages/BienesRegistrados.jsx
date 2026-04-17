@@ -143,6 +143,26 @@ export default function BienesRegistrados() {
     return Array.from(values.values());
   }, [activos]);
 
+  const estatusOptions = useMemo(() => {
+    const unique = new Map();
+    activos.forEach((a) => {
+      const val = (a?.estatus ?? "").toString().trim();
+      if (!val || unique.has(val)) return;
+      unique.set(val, { value: val, label: val });
+    });
+    return Array.from(unique.values());
+  }, [activos]);
+
+  const productoOptions = useMemo(() => {
+    const unique = new Map();
+    activos.forEach((a) => {
+      const val = (a?.producto?.nombre ?? a?.producto?.tipo_activo ?? a?.tipo_activo ?? "").toString().trim();
+      if (!val || unique.has(val.toLowerCase())) return;
+      unique.set(val.toLowerCase(), { value: val, label: val });
+    });
+    return Array.from(unique.values());
+  }, [activos]);
+
   const activosFiltrados = useMemo(() => {
     const activosOrdenados = [...(Array.isArray(activos) ? activos : [])].sort(compareActivosByNewest);
 
@@ -162,14 +182,14 @@ export default function BienesRegistrados() {
       if (query && !codigo.includes(query) && !tipoActivo.includes(query) && !productoCompleto.includes(query)) return false;
 
       if (appliedFilters) {
-        const { ubicacion: fUbicacion, fechaDesde, fechaHasta, precioMin, precioMax } =
+        const { ubicacion: fUbicacion, estatus: fEstatus, producto: fProducto, fechaDesde, fechaHasta, precioMin, precioMax } =
           appliedFilters;
 
-        if (
-          fUbicacion &&
-          normalize(ubicacionTexto) !== normalize(fUbicacion)
-        ) {
-          return false;
+        if (fUbicacion && normalize(ubicacionTexto) !== normalize(fUbicacion)) return false;
+        if (fEstatus && normalize(a?.estatus ?? "") !== normalize(fEstatus)) return false;
+        if (fProducto) {
+          const nombreProd = normalize(a?.producto?.nombre ?? a?.producto?.tipo_activo ?? a?.tipo_activo ?? "");
+          if (!nombreProd.includes(normalize(fProducto))) return false;
         }
         if (fechaDesde && fechaAlta && fechaAlta < new Date(fechaDesde)) return false;
         if (fechaHasta && fechaAlta && fechaAlta > new Date(fechaHasta)) return false;
@@ -300,6 +320,8 @@ export default function BienesRegistrados() {
           onApply={setAppliedFilters}
           onClear={() => setAppliedFilters(null)}
           ubicaciones={ubicaciones}
+          estatusOptions={estatusOptions}
+          productoOptions={productoOptions}
         />
 
         <Row className="g-4 mt-2">
