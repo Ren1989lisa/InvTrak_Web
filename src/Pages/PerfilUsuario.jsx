@@ -210,7 +210,7 @@ export default function PerfilUsuario() {
         ) : null}
         {isUsuario && pendientesResguardo.length > 0 ? (
           <Alert variant="warning" className="mb-2">
-            Tienes bienes pendientes por confirmar
+            Tienes activos pendientes por confirmar
           </Alert>
         ) : null}
         <Button
@@ -228,7 +228,7 @@ export default function PerfilUsuario() {
             <div className="inv-profile-cardWrapper">
               <ProfileInfoCard usuario={usuario} />
             </div>
-            {isAdmin && (
+            {isAdmin || String(usuario?.id_usuario) === String(currentUser?.id_usuario) ? (
               <div className="inv-profile-actions">
                 <PrimaryButton
                   variant="primary"
@@ -241,7 +241,7 @@ export default function PerfilUsuario() {
                   }
                 />
               </div>
-            )}
+            ) : null}
           </>
         )}
       </Container>

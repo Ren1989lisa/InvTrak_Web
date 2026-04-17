@@ -44,8 +44,6 @@ function validateAdminForm(data) {
   if (!(data?.fecha_nacimiento ?? "").toString().trim()) return "La fecha de nacimiento es obligatoria.";
   if (!(data?.curp ?? "").toString().trim()) return "La CURP es obligatoria.";
   if ((data?.curp ?? "").toString().trim().length !== 18) return "La CURP debe tener 18 caracteres.";
-  if (!(data?.rol ?? "").toString().trim()) return "El rol es obligatorio.";
-  if (!(data?.numero_empleado ?? "").toString().trim()) return "El numero de empleado es obligatorio.";
   if (!(data?.area ?? "").toString().trim()) return "El area es obligatoria.";
   return "";
 }
@@ -226,6 +224,10 @@ export default function EditarPerfil() {
   const canEditUserFields = isAdminEditMode;
   const showPasswordField = !isAdminEditMode;
   const backRoute = isAdminEditMode ? "/usuarios" : perfilRoute;
+  const usuarioEsAdmin = (usuario?.rol ?? "").toString().toLowerCase() === "admin";
+
+  const maxFechaNac = (() => { const d = new Date(); d.setFullYear(d.getFullYear() - 18); return d.toISOString().split("T")[0]; })();
+  const minFechaNac = (() => { const d = new Date(); d.setFullYear(d.getFullYear() - 100); return d.toISOString().split("T")[0]; })();
 
   return (
     <div className="inv-page">
@@ -323,6 +325,8 @@ export default function EditarPerfil() {
                             label="Fecha de nacimiento"
                             name={field.name}
                             type="date"
+                            min={minFechaNac}
+                            max={maxFechaNac}
                             value={field.value}
                             onChange={field.onChange}
                             onBlur={field.onBlur}
@@ -353,36 +357,42 @@ export default function EditarPerfil() {
 
                   <Row>
                     <Col xs={12} md={6}>
-                      <Controller
-                        name="rol"
-                        control={control}
-                        render={({ field, fieldState }) => (
-                          <FormSelect
-                            label="Rol"
-                            name={field.name}
-                            value={field.value}
-                            onChange={field.onChange}
-                            onBlur={field.onBlur}
-                            options={ROL_OPTIONS}
-                            disabled={!canEditUserFields}
-                            error={fieldState.error?.message}
-                          />
-                        )}
-                      />
+                      {usuarioEsAdmin ? (
+                        <FormInput
+                          label="Rol"
+                          name="rol"
+                          value="admin"
+                          disabled
+                        />
+                      ) : (
+                        <Controller
+                          name="rol"
+                          control={control}
+                          render={({ field, fieldState }) => (
+                            <FormSelect
+                              label="Rol"
+                              name={field.name}
+                              value={field.value}
+                              onChange={field.onChange}
+                              onBlur={field.onBlur}
+                              options={ROL_OPTIONS}
+                              disabled={!canEditUserFields}
+                              error={fieldState.error?.message}
+                            />
+                          )}
+                        />
+                      )}
                     </Col>
                     <Col xs={12} md={6}>
                       <Controller
                         name="numero_empleado"
                         control={control}
-                        render={({ field, fieldState }) => (
+                        render={({ field }) => (
                           <FormInput
                             label="Numero de empleado"
                             name={field.name}
                             value={field.value}
-                            onChange={field.onChange}
-                            onBlur={field.onBlur}
-                            error={fieldState.error?.message}
-                            disabled={!canEditUserFields}
+                            disabled
                           />
                         )}
                       />

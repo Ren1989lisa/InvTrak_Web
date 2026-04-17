@@ -48,7 +48,9 @@ function hasMissingChecklistValue(checklist) {
 }
 
 function checklistToEnum(value) {
-  return value === "true" ? "SI" : "NO";
+  if (value === "true") return "SI";
+  if (value === "false") return "NO";
+  return "NA";
 }
 
 export default function ConfirmaResguardo() {
@@ -471,6 +473,15 @@ export default function ConfirmaResguardo() {
                           value="false"
                           checked={checklist[key] === "false"}
                           onChange={() => handleCheckChange(key, "false")}
+                        />
+                        <Form.Check
+                          type="radio"
+                          name={key}
+                          id={`${key}-na`}
+                          label="No aplica"
+                          value="na"
+                          checked={checklist[key] === "na"}
+                          onChange={() => handleCheckChange(key, "na")}
                         />
                       </div>
                     </div>

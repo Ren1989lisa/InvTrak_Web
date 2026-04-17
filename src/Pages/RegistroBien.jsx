@@ -558,6 +558,13 @@ export default function RegistroBien() {
 
   const pageTitle = isEditMode ? "Editar activo" : "Registro de Bienes";
   const formTitle = isEditMode ? "Editar bien" : "Registro de Bien";
+
+  const todayStr = todayDateString();
+  const minFechaAlta = (() => {
+    const d = new Date();
+    d.setFullYear(d.getFullYear() - 100);
+    return d.toISOString().split("T")[0];
+  })();
   const submitLabel = isSaving
     ? isEditMode
       ? "Guardando..."
@@ -674,6 +681,8 @@ export default function RegistroBien() {
                     label="Fecha de alta"
                     name={field.name}
                     type="date"
+                    min={minFechaAlta}
+                    max={todayStr}
                     value={field.value}
                     onChange={field.onChange}
                     onBlur={field.onBlur}

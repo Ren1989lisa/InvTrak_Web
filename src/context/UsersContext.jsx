@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { getDefaultRouteByRole } from "../config/routes";
 import {
   getCurrentUser as getStoredCurrentUser,
@@ -11,20 +11,20 @@ import { getPerfilActual } from "../services/userService";
 const UsersContext = createContext(null);
 
 const MENU_ADMIN = [
-  { icon: "grid", label: "Bienes", route: "/bienes-registrados" },
+  { icon: "grid", label: "Activos", route: "/bienes-registrados" },
   { icon: "users", label: "Usuarios", route: "/usuarios" },
   { icon: "folder", label: "Catalogos", route: "/catalogos" },
   { icon: "clock", label: "Historial", route: "/historial" },
-  { icon: "report", label: "Asignar Bien", route: "/asignar-bien" },
+  { icon: "report", label: "Asignar Activo", route: "/asignar-bien" },
   { icon: "report", label: "Asignar Reporte", route: "/asignar-reporte" },
   { icon: "grid", label: "Dashboard", route: "/dashboard" },
-  { icon: "box", label: "Registro de bienes", route: "/registro-bien" },
+  { icon: "box", label: "Registro de activos", route: "/registro-bien" },
   { icon: "returns", label: "Devoluciones y bajas", route: "/devoluciones-bajas" },
 ];
 
 const MENU_USUARIO = [
-  { icon: "grid", label: "Mis bienes", route: "/mis-bienes" },
-  { icon: "report", label: "Reportar bien", route: "/reportar-bien" },
+  { icon: "grid", label: "Mis activos", route: "/mis-bienes" },
+  { icon: "report", label: "Reportar activo", route: "/reportar-bien" },
 ];
 
 const MENU_TECNICO = [
@@ -39,8 +39,8 @@ function getMenuByRol(rol) {
   return MENU_USUARIO;
 }
 
-const RUTAS_USUARIO = ["/bienes-registrados", "/mis-bienes", "/perfil", "/reportar-bien"];
-const RUTAS_TECNICO = ["/mis-reparaciones", "/perfil"];
+const RUTAS_USUARIO = ["/bienes-registrados", "/mis-bienes", "/perfil", "/reportar-bien", "/perfil/editar"];
+const RUTAS_TECNICO = ["/mis-reparaciones", "/perfil", "/perfil/editar"];
 
 function canAccessRoute(rol, path) {
   const r = (rol ?? "").toString().toLowerCase();
@@ -50,6 +50,7 @@ function canAccessRoute(rol, path) {
 
   if (r === "usuario") {
     if (RUTAS_USUARIO.some((ruta) => p === ruta)) return true;
+    if (p.endsWith("/editar") && p.startsWith("/perfil/")) return true;
     if (p.endsWith("/editar")) return false;
     if (p.startsWith("/perfil/") || p.startsWith("/activo/") || p.startsWith("/confirmar-resguardo/"))
       return true;
@@ -58,6 +59,7 @@ function canAccessRoute(rol, path) {
 
   if (r === "tecnico") {
     if (RUTAS_TECNICO.some((ruta) => p === ruta)) return true;
+    if (p.endsWith("/editar") && p.startsWith("/perfil/")) return true;
     if (p.endsWith("/editar")) return false;
     if (p.startsWith("/perfil/") || p.startsWith("/activo/") || p.startsWith("/reporte/"))
       return true;
@@ -77,6 +79,7 @@ function extractPerfilPayload(payload) {
 export function UsersProvider({ children }) {
   const [user, setUser] = useState(() => getStoredCurrentUser());
   const [isAuthenticated, setIsAuthenticated] = useState(() => Boolean(getToken() && getStoredCurrentUser()));
+  const hydratedRef = useRef(false);
 
   const currentUser = user;
   const userRole = user?.rol ?? null;
@@ -99,30 +102,15 @@ export function UsersProvider({ children }) {
   const isAdmin = (user?.rol ?? "").toString().toLowerCase() === "admin";
 
   useEffect(() => {
-    let active = true;
-
     if (!isAuthenticated || !getToken()) {
-      return () => {
-        active = false;
-      };
+      hydratedRef.current = false;
+      return;
     }
 
-    const localUserId = user?.id_usuario ?? user?.id ?? null;
-    const localUserName = (
-      user?.nombre ??
-      user?.nombre_completo ??
-      ""
-    )
-      .toString()
-      .trim();
-    const localUserEmail = (user?.correo ?? "").toString().trim();
-    const hasLocalProfileData = Boolean(localUserId && (localUserName || localUserEmail));
+    if (hydratedRef.current) return;
+    hydratedRef.current = true;
 
-    if (hasLocalProfileData) {
-      return () => {
-        active = false;
-      };
-    }
+    let active = true;
 
     async function hydrateCurrentUserProfile() {
       try {
@@ -193,7 +181,7 @@ export function UsersProvider({ children }) {
     return () => {
       active = false;
     };
-  }, [isAuthenticated, user?.id_usuario, user?.id, user?.nombre, user?.nombre_completo, user?.correo]);
+  }, [isAuthenticated]);
 
   const login = useCallback(async (correo, password) => {
     const nextUser = await authLogin(correo, password);
@@ -206,6 +194,7 @@ export function UsersProvider({ children }) {
     authLogout();
     setUser(null);
     setIsAuthenticated(false);
+    hydratedRef.current = false;
   }, []);
 
   const updateCurrentUser = useCallback((partialUser) => {

@@ -160,7 +160,7 @@ export default function MisBienes() {
   return (
     <div className="inv-page">
       <NavbarMenu
-        title="Mis bienes"
+        title="Mis activos"
         onMenuClick={() => setOpenSidebar((v) => !v)}
         notificationItems={notificationItems}
         onNotificationsOpen={refresh}
@@ -222,7 +222,7 @@ export default function MisBienes() {
 
         {hasPending ? (
           <Alert variant="warning" className="mb-3">
-            Tienes bienes pendientes por confirmar
+            Tienes activos pendientes por confirmar
           </Alert>
         ) : null}
 
@@ -244,14 +244,14 @@ export default function MisBienes() {
         {!isLoading && bienesConfirmados.length === 0 ? (
           <Alert variant="info" className="mt-3">
             {pendientesResguardo.length > 0
-              ? "Tienes bienes pendientes por confirmar. Usa la notificacion para subir el QR y completar el resguardo."
-              : "No tienes bienes confirmados. Si te asignaron un activo, confirma el resguardo desde las notificaciones."}
+              ? "Tienes activos pendientes por confirmar. Usa la notificacion para subir el QR y completar el resguardo."
+              : "No tienes activos confirmados. Si te asignaron un activo, confirma el resguardo desde las notificaciones."}
           </Alert>
         ) : null}
 
         {!isLoading && bienesConfirmados.length > 0 && activosFiltrados.length === 0 ? (
           <Alert variant="info" className="mt-3">
-            No hay bienes confirmados con ese filtro.
+            No hay activos confirmados con ese filtro.
           </Alert>
         ) : null}
 

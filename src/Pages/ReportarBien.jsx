@@ -371,7 +371,7 @@ export default function ReportarBien() {
 
         {isLoadingMisBienes ? (
           <Alert variant="info" className="mt-2 mb-0">
-            Cargando tus bienes...
+            Cargando tus activos...
           </Alert>
         ) : null}
 
@@ -405,13 +405,13 @@ export default function ReportarBien() {
                         control={control}
                         render={({ field, fieldState }) => (
                           <FormSelect
-                            label="Etiqueta del bien"
+                            label="Etiqueta del activo"
                             name={field.name}
                             value={field.value}
                             onChange={field.onChange}
                             onBlur={field.onBlur}
                             options={etiquetaOptions}
-                            placeholder="Selecciona la etiqueta del bien"
+                            placeholder="Selecciona la etiqueta del activo"
                             className="inv-reportar-select"
                             error={fieldState.error?.message}
                             disabled={isSubmitting}

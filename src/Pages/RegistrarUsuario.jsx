@@ -32,6 +32,14 @@ export default function RegistrarUsuario() {
   const [success, setSuccess] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const today = new Date();
+  const maxFechaNac = new Date(today);
+  maxFechaNac.setFullYear(today.getFullYear() - 18);
+  const minFechaNac = new Date(today);
+  minFechaNac.setFullYear(today.getFullYear() - 100);
+  const maxFechaNacStr = maxFechaNac.toISOString().split("T")[0];
+  const minFechaNacStr = minFechaNac.toISOString().split("T")[0];
+
   const { control, handleSubmit, reset } = useForm({
     resolver: zodResolver(usuarioSchema),
     defaultValues: INITIAL_VALUES,
@@ -112,6 +120,8 @@ export default function RegistrarUsuario() {
                   label="Fecha de nacimiento"
                   name={field.name}
                   type="date"
+                  min={minFechaNacStr}
+                  max={maxFechaNacStr}
                   value={field.value}
                   onChange={field.onChange}
                   onBlur={field.onBlur}

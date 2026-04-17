@@ -272,15 +272,23 @@ export default function FiltersModal({
                 <Form.Control
                   type="number"
                   placeholder="Ingrese la cantidad"
+                  min="0"
                   value={precioMin}
-                  onChange={(event) => setPrecioMin(event.target.value)}
+                  onChange={(event) => {
+                    const v = event.target.value;
+                    if (v === "" || Number(v) >= 0) setPrecioMin(v);
+                  }}
                 />
                 <Form.Label className="mt-2">Maximo</Form.Label>
                 <Form.Control
                   type="number"
                   placeholder="Ingrese la cantidad"
+                  min="0"
                   value={precioMax}
-                  onChange={(event) => setPrecioMax(event.target.value)}
+                  onChange={(event) => {
+                    const v = event.target.value;
+                    if (v === "" || Number(v) >= 0) setPrecioMax(v);
+                  }}
                 />
               </div>
             </div>

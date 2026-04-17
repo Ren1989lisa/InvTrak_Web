@@ -266,7 +266,6 @@ export async function updateUsuario(idUsuario, input) {
     correo: (input?.correo ?? "").toString().trim(),
     fechaNacimiento: input?.fecha_nacimiento ?? input?.fechaNacimiento ?? "",
     curp: (input?.curp ?? "").toString().trim().toUpperCase(),
-    numeroEmpleado: (input?.numero_empleado ?? input?.numeroEmpleado ?? "").toString().trim(),
     rolId:
       input?.rolId ??
       mapFrontendRolToId(input?.rol),

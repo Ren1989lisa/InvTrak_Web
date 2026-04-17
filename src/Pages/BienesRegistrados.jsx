@@ -290,7 +290,7 @@ export default function BienesRegistrados() {
         ) : null}
         {isLoadingActivos ? (
           <Alert variant="info" className="mt-3 mb-0">
-            Cargando bienes registrados...
+            Cargando activos registrados...
           </Alert>
         ) : null}
 

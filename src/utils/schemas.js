@@ -12,7 +12,17 @@ export const forgotPasswordSchema = z.object({
 export const usuarioSchema = z.object({
   nombre: z.string().min(1, "El nombre es obligatorio"),
   correo: z.string().min(1, "El correo es obligatorio").email("Correo invalido"),
-  fecha_nacimiento: z.string().min(1, "La fecha de nacimiento es obligatoria"),
+  fecha_nacimiento: z.string().min(1, "La fecha de nacimiento es obligatoria").refine((value) => {
+    const date = new Date(`${value}T00:00:00`);
+    if (Number.isNaN(date.getTime())) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const minAge = new Date(today);
+    minAge.setFullYear(today.getFullYear() - 18);
+    const maxAge = new Date(today);
+    maxAge.setFullYear(today.getFullYear() - 100);
+    return date <= minAge && date >= maxAge;
+  }, "El usuario debe tener entre 18 y 100 años"),
   curp: z.string().length(18, "La CURP debe tener exactamente 18 caracteres"),
   rol: z.string().min(1, "El rol es obligatorio"),
   area: z.string().min(1, "El area es obligatoria"),
@@ -47,13 +57,14 @@ export const registroBienSchema = z.object({
     .trim()
     .min(1, "La fecha de alta es obligatoria")
     .refine((value) => {
-      const selectedDate = new Date(`${value}T00:00:00`);
-      if (Number.isNaN(selectedDate.getTime())) return false;
-
+      const date = new Date(`${value}T00:00:00`);
+      if (Number.isNaN(date.getTime())) return false;
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      return selectedDate <= today;
-    }, "La fecha no puede ser futura"),
+      const minDate = new Date(today);
+      minDate.setFullYear(today.getFullYear() - 100);
+      return date <= today && date >= minDate;
+    }, "La fecha debe estar entre hoy y los últimos 100 años"),
   descripcion: z.string().trim().min(1, "La descripcion es obligatoria"),
   estatus: z.string().optional(),
   costo: z.string().trim().min(1, "El costo es obligatorio").refine(
