@@ -218,18 +218,6 @@ export default function Dashboard() {
       />
 
       <Container fluid className="inv-content px-3 px-md-4 py-3">
-        <div className="d-flex justify-content-end mb-3">
-          <Button
-            type="button"
-            variant="outline-primary"
-            size="sm"
-            onClick={() => setRefreshToken((value) => value + 1)}
-            disabled={isLoading}
-          >
-            Actualizar
-          </Button>
-        </div>
-
         {isLoading ? (
           <Alert variant="info" className="mb-3 d-flex align-items-center gap-2">
             <Spinner animation="border" size="sm" />

@@ -7,6 +7,7 @@ import SidebarMenu from "../Components/SidebarMenu";
 import ProfileHeader from "../Components/ProfileHeader";
 import ProfileInfoCard from "../Components/ProfileInfoCard";
 import PrimaryButton from "../Components/PrimaryButton";
+import BackButton from "../Components/BackButton";
 import { useUsers } from "../context/UsersContext";
 import { usePendientesResguardo } from "../hooks/usePendientesResguardo";
 import { getPerfilActual, getUsuarios } from "../services/userService";
